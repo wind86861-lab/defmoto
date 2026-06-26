@@ -43,3 +43,6 @@ storybook-static
 !.vscode/settings.json
 !.vscode/extensions.json
 .idea/
+
+# claude code
+.claude/
