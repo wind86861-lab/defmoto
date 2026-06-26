@@ -145,7 +145,7 @@ export function Header() {
                   <Link
                     href={item.href}
                     className={cn(
-                      'inline-flex h-10 items-center whitespace-nowrap rounded-lg px-4 text-[15px] font-semibold transition-colors',
+                      'inline-flex h-10 items-center whitespace-nowrap rounded-lg px-4 text-[15px] font-bold transition-colors',
                       active
                         ? 'text-brand-yellow'
                         : 'text-white/75 hover:bg-white/5 hover:text-white',
