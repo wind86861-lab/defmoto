@@ -704,7 +704,22 @@
     "moveUpAria": "Move up",
     "moveDownAria": "Move down",
     "linkPlaceholder": "https://... or /catalog (optional link)",
-    "tipText": "💡 <b>Tip:</b> The banner is shown full-width (object-cover) — a wide image (e.g. 1600×900) gives the best result. If you add a link, users are redirected there on click (internal path: <code>/catalog</code>, external: <code>https://...</code>)."
+    "tipText": "💡 <b>Tip:</b> The banner is shown full-width (object-cover) — a wide image (e.g. 1600×900) gives the best result. If you add a link, users are redirected there on click (internal path: <code>/catalog</code>, external: <code>https://...</code>).",
+    "navMarketplaces": "Marketplaces",
+    "marketplacesSubtitle": "Manage the marketplace links shown in the navbar",
+    "marketplacesSectionTitle": "Marketplaces ({count})",
+    "addMarketplaceButton": "Marketplace",
+    "noMarketplacesTitle": "No marketplaces",
+    "noMarketplacesDesc": "Click the button above to add one.",
+    "mpNameLabel": "Name",
+    "mpNamePlaceholder": "Uzum Market",
+    "mpLabelLabel": "Short label",
+    "mpLabelPlaceholder": "Uzum",
+    "mpUrlLabel": "Link",
+    "mpUrlPlaceholder": "https://uzum.uz",
+    "mpColorLabel": "Color",
+    "mpEnabledLabel": "Active",
+    "marketplacesTipText": "💡 <b>Tip:</b> Each marketplace shows in the navbar as a coloured badge. <b>Short label</b> is the badge text (e.g. “Uzum”), <b>Name</b> is the full title (tooltip). Disabled marketplaces are hidden on the site."
   },
   "categories": {
     "motorcycles": "Motorcycles",

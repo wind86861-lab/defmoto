@@ -704,7 +704,22 @@
     "moveUpAria": "Вверх",
     "moveDownAria": "Вниз",
     "linkPlaceholder": "https://... или /catalog (необязательная ссылка)",
-    "tipText": "💡 <b>Совет:</b> Баннер показывается на всю ширину (object-cover) — широкоформатное изображение (например, 1600×900) даёт лучший результат. Если добавите ссылку, пользователь перейдёт по ней при нажатии (внутренний путь: <code>/catalog</code>, внешний: <code>https://...</code>)."
+    "tipText": "💡 <b>Совет:</b> Баннер показывается на всю ширину (object-cover) — широкоформатное изображение (например, 1600×900) даёт лучший результат. Если добавите ссылку, пользователь перейдёт по ней при нажатии (внутренний путь: <code>/catalog</code>, внешний: <code>https://...</code>).",
+    "navMarketplaces": "Маркетплейсы",
+    "marketplacesSubtitle": "Управляйте ссылками на маркетплейсы в шапке",
+    "marketplacesSectionTitle": "Маркетплейсы ({count})",
+    "addMarketplaceButton": "Маркетплейс",
+    "noMarketplacesTitle": "Маркетплейсов нет",
+    "noMarketplacesDesc": "Нажмите кнопку выше, чтобы добавить.",
+    "mpNameLabel": "Название",
+    "mpNamePlaceholder": "Uzum Market",
+    "mpLabelLabel": "Короткая метка",
+    "mpLabelPlaceholder": "Uzum",
+    "mpUrlLabel": "Ссылка",
+    "mpUrlPlaceholder": "https://uzum.uz",
+    "mpColorLabel": "Цвет",
+    "mpEnabledLabel": "Активен",
+    "marketplacesTipText": "💡 <b>Совет:</b> Каждый маркетплейс отображается в шапке как цветной бейдж. <b>Короткая метка</b> — текст на бейдже (например “Uzum”), <b>Название</b> — полное имя (всплывающая подсказка). Отключённые маркетплейсы на сайте не видны."
   },
   "categories": {
     "motorcycles": "Мотоциклы",

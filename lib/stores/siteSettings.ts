@@ -18,15 +18,30 @@ export interface PromoBanner {
   href?: string;
 }
 
+export interface Marketplace {
+  id: string;
+  name: string; // full name — used as aria-label / tooltip (e.g. "Uzum Market")
+  label: string; // short badge text (e.g. "Uzum")
+  url: string;
+  color: string; // hex brand colour for the badge
+  enabled: boolean;
+}
+
 interface SiteSettingsState {
   hero: HeroOverride;
   banner: PromoBanner | null;
+  marketplaces: Marketplace[];
   setHero: (patch: Partial<HeroOverride>) => void;
   resetHero: () => void;
   addSlide: (slide: HeroSlide) => void;
   removeSlide: (id: string) => void;
   reorderSlide: (id: string, direction: -1 | 1) => void;
   setBanner: (banner: PromoBanner | null) => void;
+  addMarketplace: (m: Marketplace) => void;
+  updateMarketplace: (id: string, patch: Partial<Marketplace>) => void;
+  removeMarketplace: (id: string) => void;
+  reorderMarketplace: (id: string, direction: -1 | 1) => void;
+  resetMarketplaces: () => void;
 }
 
 // Same images Hero.tsx used to hard-code — now seeded into the store so
@@ -46,11 +61,41 @@ export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
 
 const defaultHero: HeroOverride = { slides: DEFAULT_HERO_SLIDES };
 
+// Marketplaces where DEFT MOTO also sells — shown in the navbar and editable
+// from the admin panel. Colours match the PriceCompare brand chips.
+export const DEFAULT_MARKETPLACES: Marketplace[] = [
+  {
+    id: 'mp-uzum',
+    name: 'Uzum Market',
+    label: 'Uzum',
+    url: 'https://uzum.uz',
+    color: '#7B2CBF',
+    enabled: true,
+  },
+  {
+    id: 'mp-wildberries',
+    name: 'Wildberries',
+    label: 'WB',
+    url: 'https://www.wildberries.uz',
+    color: '#CB11AB',
+    enabled: true,
+  },
+  {
+    id: 'mp-yandex',
+    name: 'Yandex Market',
+    label: 'Yandex',
+    url: 'https://market.yandex.uz',
+    color: '#FC3F1D',
+    enabled: true,
+  },
+];
+
 export const useSiteSettings = create<SiteSettingsState>()(
   persist(
     (set) => ({
       hero: defaultHero,
       banner: null,
+      marketplaces: DEFAULT_MARKETPLACES,
       setHero: (patch) =>
         set((state) => ({ hero: { ...state.hero, ...patch } })),
       resetHero: () => set({ hero: defaultHero }),
@@ -76,16 +121,43 @@ export const useSiteSettings = create<SiteSettingsState>()(
           return { hero: { ...state.hero, slides } };
         }),
       setBanner: (banner) => set({ banner }),
+      addMarketplace: (m) =>
+        set((state) => ({ marketplaces: [...state.marketplaces, m] })),
+      updateMarketplace: (id, patch) =>
+        set((state) => ({
+          marketplaces: state.marketplaces.map((m) =>
+            m.id === id ? { ...m, ...patch } : m,
+          ),
+        })),
+      removeMarketplace: (id) =>
+        set((state) => ({
+          marketplaces: state.marketplaces.filter((m) => m.id !== id),
+        })),
+      reorderMarketplace: (id, direction) =>
+        set((state) => {
+          const list = [...state.marketplaces];
+          const idx = list.findIndex((m) => m.id === id);
+          if (idx === -1) return state;
+          const next = idx + direction;
+          if (next < 0 || next >= list.length) return state;
+          [list[idx], list[next]] = [list[next], list[idx]];
+          return { marketplaces: list };
+        }),
+      resetMarketplaces: () => set({ marketplaces: DEFAULT_MARKETPLACES }),
     }),
     {
       name: 'deftmoto-site-settings',
-      version: 1,
+      version: 2,
       // v0 persisted state had no seeded slides — backfill so existing
       // browsers also get an editable/linkable default banner.
+      // v2 introduces marketplaces — seed them for older persisted state.
       migrate: (persisted) => {
         const state = persisted as SiteSettingsState;
         if (!state.hero?.slides || state.hero.slides.length === 0) {
           state.hero = { ...state.hero, slides: DEFAULT_HERO_SLIDES };
+        }
+        if (!state.marketplaces || state.marketplaces.length === 0) {
+          state.marketplaces = DEFAULT_MARKETPLACES;
         }
         return state;
       },

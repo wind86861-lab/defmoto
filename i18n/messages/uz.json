@@ -704,7 +704,22 @@
     "moveUpAria": "Yuqoriga",
     "moveDownAria": "Pastga",
     "linkPlaceholder": "https://... yoki /catalog (ixtiyoriy link)",
-    "tipText": "💡 <b>Tavsiya:</b> Banner to'liq kenglikda (object-cover) ko'rsatiladi — keng formatli surat (masalan 1600×900) eng yaxshi natija beradi. Link qo'shsangiz, foydalanuvchi bosganda shu manzilga yo'naltiriladi (ichki yo'l: <code>/catalog</code>, tashqi: <code>https://...</code>)."
+    "tipText": "💡 <b>Tavsiya:</b> Banner to'liq kenglikda (object-cover) ko'rsatiladi — keng formatli surat (masalan 1600×900) eng yaxshi natija beradi. Link qo'shsangiz, foydalanuvchi bosganda shu manzilga yo'naltiriladi (ichki yo'l: <code>/catalog</code>, tashqi: <code>https://...</code>).",
+    "navMarketplaces": "Marketpleyslar",
+    "marketplacesSubtitle": "Navbardagi marketpleys havolalarini boshqaring",
+    "marketplacesSectionTitle": "Marketpleyslar ({count})",
+    "addMarketplaceButton": "Marketpleys",
+    "noMarketplacesTitle": "Marketpleyslar yoʻq",
+    "noMarketplacesDesc": "Qoʻshish uchun yuqoridagi tugmani bosing.",
+    "mpNameLabel": "Nomi",
+    "mpNamePlaceholder": "Uzum Market",
+    "mpLabelLabel": "Qisqa belgi",
+    "mpLabelPlaceholder": "Uzum",
+    "mpUrlLabel": "Havola",
+    "mpUrlPlaceholder": "https://uzum.uz",
+    "mpColorLabel": "Rang",
+    "mpEnabledLabel": "Faol",
+    "marketplacesTipText": "💡 <b>Maslahat:</b> Har bir marketpleys navbarda rangli belgi sifatida koʻrsatiladi. <b>Qisqa belgi</b> — badgedagi matn (masalan “Uzum”), <b>Nomi</b> — toʻliq nom (tooltip). Faolsizlantirilgan marketpleyslar saytda koʻrinmaydi."
   },
   "categories": {
     "motorcycles": "Mototsikllar",

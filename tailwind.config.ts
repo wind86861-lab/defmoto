@@ -77,8 +77,8 @@ const config: Config = {
         'display-2xl': ['3.5rem', { lineHeight: '1.05', letterSpacing: '-0.03em', fontWeight: '800' }],
         'display-xl': ['2.75rem', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '800' }],
         'display-lg': ['2.25rem', { lineHeight: '1.15', letterSpacing: '-0.02em', fontWeight: '700' }],
-        'display-md': ['1.75rem', { lineHeight: '1.2', letterSpacing: '-0.01em', fontWeight: '700' }],
-        'display-sm': ['1.5rem', { lineHeight: '1.25', fontWeight: '700' }],
+        'display-md': ['2rem', { lineHeight: '1.2', letterSpacing: '-0.01em', fontWeight: '700' }],
+        'display-sm': ['1.75rem', { lineHeight: '1.25', fontWeight: '700' }],
       },
       borderRadius: {
         '4xl': '2rem',

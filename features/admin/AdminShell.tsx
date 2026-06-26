@@ -11,6 +11,7 @@ import {
   ShoppingBag,
   Tag,
   MessageCircle,
+  Store,
   ExternalLink,
   LogOut,
 } from 'lucide-react';
@@ -34,6 +35,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     { href: '/admin/products', label: t('navProducts'), icon: Package },
     { href: '/admin/orders', label: t('navOrders'), icon: ShoppingBag },
     { href: '/admin/categories', label: t('navCategories'), icon: Tag },
+    { href: '/admin/marketplaces', label: t('navMarketplaces'), icon: Store },
     { href: '/admin/chats', label: t('navChats'), icon: MessageCircle },
   ];
 

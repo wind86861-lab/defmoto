@@ -11,12 +11,11 @@ import {
   Menu,
   MoreHorizontal,
   Phone,
-  Send,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Logo } from '@/components/ui/Logo';
 import { IconButton } from '@/components/ui/IconButton';
-import { SocialDot, WhatsAppIcon, ViberIcon } from '@/components/ui/SocialIcons';
+import { MarketplaceLinks } from '@/components/features/MarketplaceLinks';
 import { useCartStore } from '@/lib/stores/cart';
 import { useWishlistStore } from '@/lib/stores/wishlist';
 import { useMounted } from '@/hooks/useMounted';
@@ -171,22 +170,7 @@ export function Header() {
               </span>
               <span>{tContact('phone')}</span>
             </a>
-            <div className="flex shrink-0 items-center gap-1.5">
-              <SocialDot color="#229ED9" href="https://t.me/" label="Telegram" className="h-7 w-7">
-                <Send className="h-3.5 w-3.5" fill="currentColor" />
-              </SocialDot>
-              <SocialDot
-                color="#25D366"
-                href="https://wa.me/"
-                label="WhatsApp"
-                className="h-7 w-7"
-              >
-                <WhatsAppIcon className="h-3.5 w-3.5" />
-              </SocialDot>
-              <SocialDot color="#7360F2" href="https://viber.com" label="Viber" className="h-7 w-7">
-                <ViberIcon className="h-3.5 w-3.5" />
-              </SocialDot>
-            </div>
+            <MarketplaceLinks size="sm" />
           </div>
         </div>
       </div>
