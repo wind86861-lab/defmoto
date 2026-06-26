@@ -132,8 +132,8 @@ export function Header() {
 
       {/* ===== Row 2 — sub-nav (xl+ only) ===== */}
       <div className="hidden border-t border-brand-surface-border/40 xl:block">
-        <div className="mx-auto flex h-12 max-w-[1320px] items-center gap-3 px-4 xl:px-8">
-          <ul className="flex min-w-0 flex-1 items-center gap-0.5">
+        <div className="mx-auto flex h-14 max-w-[1320px] items-center gap-4 px-4 xl:px-8">
+          <ul className="flex min-w-0 flex-1 items-center justify-between gap-1 pr-4">
             {mainNav.map((item) => {
               const active =
                 item.href === '/'
@@ -145,7 +145,7 @@ export function Header() {
                   <Link
                     href={item.href}
                     className={cn(
-                      'inline-flex h-9 items-center whitespace-nowrap rounded-lg px-2.5 text-[13px] font-semibold transition-colors',
+                      'inline-flex h-10 items-center whitespace-nowrap rounded-lg px-4 text-[15px] font-semibold transition-colors',
                       active
                         ? 'text-brand-yellow'
                         : 'text-white/75 hover:bg-white/5 hover:text-white',
