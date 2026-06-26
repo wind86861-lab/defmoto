@@ -180,7 +180,7 @@ export function ChatInput({
               disabled={disabled}
               placeholder={t('messagePlaceholder')}
               rows={1}
-              className="flex-1 resize-none bg-transparent px-3.5 py-2.5 text-[15px] text-white outline-none placeholder:text-white/35"
+              className="flex-1 resize-none bg-transparent px-3.5 py-2.5 text-base text-white outline-none placeholder:text-white/35"
             />
           </div>
 

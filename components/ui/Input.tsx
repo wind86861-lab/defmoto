@@ -29,7 +29,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             className={cn(
-              'flex-1 bg-transparent text-[15px] text-white placeholder:text-white/35 outline-none',
+              'flex-1 bg-transparent text-base text-white placeholder:text-white/35 outline-none',
               className,
             )}
             {...props}

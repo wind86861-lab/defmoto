@@ -334,7 +334,7 @@ function BookingForm({ centerName }: { centerName: string }) {
           value={form.comment}
           onChange={(e) => setForm({ ...form, comment: e.target.value })}
           disabled={submitted}
-          className="w-full rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-3 text-[15px] text-white outline-none placeholder:text-white/35 transition-colors focus:border-brand-yellow/60 focus:shadow-glow-sm"
+          className="w-full rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-3 text-base text-white outline-none placeholder:text-white/35 transition-colors focus:border-brand-yellow/60 focus:shadow-glow-sm"
         />
         <Button
           type="submit"

@@ -74,7 +74,7 @@ export function SearchClient() {
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder={t('searchPlaceholder')}
-            className="h-10 flex-1 bg-transparent text-[15px] text-white outline-none placeholder:text-white/35"
+            className="h-10 flex-1 bg-transparent text-base text-white outline-none placeholder:text-white/35"
           />
           {value && (
             <button

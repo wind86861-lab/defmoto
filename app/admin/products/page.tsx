@@ -88,7 +88,7 @@ export default function AdminProductsPage() {
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="h-12 rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 text-sm font-semibold text-white outline-none focus:border-brand-yellow/60"
+          className="h-12 rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 text-base font-semibold text-white outline-none focus:border-brand-yellow/60"
         >
           <option value="">{t('allCategoriesOption')}</option>
           {mockCategories.map((c) => (
@@ -100,7 +100,7 @@ export default function AdminProductsPage() {
         <select
           value={stockFilter}
           onChange={(e) => setStockFilter(e.target.value as typeof stockFilter)}
-          className="h-12 rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 text-sm font-semibold text-white outline-none focus:border-brand-yellow/60"
+          className="h-12 rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 text-base font-semibold text-white outline-none focus:border-brand-yellow/60"
         >
           <option value="all">{t('stockAllOption')}</option>
           <option value="in">{t('stockInOption')}</option>
