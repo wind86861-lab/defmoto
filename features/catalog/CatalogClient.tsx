@@ -130,9 +130,9 @@ function CategoriesStrip({ activeSlug }: { activeSlug?: string }) {
         )}
       </div>
 
-      {/* Mobile: horizontal scroll. Desktop: 5-column grid — 3 rows for 15 cards */}
+      {/* Mobile: 2-row horizontal scroll. Desktop: 5-column grid — 3 rows for 15 cards */}
       <div className="-mx-4 overflow-x-auto px-4 scrollbar-hide sm:mx-0 sm:px-0">
-        <div className="flex gap-3 sm:grid sm:grid-cols-2 sm:gap-4 lg:grid-cols-5">
+        <div className="grid grid-flow-col grid-rows-2 gap-3 sm:grid-flow-row sm:grid-rows-none sm:grid-cols-2 sm:gap-4 lg:grid-cols-5">
           <CategoryCard
             category={{ id: 'all', slug: '', name: t('allCategory'), icon: '🗂️' }}
             href="/catalog"
