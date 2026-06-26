@@ -1,39 +1,73 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { cn } from '@/lib/cn';
 
 interface RevealProps {
   children: ReactNode;
   direction?: 'left' | 'right' | 'up';
-  delay?: number;
+  delay?: number; // seconds
   className?: string;
 }
 
-const OFFSET = {
-  left: { x: -56, y: 0 },
-  right: { x: 56, y: 0 },
-  up: { x: 0, y: 36 },
+const animationClass: Record<NonNullable<RevealProps['direction']>, string> = {
+  up: 'animate-reveal-up',
+  left: 'animate-reveal-left',
+  right: 'animate-reveal-right',
 };
 
-export function Reveal({ children, direction = 'up', delay = 0, className }: RevealProps) {
-  const reduceMotion = useReducedMotion();
+/**
+ * Scroll-reveal wrapper — plays a fade/slide-in animation the first time the
+ * element enters the viewport.
+ *
+ * Deliberately "visible by default": the content has no hidden state until an
+ * IntersectionObserver confirms it's entering view and adds the animation
+ * class (which itself starts at opacity 0 → 1). So if JS, hydration or the
+ * observer ever fail, the content simply stays visible — it can never get
+ * stuck invisible. Reduced-motion users get no animation, just the content.
+ */
+export function Reveal({
+  children,
+  direction = 'up',
+  delay = 0,
+  className,
+}: RevealProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [animate, setAnimate] = useState(false);
 
-  if (reduceMotion) {
-    return <div className={className}>{children}</div>;
-  }
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
 
-  const offset = OFFSET[direction];
+    const prefersReduced = window.matchMedia?.(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    if (prefersReduced || typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setAnimate(true);
+            observer.disconnect();
+            break;
+          }
+        }
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -10% 0px' },
+    );
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, x: offset.x, y: offset.y }}
-      whileInView={{ opacity: 1, x: 0, y: 0 }}
-      viewport={{ once: true, margin: '-64px' }}
-      transition={{ duration: 0.65, delay, ease: [0.16, 1, 0.3, 1] }}
+    <div
+      ref={ref}
+      style={animate && delay ? { animationDelay: `${delay}s` } : undefined}
+      className={cn(animate && animationClass[direction], className)}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

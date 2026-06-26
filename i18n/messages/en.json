@@ -180,7 +180,9 @@
     "franchiseStatPaybackValue": "12–18 mo",
     "franchiseStatBranchesLabel": "Active branches",
     "franchiseStatBranchesValue": "5+",
-    "franchiseFormTitle": "Submit a request"
+    "franchiseFormTitle": "Submit a request",
+    "tabBranches": "Branches",
+    "tabFranchise": "Franchise"
   },
   "service": {
     "title": "Service centres",

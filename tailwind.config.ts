@@ -106,6 +106,9 @@ const config: Config = {
         'glow-pulse': 'glowPulse 2.5s ease-in-out infinite',
         'shimmer': 'shimmer 1.8s linear infinite',
         'scale-in': 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+        'reveal-up': 'revealUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'reveal-left': 'revealLeft 0.7s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'reveal-right': 'revealRight 0.7s cubic-bezier(0.16, 1, 0.3, 1) both',
       },
       keyframes: {
         fadeIn: {
@@ -131,6 +134,18 @@ const config: Config = {
         scaleIn: {
           '0%': { opacity: '0', transform: 'scale(0.96)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        revealUp: {
+          '0%': { opacity: '0', transform: 'translateY(2rem)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        revealLeft: {
+          '0%': { opacity: '0', transform: 'translateX(-2.5rem)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
+        revealRight: {
+          '0%': { opacity: '0', transform: 'translateX(2.5rem)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
         },
       },
       transitionTimingFunction: {

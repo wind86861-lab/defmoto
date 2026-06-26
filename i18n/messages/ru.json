@@ -180,7 +180,9 @@
     "franchiseStatPaybackValue": "12–18 мес",
     "franchiseStatBranchesLabel": "Активных филиалов",
     "franchiseStatBranchesValue": "5+",
-    "franchiseFormTitle": "Оставить заявку"
+    "franchiseFormTitle": "Оставить заявку",
+    "tabBranches": "Филиалы",
+    "tabFranchise": "Франшиза"
   },
   "service": {
     "title": "Сервисные центры",

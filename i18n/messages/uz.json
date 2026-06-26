@@ -180,7 +180,9 @@
     "franchiseStatPaybackValue": "12–18 oy",
     "franchiseStatBranchesLabel": "Faol filiallar",
     "franchiseStatBranchesValue": "5+",
-    "franchiseFormTitle": "Ariza qoldiring"
+    "franchiseFormTitle": "Ariza qoldiring",
+    "tabBranches": "Filiallar",
+    "tabFranchise": "Franshiza"
   },
   "service": {
     "title": "Servis markazlari",

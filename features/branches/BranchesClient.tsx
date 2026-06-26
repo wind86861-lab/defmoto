@@ -15,6 +15,7 @@ import {
   Megaphone,
   GraduationCap,
   Truck,
+  Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
@@ -32,6 +33,7 @@ import type { Branch } from '@/types/content';
 
 export function BranchesClient() {
   const t = useTranslations('branches');
+  const [view, setView] = useState<'branches' | 'franchise'>('branches');
   const [activeId, setActiveId] = useState(mockBranches[0].id);
   const active = mockBranches.find((b) => b.id === activeId) ?? mockBranches[0];
 
@@ -44,19 +46,66 @@ export function BranchesClient() {
         <p className="mt-2 text-sm text-white/55 sm:text-base">{t('subtitle')}</p>
       </header>
 
-      {/* === Branch selector === */}
-      <BranchSelector activeId={activeId} onChange={setActiveId} />
+      {/* === Branch / Franchise toggle === */}
+      <div className="mx-auto mb-7 flex max-w-md rounded-2xl border border-brand-surface-border bg-brand-surface p-1">
+        <TabButton
+          active={view === 'branches'}
+          onClick={() => setView('branches')}
+          icon={<Building2 className="h-4 w-4" />}
+          label={t('tabBranches')}
+        />
+        <TabButton
+          active={view === 'franchise'}
+          onClick={() => setView('franchise')}
+          icon={<Sparkles className="h-4 w-4" />}
+          label={t('tabFranchise')}
+        />
+      </div>
 
-      {/* === Branch detail === */}
-      <Reveal direction="left">
-        <BranchDetail branch={active} />
-      </Reveal>
+      {view === 'branches' ? (
+        <div className="animate-fade-in">
+          {/* === Branch selector === */}
+          <BranchSelector activeId={activeId} onChange={setActiveId} />
 
-      {/* === Franchise block (kept) === */}
-      <Reveal direction="right">
-        <FranchiseSection />
-      </Reveal>
+          {/* === Branch detail === */}
+          <Reveal direction="up">
+            <BranchDetail branch={active} />
+          </Reveal>
+        </div>
+      ) : (
+        <div className="animate-fade-in">
+          <FranchiseSection />
+        </div>
+      )}
     </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all',
+        active
+          ? 'bg-gradient-yellow text-brand-dark shadow-glow-sm'
+          : 'text-white/65 hover:text-white',
+      )}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
 
@@ -393,7 +442,7 @@ function FranchiseSection() {
   ];
 
   return (
-    <section className="mt-12 sm:mt-16">
+    <section>
       <div className="relative overflow-hidden rounded-3xl bg-gradient-yellow p-6 sm:p-10">
         <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-10 -left-10 h-56 w-56 rounded-full bg-white/10 blur-3xl" />

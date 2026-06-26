@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ProductCard } from '@/components/features/ProductCard';
 import { SectionHeader } from '@/components/features/SectionHeader';
+import { Reveal } from '@/components/ui/Reveal';
 import { formatPrice } from '@/lib/format';
 import { useCartStore } from '@/lib/stores/cart';
 import { useWishlistStore } from '@/lib/stores/wishlist';
@@ -260,13 +261,13 @@ export function ProductPageClient({ product, similar }: Props) {
       </div>
 
       {/* Info tabs */}
-      <div className="mt-14">
+      <Reveal direction="up" className="mt-14">
         <ProductInfo product={product} />
-      </div>
+      </Reveal>
 
       {/* Similar */}
       {similar.length > 0 && (
-        <div className="mt-14">
+        <Reveal direction="up" className="mt-14">
           <SectionHeader
             title={t('similarProductsTitle')}
             href="/catalog"
@@ -277,7 +278,7 @@ export function ProductPageClient({ product, similar }: Props) {
               <ProductCard key={p.id} product={p} />
             ))}
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Sticky CTA — Mobile only */}
