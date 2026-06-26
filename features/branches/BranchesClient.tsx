@@ -11,6 +11,10 @@ import {
   ChevronDown,
   Star,
   Sparkles,
+  Briefcase,
+  Megaphone,
+  GraduationCap,
+  Truck,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
@@ -375,42 +379,103 @@ function FranchiseSection() {
   const canSubmit =
     form.name.length >= 2 && form.phone.length >= 9 && form.city.length >= 2;
 
+  const benefits = [
+    { icon: Briefcase, title: t('franchiseBenefit1Title'), desc: t('franchiseBenefit1Desc') },
+    { icon: Megaphone, title: t('franchiseBenefit2Title'), desc: t('franchiseBenefit2Desc') },
+    { icon: GraduationCap, title: t('franchiseBenefit3Title'), desc: t('franchiseBenefit3Desc') },
+    { icon: Truck, title: t('franchiseBenefit4Title'), desc: t('franchiseBenefit4Desc') },
+  ];
+
+  const stats = [
+    { value: t('franchiseStatInvestmentValue'), label: t('franchiseStatInvestmentLabel') },
+    { value: t('franchiseStatPaybackValue'), label: t('franchiseStatPaybackLabel') },
+    { value: t('franchiseStatBranchesValue'), label: t('franchiseStatBranchesLabel') },
+  ];
+
   return (
     <section className="mt-12 sm:mt-16">
       <div className="relative overflow-hidden rounded-3xl bg-gradient-yellow p-6 sm:p-10">
         <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-10 -left-10 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
 
-        <div className="relative grid gap-6 sm:grid-cols-2 sm:gap-10">
-          <div>
+        <div className="relative">
+          {/* Header */}
+          <div className="max-w-2xl">
             <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-brand-dark/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-dark backdrop-blur-md">
               <Sparkles className="h-3 w-3" />
               {t('franchiseBadge')}
             </div>
-            <h2 className="font-display text-display-sm font-extrabold leading-tight text-brand-dark sm:text-display-md">
+            <h2 className="font-display text-display-md font-extrabold leading-tight text-brand-dark sm:text-display-lg">
               {t('franchiseTitle')}
             </h2>
             <p className="mt-3 text-sm font-medium text-brand-dark/80 sm:text-base">
               {t('franchiseDesc')}
             </p>
-
-            {!open && (
-              <button
-                type="button"
-                onClick={() => setOpen(true)}
-                className="mt-5 inline-flex h-12 items-center gap-2 rounded-xl bg-brand-dark px-5 font-bold text-white shadow-card transition-all hover:bg-black hover:shadow-card-hover active:scale-[0.98]"
-              >
-                {t('franchiseSubmit')}
-                <ChevronDown className="h-4 w-4" />
-              </button>
-            )}
           </div>
 
-          {open && (
+          {/* Stats */}
+          <div className="mt-6 grid grid-cols-3 gap-2.5 sm:mt-8 sm:max-w-2xl sm:gap-4">
+            {stats.map((s) => (
+              <div
+                key={s.label}
+                className="rounded-2xl bg-brand-dark/85 px-3 py-3.5 text-center backdrop-blur-md sm:px-4 sm:py-5"
+              >
+                <div className="font-display text-lg font-extrabold leading-none text-brand-yellow sm:text-2xl">
+                  {s.value}
+                </div>
+                <div className="mt-1.5 text-[10px] font-bold uppercase leading-tight tracking-wider text-white/60 sm:text-[11px]">
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Benefits */}
+          <div className="mt-8">
+            <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-brand-dark/70">
+              {t('franchiseBenefitsTitle')}
+            </h3>
+            <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
+              {benefits.map((b) => {
+                const Icon = b.icon;
+                return (
+                  <div
+                    key={b.title}
+                    className="rounded-2xl bg-brand-dark/85 p-4 backdrop-blur-md transition-transform hover:-translate-y-0.5"
+                  >
+                    <span className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-brand-yellow/15 text-brand-yellow">
+                      <Icon className="h-4.5 w-4.5" strokeWidth={2.2} />
+                    </span>
+                    <h4 className="font-display text-[15px] font-extrabold leading-tight text-white">
+                      {b.title}
+                    </h4>
+                    <p className="mt-1.5 text-xs leading-relaxed text-white/60">
+                      {b.desc}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* CTA + form */}
+          {!open ? (
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="mt-8 inline-flex h-12 items-center gap-2 rounded-xl bg-brand-dark px-6 font-bold text-white shadow-card transition-all hover:bg-black hover:shadow-card-hover active:scale-[0.98]"
+            >
+              {t('franchiseSubmit')}
+              <ChevronDown className="h-4 w-4" />
+            </button>
+          ) : (
             <form
               onSubmit={handleSubmit}
-              className="flex flex-col gap-3 rounded-2xl bg-brand-dark/85 p-4 backdrop-blur-md animate-slide-up sm:p-5"
+              className="mt-8 grid gap-3 rounded-2xl bg-brand-dark/90 p-4 backdrop-blur-md animate-slide-up sm:grid-cols-2 sm:p-5"
             >
+              <h3 className="font-display text-lg font-extrabold text-white sm:col-span-2">
+                {t('franchiseFormTitle')}
+              </h3>
               <Input
                 placeholder={t('franchiseName')}
                 value={form.name}
@@ -442,7 +507,7 @@ function FranchiseSection() {
                 value={form.message}
                 onChange={(e) => setForm({ ...form, message: e.target.value })}
                 disabled={submitted}
-                className="rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-3 text-base text-white outline-none placeholder:text-white/35 transition-colors focus:border-brand-yellow/60 focus:shadow-glow-sm"
+                className="rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-3 text-base text-white outline-none placeholder:text-white/35 transition-colors focus:border-brand-yellow/60 focus:shadow-glow-sm sm:col-span-2"
               />
               <Button
                 type="submit"
@@ -451,6 +516,7 @@ function FranchiseSection() {
                 fullWidth
                 leftIcon={<Send className="h-4 w-4" />}
                 disabled={!canSubmit || submitted}
+                className="sm:col-span-2"
               >
                 {submitted ? `✓ ${t('sentLabel')}` : t('franchiseSubmit')}
               </Button>

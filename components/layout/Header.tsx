@@ -72,7 +72,7 @@ export function Header() {
         {/* Search bar */}
         <Link
           href="/search"
-          className="group flex h-10 flex-1 items-center gap-2.5 rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 text-sm text-white/45 transition-colors hover:border-brand-yellow/40 xl:h-12 xl:rounded-2xl xl:px-5 xl:text-base"
+          className="group flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 text-sm text-white/45 transition-colors hover:border-brand-yellow/40 xl:h-12 xl:rounded-2xl xl:px-5 xl:text-base"
         >
           <Search className="h-4 w-4 transition-colors group-hover:text-brand-yellow xl:order-2 xl:ml-auto xl:hidden" />
           <span className="truncate">{t('searchPlaceholder')}</span>

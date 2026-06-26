@@ -22,7 +22,9 @@ export default async function HomePage() {
   return (
     <>
       <Header />
-      <main className="pb-20 md:pb-0">
+      {/* overflow-x-clip contains the horizontal slide-in reveals so they
+          can't cause horizontal scroll on mobile (clip keeps sticky working) */}
+      <main className="overflow-x-clip pb-20 md:pb-0">
         <Hero />
 
         <Reveal direction="left">
