@@ -21,7 +21,14 @@
     "languageLabel": "Til",
     "languageSheetTitle": "Tilni tanlang",
     "categoryProductCount": "{count} ta tovar",
-    "additionalPhone": "Qo'shimcha"
+    "additionalPhone": "Qo'shimcha",
+    "priceFrom": "Dan",
+    "priceTo": "Gacha",
+    "minPriceAria": "Minimal narx",
+    "maxPriceAria": "Maksimal narx",
+    "copy": "Nusxalash",
+    "copied": "Nusxalandi",
+    "close": "Yopish"
   },
   "nav": {
     "home": "Bosh sahifa",
@@ -108,7 +115,11 @@
     "notFoundTitle": "Kerakli tovarni topa olmadingizmi?",
     "notFoundSubtitle": "Bizga yozing — qisqa vaqt ichida toping va eng arzon narxda taklif qilamiz",
     "notFoundCta": "So'rov yuborish",
-    "faq": "Tez-tez beriladigan savollar"
+    "faq": "Tez-tez beriladigan savollar",
+    "notFoundBadge": "Maxsus so'rov",
+    "notFoundProductPlaceholder": "Tovar nomi yoki tavsif",
+    "notFoundPhonePlaceholder": "+998 90 000 00 00",
+    "notFoundSent": "Yuborildi!"
   },
   "priceCompare": {
     "title": "Narxlarni solishtiring",

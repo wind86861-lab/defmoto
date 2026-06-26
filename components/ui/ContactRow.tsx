@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode, MouseEvent } from 'react';
+import { useTranslations } from 'next-intl';
 import { Copy, type LucideIcon } from 'lucide-react';
 import { useToast } from './Toaster';
 
@@ -14,13 +15,14 @@ interface ContactRowProps {
 }
 
 export function ContactRow({ icon: Icon, label, value, href, copyable, extra }: ContactRowProps) {
+  const t = useTranslations('common');
   const toast = useToast();
 
   const handleCopy = (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     navigator.clipboard?.writeText(value);
-    toast.success('Nusxalandi', value);
+    toast.success(t('copied'), value);
   };
 
   return (
@@ -48,7 +50,7 @@ export function ContactRow({ icon: Icon, label, value, href, copyable, extra }: 
             <button
               type="button"
               onClick={handleCopy}
-              aria-label="Nusxalash"
+              aria-label={t('copy')}
               className="shrink-0 rounded-md p-1 text-white/25 transition-colors hover:bg-white/5 hover:text-brand-yellow"
             >
               <Copy className="h-3.5 w-3.5" />

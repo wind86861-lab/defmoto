@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/cn';
 
 type Size = 'sm' | 'md' | 'lg' | 'xl';
@@ -14,6 +15,7 @@ export function MotoSpinner({
   className?: string;
   size?: number;
 }) {
+  const t = useTranslations('common');
   return (
     <svg
       viewBox="0 0 100 100"
@@ -22,7 +24,7 @@ export function MotoSpinner({
       className={cn('animate-spin', className)}
       style={{ animationDuration: '0.7s' }}
       role="status"
-      aria-label="Yuklanmoqda"
+      aria-label={t('loading')}
     >
       <circle cx="50" cy="50" r="44" fill="none" stroke="currentColor" strokeWidth="8" opacity="0.18" />
       <path
@@ -57,6 +59,7 @@ interface MotoLoaderProps {
 }
 
 export function MotoLoader({ size = 'md', className, label }: MotoLoaderProps) {
+  const t = useTranslations('common');
   const { logo, ring } = sizeMap[size];
   const logoW = logo * LOGO_ASPECT;
   const logoH = logo;
@@ -69,7 +72,7 @@ export function MotoLoader({ size = 'md', className, label }: MotoLoaderProps) {
         className="relative flex items-center justify-center"
         style={{ width: ring, height: ring }}
         role="status"
-        aria-label={label ?? 'Yuklanmoqda'}
+        aria-label={label ?? t('loading')}
       >
         {/* ───── Background halo ───── */}
         <div
@@ -301,7 +304,7 @@ export function MotoLoader({ size = 'md', className, label }: MotoLoaderProps) {
 /* ============================================================
  * FullScreenLoader — backdrop overlay wrapper
  * ============================================================ */
-export function FullScreenLoader({ label = 'Yuklanmoqda' }: { label?: string }) {
+export function FullScreenLoader({ label }: { label?: string }) {
   return (
     <div className="fixed inset-0 z-[300] flex items-center justify-center bg-brand-dark/90 backdrop-blur-md">
       <MotoLoader size="xl" label={label} />

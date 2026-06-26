@@ -24,6 +24,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product, variant = 'grid', className }: ProductCardProps) {
   const t = useTranslations('common');
+  const tProduct = useTranslations('product');
   const locale = useLocale() as Locale;
   const router = useRouter();
   const toast = useToast();
@@ -48,8 +49,8 @@ export function ProductCard({ product, variant = 'grid', className }: ProductCar
       price: product.price,
       oldPrice: product.oldPrice,
     });
-    toast.cart('Savatga qo\'shildi', product.name, {
-      label: 'Savatga o\'tish',
+    toast.cart(tProduct('addedToCartTitle'), product.name, {
+      label: tProduct('goToCartAction'),
       onClick: () => router.push('/cart'),
     });
   };
@@ -60,9 +61,9 @@ export function ProductCard({ product, variant = 'grid', className }: ProductCar
     const wasWishlisted = isWishlisted;
     toggleWishlist(product.id);
     if (wasWishlisted) {
-      toast.info('Sevimlilardan olib tashlandi', product.name);
+      toast.info(tProduct('removedFromWishlistTitle'), product.name);
     } else {
-      toast.wishlist('Sevimlilarga qo\'shildi', product.name);
+      toast.wishlist(tProduct('addedToWishlistTitle'), product.name);
     }
   };
 
@@ -110,7 +111,7 @@ export function ProductCard({ product, variant = 'grid', className }: ProductCar
         <button
           type="button"
           onClick={handleWishlist}
-          aria-label="Wishlist"
+          aria-label={tProduct('wishlistAria')}
           className={cn(
             'absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full backdrop-blur-md transition-all no-tap-highlight',
             isWishlisted

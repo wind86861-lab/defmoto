@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/cn';
 import { formatPrice } from '@/lib/format';
 
@@ -13,6 +14,7 @@ interface PriceRangeProps {
 }
 
 export function PriceRange({ min, max, value, onChange, step = 10000 }: PriceRangeProps) {
+  const t = useTranslations('common');
   const [internal, setInternal] = useState<[number, number]>(value);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -39,14 +41,14 @@ export function PriceRange({ min, max, value, onChange, step = 10000 }: PriceRan
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2 text-xs">
         <div className="flex flex-1 flex-col gap-1">
-          <span className="text-white/45">Dan</span>
+          <span className="text-white/45">{t('priceFrom')}</span>
           <span className="font-display text-sm font-bold text-brand-yellow">
             {formatPrice(internal[0])}
           </span>
         </div>
         <div className="h-px flex-1 bg-brand-surface-border" />
         <div className="flex flex-1 flex-col items-end gap-1">
-          <span className="text-white/45">Gacha</span>
+          <span className="text-white/45">{t('priceTo')}</span>
           <span className="font-display text-sm font-bold text-brand-yellow">
             {formatPrice(internal[1])}
           </span>
@@ -69,7 +71,7 @@ export function PriceRange({ min, max, value, onChange, step = 10000 }: PriceRan
           step={step}
           value={internal[0]}
           onChange={(e) => setLow(Number(e.target.value))}
-          aria-label="Min price"
+          aria-label={t('minPriceAria')}
           className={cn(
             'pointer-events-none absolute inset-x-0 top-0 h-6 w-full appearance-none bg-transparent outline-none',
             '[&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6',
@@ -86,7 +88,7 @@ export function PriceRange({ min, max, value, onChange, step = 10000 }: PriceRan
           step={step}
           value={internal[1]}
           onChange={(e) => setHigh(Number(e.target.value))}
-          aria-label="Max price"
+          aria-label={t('maxPriceAria')}
           className={cn(
             'pointer-events-none absolute inset-x-0 top-0 h-6 w-full appearance-none bg-transparent outline-none',
             '[&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6',

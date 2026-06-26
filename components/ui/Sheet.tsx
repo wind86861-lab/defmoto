@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslations } from 'next-intl';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -23,6 +24,7 @@ export function Sheet({
   children,
   footer,
 }: SheetProps) {
+  const t = useTranslations('common');
   const { impact } = useHaptic();
   const [mounted, setMounted] = useState(false);
 
@@ -91,7 +93,7 @@ export function Sheet({
             <h2 className="font-display text-lg font-bold">{title}</h2>
             <button
               onClick={onClose}
-              aria-label="Close"
+              aria-label={t('close')}
               className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-white/8"
             >
               <X className="h-5 w-5" />

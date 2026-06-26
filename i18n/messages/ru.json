@@ -21,7 +21,14 @@
     "languageLabel": "Язык",
     "languageSheetTitle": "Выберите язык",
     "categoryProductCount": "{count, plural, one {# товар} few {# товара} many {# товаров} other {# товаров}}",
-    "additionalPhone": "Дополнительный"
+    "additionalPhone": "Дополнительный",
+    "priceFrom": "От",
+    "priceTo": "До",
+    "minPriceAria": "Минимальная цена",
+    "maxPriceAria": "Максимальная цена",
+    "copy": "Копировать",
+    "copied": "Скопировано",
+    "close": "Закрыть"
   },
   "nav": {
     "home": "Главная",
@@ -108,7 +115,11 @@
     "notFoundTitle": "Не нашли нужный товар?",
     "notFoundSubtitle": "Напишите нам — найдём в кратчайшие сроки и предложим лучшую цену",
     "notFoundCta": "Отправить запрос",
-    "faq": "Часто задаваемые вопросы"
+    "faq": "Часто задаваемые вопросы",
+    "notFoundBadge": "Специальный запрос",
+    "notFoundProductPlaceholder": "Название или описание товара",
+    "notFoundPhonePlaceholder": "+998 90 000 00 00",
+    "notFoundSent": "Отправлено!"
   },
   "priceCompare": {
     "title": "Сравните цены",

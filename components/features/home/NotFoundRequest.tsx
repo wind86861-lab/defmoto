@@ -30,7 +30,7 @@ export function NotFoundRequest() {
             <div className="sm:col-span-3">
               <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-brand-dark/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-dark backdrop-blur-md">
                 <Search className="h-3 w-3" />
-                Maxsus so'rov
+                {t('notFoundBadge')}
               </div>
               <h2 className="font-display text-display-md font-extrabold leading-tight text-brand-dark sm:text-display-lg">
                 {t('notFoundTitle')}
@@ -42,12 +42,12 @@ export function NotFoundRequest() {
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:col-span-2 sm:justify-center">
               <Input
-                placeholder="Tovar nomi yoki tavsif"
+                placeholder={t('notFoundProductPlaceholder')}
                 className="bg-brand-dark/90 text-white placeholder:text-white/40"
                 disabled={submitted}
               />
               <Input
-                placeholder="+998 90 000 00 00"
+                placeholder={t('notFoundPhonePlaceholder')}
                 type="tel"
                 className="bg-brand-dark/90 text-white placeholder:text-white/40"
                 disabled={submitted}
@@ -58,7 +58,7 @@ export function NotFoundRequest() {
                 className="group inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-dark px-5 font-bold text-white shadow-card transition-all hover:bg-black hover:shadow-card-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-success disabled:text-white"
               >
                 {submitted ? (
-                  <>✓ Yuborildi!</>
+                  <>✓ {t('notFoundSent')}</>
                 ) : (
                   <>
                     <span>{t('notFoundCta')}</span>

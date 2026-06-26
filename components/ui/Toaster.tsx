@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { create } from 'zustand';
+import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, AlertTriangle, Info, ShoppingBag, Heart } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -127,6 +128,7 @@ export function Toaster() {
 }
 
 function ToastCard({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }) {
+  const t = useTranslations('common');
   const meta = variantMeta[toast.variant];
 
   return (
@@ -180,7 +182,7 @@ function ToastCard({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
         <button
           type="button"
           onClick={onDismiss}
-          aria-label="Yopish"
+          aria-label={t('close')}
           className="-mr-1.5 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white/45 transition-colors hover:bg-white/8 hover:text-white"
         >
           <X className="h-3.5 w-3.5" />
