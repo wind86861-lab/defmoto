@@ -16,6 +16,10 @@
     -webkit-tap-highlight-color: transparent;
     text-rendering: optimizeLegibility;
     scroll-behavior: smooth;
+    /* Android Chrome/WebView (incl. Telegram's in-app browser) ignores the
+       viewport meta's maximum-scale/user-scalable, so pinch-zoom must be
+       blocked here instead — pan-x/pan-y allow scrolling but omit pinch-zoom. */
+    touch-action: pan-x pan-y;
   }
 
   body {

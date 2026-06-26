@@ -22,6 +22,18 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
   const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
   const [isReady, setIsReady] = useState(false);
 
+  // Force any pinch/auto-zoom already engaged by the WebView back to 1.0.
+  // Android WebViews (incl. Telegram's in-app browser) ignore maximum-scale
+  // in the viewport meta tag, so a zoom triggered on a previous page can get
+  // stuck across navigations — re-writing the meta content snaps it back.
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) return;
+    const original = meta.getAttribute('content') ?? '';
+    meta.setAttribute('content', `${original}, maximum-scale=1.0`);
+    meta.setAttribute('content', original);
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
