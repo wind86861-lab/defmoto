@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Admin bootstrap</title>
+    <script>
+      // Internal helper for screenshot/QA — seeds the admin-auth store
+      // so the protected pages render without a manual login.
+      try {
+        localStorage.setItem(
+          'deftmoto-admin-auth',
+          JSON.stringify({
+            state: { isAuthed: true, loggedInAt: new Date().toISOString() },
+            version: 0,
+          }),
+        );
+      } catch (e) {}
+      const target = new URLSearchParams(window.location.search).get('to') || '/admin';
+      window.location.replace(target);
+    </script>
+  </head>
+  <body style="background:#0a0a0a;color:#fff;font-family:sans-serif">
+    Logging in...
+  </body>
+</html>

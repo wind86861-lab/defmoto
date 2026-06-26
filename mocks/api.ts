@@ -1,0 +1,154 @@
+import type { Product } from '@/types/product';
+import { mockProducts } from './products';
+import { mockCategories } from './categories';
+import { mockBrands } from './brands';
+
+export type SortKey = 'popular' | 'price-asc' | 'price-desc' | 'newest' | 'rating';
+
+export interface ProductQuery {
+  category?: string;
+  brands?: string[];
+  colors?: string[];
+  minPrice?: number;
+  maxPrice?: number;
+  inStockOnly?: boolean;
+  sort?: SortKey;
+  query?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ProductListResponse {
+  items: Product[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+  facets: {
+    priceMin: number;
+    priceMax: number;
+    brands: { slug: string; name: string; count: number }[];
+    colors: { hex: string; name: string; count: number }[];
+  };
+}
+
+const sortFns: Record<SortKey, (a: Product, b: Product) => number> = {
+  popular: (a, b) => (b.reviewCount ?? 0) - (a.reviewCount ?? 0),
+  'price-asc': (a, b) => a.price - b.price,
+  'price-desc': (a, b) => b.price - a.price,
+  newest: (a, b) => Number(b.isNew) - Number(a.isNew),
+  rating: (a, b) => (b.rating ?? 0) - (a.rating ?? 0),
+};
+
+export function queryProducts(q: ProductQuery = {}): ProductListResponse {
+  const {
+    category,
+    brands = [],
+    colors = [],
+    minPrice,
+    maxPrice,
+    inStockOnly,
+    sort = 'popular',
+    query,
+    page = 1,
+    pageSize = 12,
+  } = q;
+
+  let items = [...mockProducts];
+
+  if (category) {
+    items = items.filter((p) => p.categorySlug === category);
+  }
+  if (brands.length) {
+    const set = new Set(brands.map((b) => b.toLowerCase()));
+    items = items.filter((p) => p.brand && set.has(p.brand.toLowerCase()));
+  }
+  if (colors.length) {
+    const set = new Set(colors.map((c) => c.toLowerCase()));
+    items = items.filter((p) =>
+      p.variants?.some((v) => v.colorHex && set.has(v.colorHex.toLowerCase())),
+    );
+  }
+  if (typeof minPrice === 'number') {
+    items = items.filter((p) => p.price >= minPrice);
+  }
+  if (typeof maxPrice === 'number') {
+    items = items.filter((p) => p.price <= maxPrice);
+  }
+  if (inStockOnly) {
+    items = items.filter((p) => p.inStock);
+  }
+  if (query?.trim()) {
+    const q = query.trim().toLowerCase();
+    items = items.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.brand?.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q),
+    );
+  }
+
+  items.sort(sortFns[sort]);
+
+  const total = items.length;
+  const start = (page - 1) * pageSize;
+  const paged = items.slice(start, start + pageSize);
+
+  // Facets — based on full (filtered) set, so user can refine further
+  const allPrices = mockProducts.map((p) => p.price);
+  const brandCounts = new Map<string, number>();
+  const colorCounts = new Map<string, { hex: string; name: string; count: number }>();
+
+  for (const p of mockProducts) {
+    if (p.brand) {
+      brandCounts.set(p.brand, (brandCounts.get(p.brand) ?? 0) + 1);
+    }
+    for (const v of p.variants ?? []) {
+      if (v.colorHex && v.color) {
+        const key = v.colorHex.toLowerCase();
+        const existing = colorCounts.get(key);
+        if (existing) existing.count += 1;
+        else colorCounts.set(key, { hex: v.colorHex, name: v.color, count: 1 });
+      }
+    }
+  }
+
+  const brandFacets = mockBrands
+    .filter((b) => brandCounts.has(b.name))
+    .map((b) => ({ slug: b.slug, name: b.name, count: brandCounts.get(b.name) ?? 0 }));
+
+  return {
+    items: paged,
+    total,
+    page,
+    pageSize,
+    hasMore: start + pageSize < total,
+    facets: {
+      priceMin: Math.min(...allPrices),
+      priceMax: Math.max(...allPrices),
+      brands: brandFacets,
+      colors: Array.from(colorCounts.values()),
+    },
+  };
+}
+
+export function searchProductsInstant(query: string, limit = 6): Product[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return mockProducts
+    .filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.brand?.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q),
+    )
+    .slice(0, limit);
+}
+
+export function getCategoryBySlug(slug: string) {
+  return mockCategories.find((c) => c.slug === slug);
+}
+
+export function getProductBySlug(slug: string) {
+  return mockProducts.find((p) => p.slug === slug);
+}
