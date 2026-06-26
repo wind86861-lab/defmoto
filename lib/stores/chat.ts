@@ -19,7 +19,12 @@ const welcomeMessage: ChatMessage = {
   operatorRole: defaultOperator.role,
 };
 
+function makeSessionId() {
+  return `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
 interface ChatState {
+  sessionId: string;
   messages: ChatMessage[];
   isOperatorTyping: boolean;
   operator: OperatorProfile;
@@ -32,6 +37,7 @@ interface ChatState {
 export const useChatStore = create<ChatState>()(
   persist(
     (set) => ({
+      sessionId: makeSessionId(),
       messages: [welcomeMessage],
       isOperatorTyping: false,
       operator: defaultOperator,
@@ -42,11 +48,12 @@ export const useChatStore = create<ChatState>()(
           messages: state.messages.map((m) => (m.id === id ? { ...m, ...patch } : m)),
         })),
       setOperatorTyping: (typing) => set({ isOperatorTyping: typing }),
-      reset: () => set({ messages: [welcomeMessage], isOperatorTyping: false }),
+      reset: () => set((state) => ({ ...state, messages: [welcomeMessage], isOperatorTyping: false })),
     }),
     {
       name: 'deftmoto-chat',
       partialize: (state) => ({
+        sessionId: state.sessionId,
         messages: state.messages,
         operator: state.operator,
       }),

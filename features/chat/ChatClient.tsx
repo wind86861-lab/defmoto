@@ -15,6 +15,7 @@ import { cn } from '@/lib/cn';
 import { useChatStore } from '@/lib/stores/chat';
 import { useMounted } from '@/hooks/useMounted';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTelegram } from '@/components/providers/TelegramProvider';
 import { ChatBubble, TypingIndicator } from './ChatBubble';
 import { ChatInput } from './ChatInput';
 import { generateOperatorReply } from './operatorBot';
@@ -29,6 +30,7 @@ export function ChatClient() {
   const locale = useLocale();
   const router = useRouter();
   const mounted = useMounted();
+  const sessionId = useChatStore((s) => s.sessionId);
   const messages = useChatStore((s) => s.messages);
   const isTyping = useChatStore((s) => s.isOperatorTyping);
   const operator = useChatStore((s) => s.operator);
@@ -37,9 +39,12 @@ export function ChatClient() {
   const setOperatorTyping = useChatStore((s) => s.setOperatorTyping);
   const reset = useChatStore((s) => s.reset);
   const { impact, notify } = useHaptic();
+  const { user } = useTelegram();
 
   const listRef = useRef<HTMLDivElement>(null);
   const [inputHeight, setInputHeight] = useState(0);
+  // Only pull operator replies newer than what we've already shown.
+  const sinceRef = useRef<number>(Date.now());
 
   const suggestions = [
     t('suggestion1'),
@@ -69,10 +74,52 @@ export function ChatClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, locale]);
 
+  // Poll the relay for live operator replies (no-op when relay is disabled).
+  useEffect(() => {
+    if (!mounted) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const poll = async () => {
+      try {
+        const res = await fetch(
+          `/api/chat/poll?sessionId=${encodeURIComponent(sessionId)}&since=${sinceRef.current}`,
+          { cache: 'no-store' },
+        );
+        const data = await res.json();
+        if (!cancelled && data?.ok && Array.isArray(data.messages) && data.messages.length) {
+          for (const m of data.messages) {
+            const ts = new Date(m.createdAt).getTime();
+            if (ts > sinceRef.current) sinceRef.current = ts;
+            addMessage({
+              id: m.id,
+              author: 'operator',
+              text: m.text,
+              createdAt: m.createdAt,
+              operatorName: operator.name,
+              operatorRole: t('operatorRoleLabel'),
+            });
+          }
+          setOperatorTyping(false);
+        }
+      } catch {
+        /* offline / relay down — ignore, try again */
+      }
+      if (!cancelled) timer = setTimeout(poll, 3000);
+    };
+
+    poll();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, sessionId]);
+
   // Hydration-safe message list
   const messagesToRender = mounted ? messages : [];
 
-  const handleSend = ({ text, images }: { text?: string; images?: string[] }) => {
+  const handleSend = async ({ text, images }: { text?: string; images?: string[] }) => {
     notify('success');
 
     const userMsg: ChatMessage = {
@@ -85,16 +132,33 @@ export function ChatClient() {
     };
     addMessage(userMsg);
 
-    // Mark sent shortly after
-    setTimeout(() => {
-      updateMessage(userMsg.id, { status: 'sent' });
-    }, 350);
+    setTimeout(() => updateMessage(userMsg.id, { status: 'sent' }), 350);
+    setTimeout(() => updateMessage(userMsg.id, { status: 'delivered' }), 700);
 
-    setTimeout(() => {
-      updateMessage(userMsg.id, { status: 'delivered' });
-    }, 700);
+    // Try to relay to a live Telegram operator first.
+    let relayed = false;
+    try {
+      const res = await fetch('/api/chat/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          text: text || (images?.length ? '📷 (rasm yuborildi)' : ''),
+          customerName: user?.first_name,
+        }),
+      });
+      const data = await res.json();
+      relayed = Boolean(data?.relayed);
+    } catch {
+      relayed = false;
+    }
 
-    // Operator typing → reply
+    updateMessage(userMsg.id, { status: 'read' });
+
+    // Live operator will answer via the poll loop — no fake reply needed.
+    if (relayed) return;
+
+    // Fallback: local auto-reply bot (relay off / no operator connected).
     setOperatorTyping(true);
     setTimeout(
       () => {
@@ -106,7 +170,6 @@ export function ChatClient() {
         replies.forEach((reply, idx) => {
           setTimeout(() => addMessage(reply), idx * 350);
         });
-        updateMessage(userMsg.id, { status: 'read' });
       },
       1200 + (text?.length ?? 0) * 12,
     );

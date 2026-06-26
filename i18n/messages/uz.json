@@ -737,7 +737,14 @@
     "mpUrlPlaceholder": "https://uzum.uz",
     "mpColorLabel": "Rang",
     "mpEnabledLabel": "Faol",
-    "marketplacesTipText": "💡 <b>Maslahat:</b> Har bir marketpleys navbarda rangli belgi sifatida koʻrsatiladi. <b>Qisqa belgi</b> — badgedagi matn (masalan “Uzum”), <b>Nomi</b> — toʻliq nom (tooltip). Faolsizlantirilgan marketpleyslar saytda koʻrinmaydi."
+    "marketplacesTipText": "💡 <b>Maslahat:</b> Har bir marketpleys navbarda rangli belgi sifatida koʻrsatiladi. <b>Qisqa belgi</b> — badgedagi matn (masalan “Uzum”), <b>Nomi</b> — toʻliq nom (tooltip). Faolsizlantirilgan marketpleyslar saytda koʻrinmaydi.",
+    "tgRelayTitle": "Telegram orqali jonli javob",
+    "tgRelayConnected": "Operator ulangan — mijoz xabarlari Telegram’ga keladi",
+    "tgRelayOffline": "Operator ulanmagan",
+    "tgRelayDisabled": "Bot hali sozlanmagan",
+    "tgRelayConnectBtn": "Botga ulanish",
+    "tgRelayHowto": "Botga /start bosing — shu Telegram akkaunt operator bo‘ladi. Mijoz xabariga reply qilib javob yozasiz.",
+    "tgRelayChecking": "Tekshirilmoqda…"
   },
   "categories": {
     "motorcycles": "Mototsikllar",

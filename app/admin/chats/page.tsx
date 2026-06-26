@@ -1,12 +1,15 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { MessageCircle, ExternalLink, Circle } from 'lucide-react';
+import { MessageCircle, ExternalLink, Circle, Send } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useChatStore } from '@/lib/stores/chat';
 import { useMounted } from '@/hooks/useMounted';
 import { formatDateTime } from '@/lib/format';
+
+const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || '';
 
 export default function AdminChatsPage() {
   const t = useTranslations('admin');
@@ -14,6 +17,25 @@ export default function AdminChatsPage() {
   const mounted = useMounted();
   const messages = useChatStore((s) => s.messages);
   const operator = useChatStore((s) => s.operator);
+
+  const [relay, setRelay] = useState<
+    { configured: boolean; operatorConnected: boolean } | null
+  >(null);
+
+  useEffect(() => {
+    let active = true;
+    const load = () =>
+      fetch('/api/chat/status', { cache: 'no-store' })
+        .then((r) => r.json())
+        .then((d) => active && setRelay(d))
+        .catch(() => {});
+    load();
+    const iv = setInterval(load, 5000);
+    return () => {
+      active = false;
+      clearInterval(iv);
+    };
+  }, []);
 
   const messageCount = mounted ? messages.length : 0;
   const lastMessage = mounted ? messages[messages.length - 1] : null;
@@ -33,6 +55,57 @@ export default function AdminChatsPage() {
           {t('chatsSubtitle')}
         </p>
       </header>
+
+      {/* Telegram live-relay status */}
+      <article
+        className={`rounded-2xl border p-5 ${
+          relay?.operatorConnected
+            ? 'border-success/40 bg-success/5'
+            : 'border-brand-yellow/30 bg-brand-yellow/5'
+        }`}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                relay?.operatorConnected
+                  ? 'bg-success/15 text-success'
+                  : 'bg-brand-yellow/15 text-brand-yellow'
+              }`}
+            >
+              <Send className="h-5 w-5" />
+            </span>
+            <div>
+              <h3 className="font-display text-base font-bold">
+                {t('tgRelayTitle')}
+              </h3>
+              <p className="mt-0.5 text-xs text-white/60">
+                {!relay
+                  ? t('tgRelayChecking')
+                  : !relay.configured
+                    ? t('tgRelayDisabled')
+                    : relay.operatorConnected
+                      ? t('tgRelayConnected')
+                      : t('tgRelayOffline')}
+              </p>
+            </div>
+          </div>
+          {relay?.configured && BOT_USERNAME && (
+            <a
+              href={`https://t.me/${BOT_USERNAME}?start=operator`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-yellow px-4 py-2 text-sm font-bold text-brand-dark shadow-glow-sm transition-all hover:brightness-110"
+            >
+              <Send className="h-4 w-4" />
+              {t('tgRelayConnectBtn')}
+            </a>
+          )}
+        </div>
+        <p className="mt-3 text-[11px] leading-relaxed text-white/45">
+          {t('tgRelayHowto')}
+        </p>
+      </article>
 
       {/* Single active chat (demo) */}
       <article className="rounded-2xl border border-brand-yellow/30 bg-brand-surface p-5">
