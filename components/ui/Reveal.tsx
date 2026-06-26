@@ -1,30 +1,26 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { cn } from '@/lib/cn';
+import type { ReactNode } from 'react';
+import { Fade } from 'react-awesome-reveal';
 
 interface RevealProps {
   children: ReactNode;
   direction?: 'left' | 'right' | 'up';
-  delay?: number; // seconds
+  /** Extra delay in seconds (added on top of the base per-element delay). */
+  delay?: number;
   className?: string;
 }
 
-const animationClass: Record<NonNullable<RevealProps['direction']>, string> = {
-  up: 'animate-reveal-up',
-  left: 'animate-reveal-left',
-  right: 'animate-reveal-right',
-};
+// Base delay applied to every reveal so each element eases in a touch later
+// (feels smoother than firing instantly the moment it scrolls into view).
+const BASE_DELAY_MS = 200;
 
 /**
- * Scroll-reveal wrapper — plays a fade/slide-in animation the first time the
- * element enters the viewport.
+ * Scroll-reveal wrapper powered by react-awesome-reveal.
  *
- * Deliberately "visible by default": the content has no hidden state until an
- * IntersectionObserver confirms it's entering view and adds the animation
- * class (which itself starts at opacity 0 → 1). So if JS, hydration or the
- * observer ever fail, the content simply stays visible — it can never get
- * stuck invisible. Reduced-motion users get no animation, just the content.
+ * Keeps the original API (direction / delay / className) so every existing
+ * call site keeps working. Fades + slides children in from the given side the
+ * first time they scroll into view (triggerOnce).
  */
 export function Reveal({
   children,
@@ -32,42 +28,16 @@ export function Reveal({
   delay = 0,
   className,
 }: RevealProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [animate, setAnimate] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const prefersReduced = window.matchMedia?.(
-      '(prefers-reduced-motion: reduce)',
-    ).matches;
-    if (prefersReduced || typeof IntersectionObserver === 'undefined') return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setAnimate(true);
-            observer.disconnect();
-            break;
-          }
-        }
-      },
-      { threshold: 0.1, rootMargin: '0px 0px -10% 0px' },
-    );
-    observer.observe(el);
-
-    return () => observer.disconnect();
-  }, []);
-
   return (
-    <div
-      ref={ref}
-      style={animate && delay ? { animationDelay: `${delay}s` } : undefined}
-      className={cn(animate && animationClass[direction], className)}
+    <Fade
+      direction={direction}
+      delay={BASE_DELAY_MS + delay * 1000}
+      duration={850}
+      fraction={0.12}
+      triggerOnce
+      className={className}
     >
       {children}
-    </div>
+    </Fade>
   );
 }
