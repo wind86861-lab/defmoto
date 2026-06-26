@@ -744,7 +744,20 @@
     "tgRelayDisabled": "Bot not configured yet",
     "tgRelayConnectBtn": "Connect to bot",
     "tgRelayHowto": "Press /start in the bot — that Telegram account becomes the operator. Reply to a customer message to answer.",
-    "tgRelayChecking": "Checking…"
+    "tgRelayChecking": "Checking…",
+    "opSectionTitle": "Operator account",
+    "opNameLabel": "Operator name",
+    "opNamePlaceholder": "Sardor",
+    "opPhoneLabel": "Telegram phone number",
+    "opPhonePlaceholder": "+998 90 123 45 67",
+    "opSaveBtn": "Save",
+    "opClearBtn": "Remove",
+    "opSavedToast": "Operator saved",
+    "opClearedToast": "Operator removed",
+    "opHowto": "Enter the operator name and Telegram phone. Then that account presses /start in the bot and shares its contact to verify — after that customer messages arrive on that account.",
+    "opStatusConnected": "Connected",
+    "opStatusPending": "Pending — press /start in the bot",
+    "opStatusNone": "No operator set"
   },
   "categories": {
     "motorcycles": "Motorcycles",

@@ -744,7 +744,20 @@
     "tgRelayDisabled": "Бот ещё не настроен",
     "tgRelayConnectBtn": "Подключиться к боту",
     "tgRelayHowto": "Нажмите /start в боте — этот Telegram-аккаунт станет оператором. Отвечайте reply на сообщение клиента.",
-    "tgRelayChecking": "Проверка…"
+    "tgRelayChecking": "Проверка…",
+    "opSectionTitle": "Аккаунт оператора",
+    "opNameLabel": "Имя оператора",
+    "opNamePlaceholder": "Сардор",
+    "opPhoneLabel": "Телефон Telegram",
+    "opPhonePlaceholder": "+998 90 123 45 67",
+    "opSaveBtn": "Сохранить",
+    "opClearBtn": "Удалить",
+    "opSavedToast": "Оператор сохранён",
+    "opClearedToast": "Оператор удалён",
+    "opHowto": "Введите имя и номер Telegram оператора. Затем этот аккаунт нажимает /start в боте и отправляет контакт для подтверждения — после этого сообщения клиентов приходят на этот аккаунт.",
+    "opStatusConnected": "Подключён",
+    "opStatusPending": "Ожидание — нажмите /start в боте",
+    "opStatusNone": "Оператор не задан"
   },
   "categories": {
     "motorcycles": "Мотоциклы",

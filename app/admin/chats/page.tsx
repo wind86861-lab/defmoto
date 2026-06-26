@@ -3,31 +3,60 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { MessageCircle, ExternalLink, Circle, Send } from 'lucide-react';
+import {
+  MessageCircle,
+  ExternalLink,
+  Circle,
+  Send,
+  User,
+  Phone,
+  Check,
+  Trash2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { useChatStore } from '@/lib/stores/chat';
 import { useMounted } from '@/hooks/useMounted';
+import { useHaptic } from '@/hooks/useHaptic';
+import { useToast } from '@/components/ui/Toaster';
 import { formatDateTime } from '@/lib/format';
 
 const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || '';
+
+interface OperatorState {
+  configured: boolean;
+  operatorConnected: boolean;
+  operator: { name: string; phone: string } | null;
+}
 
 export default function AdminChatsPage() {
   const t = useTranslations('admin');
   const tChat = useTranslations('chat');
   const mounted = useMounted();
+  const { notify } = useHaptic();
+  const toast = useToast();
   const messages = useChatStore((s) => s.messages);
   const operator = useChatStore((s) => s.operator);
 
-  const [relay, setRelay] = useState<
-    { configured: boolean; operatorConnected: boolean } | null
-  >(null);
+  const [relay, setRelay] = useState<OperatorState | null>(null);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     let active = true;
     const load = () =>
-      fetch('/api/chat/status', { cache: 'no-store' })
+      fetch('/api/chat/operator', { cache: 'no-store' })
         .then((r) => r.json())
-        .then((d) => active && setRelay(d))
+        .then((d: OperatorState) => {
+          if (!active) return;
+          setRelay(d);
+          if (!dirty && d.operator) {
+            setName(d.operator.name);
+            setPhone(d.operator.phone);
+          }
+        })
         .catch(() => {});
     load();
     const iv = setInterval(load, 5000);
@@ -35,7 +64,57 @@ export default function AdminChatsPage() {
       active = false;
       clearInterval(iv);
     };
-  }, []);
+  }, [dirty]);
+
+  const saveOperator = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/chat/operator', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone }),
+      });
+      const d = await res.json();
+      if (d.ok) {
+        notify('success');
+        toast.success(t('opSavedToast'));
+        setDirty(false);
+        setRelay((r) => (r ? { ...r, operator: d.operator, operatorConnected: false } : r));
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const clearOperator = async () => {
+    setSaving(true);
+    try {
+      await fetch('/api/chat/operator', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clear: true }),
+      });
+      notify('warning');
+      toast.info(t('opClearedToast'));
+      setName('');
+      setPhone('');
+      setDirty(false);
+      setRelay((r) => (r ? { ...r, operator: null, operatorConnected: false } : r));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const canSave = name.trim().length >= 2 && phone.replace(/\D/g, '').length >= 9;
+  const statusText = !relay
+    ? t('tgRelayChecking')
+    : !relay.configured
+      ? t('tgRelayDisabled')
+      : relay.operatorConnected
+        ? t('opStatusConnected')
+        : relay.operator
+          ? t('opStatusPending')
+          : t('opStatusNone');
 
   const messageCount = mounted ? messages.length : 0;
   const lastMessage = mounted ? messages[messages.length - 1] : null;
@@ -56,7 +135,7 @@ export default function AdminChatsPage() {
         </p>
       </header>
 
-      {/* Telegram live-relay status */}
+      {/* Telegram operator account management */}
       <article
         className={`rounded-2xl border p-5 ${
           relay?.operatorConnected
@@ -64,7 +143,7 @@ export default function AdminChatsPage() {
             : 'border-brand-yellow/30 bg-brand-yellow/5'
         }`}
       >
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span
               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
@@ -77,33 +156,88 @@ export default function AdminChatsPage() {
             </span>
             <div>
               <h3 className="font-display text-base font-bold">
-                {t('tgRelayTitle')}
+                {t('opSectionTitle')}
               </h3>
-              <p className="mt-0.5 text-xs text-white/60">
-                {!relay
-                  ? t('tgRelayChecking')
-                  : !relay.configured
-                    ? t('tgRelayDisabled')
-                    : relay.operatorConnected
-                      ? t('tgRelayConnected')
-                      : t('tgRelayOffline')}
+              <p className="mt-0.5 flex items-center gap-1.5 text-xs">
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    relay?.operatorConnected ? 'bg-success' : 'bg-brand-yellow'
+                  }`}
+                />
+                <span className="text-white/60">{statusText}</span>
               </p>
             </div>
           </div>
-          {relay?.configured && BOT_USERNAME && (
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-white/55">
+              {t('opNameLabel')}
+            </span>
+            <Input
+              leftIcon={<User className="h-3.5 w-3.5" />}
+              placeholder={t('opNamePlaceholder')}
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setDirty(true);
+              }}
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-white/55">
+              {t('opPhoneLabel')}
+            </span>
+            <Input
+              type="tel"
+              leftIcon={<Phone className="h-3.5 w-3.5" />}
+              placeholder={t('opPhonePlaceholder')}
+              value={phone}
+              onChange={(e) => {
+                setPhone(e.target.value);
+                setDirty(true);
+              }}
+            />
+          </label>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Button
+            size="md"
+            glow
+            leftIcon={<Check className="h-4 w-4" />}
+            onClick={saveOperator}
+            disabled={!canSave || saving}
+          >
+            {t('opSaveBtn')}
+          </Button>
+          {relay?.operator && (
+            <Button
+              size="md"
+              variant="ghost"
+              leftIcon={<Trash2 className="h-4 w-4" />}
+              onClick={clearOperator}
+              disabled={saving}
+            >
+              {t('opClearBtn')}
+            </Button>
+          )}
+          {relay?.configured && BOT_USERNAME && relay.operator && !relay.operatorConnected && (
             <a
-              href={`https://t.me/${BOT_USERNAME}?start=operator`}
+              href={`https://t.me/${BOT_USERNAME}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-yellow px-4 py-2 text-sm font-bold text-brand-dark shadow-glow-sm transition-all hover:brightness-110"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-brand-surface-border bg-brand-surface px-3 py-2 text-sm font-semibold text-white/80 transition-colors hover:border-brand-yellow/40 hover:text-brand-yellow"
             >
               <Send className="h-4 w-4" />
               {t('tgRelayConnectBtn')}
             </a>
           )}
         </div>
+
         <p className="mt-3 text-[11px] leading-relaxed text-white/45">
-          {t('tgRelayHowto')}
+          {t('opHowto')}
         </p>
       </article>
 

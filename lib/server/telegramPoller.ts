@@ -3,14 +3,16 @@
  *
  * Runs on the Node server (started from instrumentation.ts). Pulls operator
  * messages from Telegram — no public HTTPS / webhook needed, so it works on a
- * plain HTTP server behind an IP. Routes operator replies back into the relay
- * store keyed by the message they replied to.
+ * plain HTTP server behind an IP.
+ *
+ * Operator onboarding:
+ *  /start            → bot asks the user to share their contact
+ *  shares contact    → tryBindOperator() verifies the phone against the
+ *                      admin-configured operator, then binds the chat
+ *  reply-to a message→ routed back to the originating website session
  */
 
-import {
-  ingestOperatorReply,
-  setOperatorChatId,
-} from './chatRelay';
+import { ingestOperatorReply, tryBindOperator } from './chatRelay';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 
@@ -31,38 +33,79 @@ interface TgUpdate {
   update_id: number;
   message?: {
     chat?: { id: number };
+    from?: { id: number };
     text?: string;
+    contact?: { phone_number?: string; user_id?: number };
     reply_to_message?: { message_id: number };
   };
 }
 
-function handleUpdate(update: TgUpdate) {
+async function handleUpdate(update: TgUpdate) {
   const msg = update.message;
   if (!msg) return;
   const chatId = msg.chat?.id;
+  if (chatId == null) return;
   const text = (msg.text || '').trim();
 
-  // Operator registers by pressing Start / sending /start in their DM.
-  if (chatId != null && text.startsWith('/start')) {
-    setOperatorChatId(chatId);
-    void tg('sendMessage', {
-      chat_id: chatId,
-      text:
-        '✅ Siz endi DEFT MOTO operatori sifatida ulandingiz.\n\n' +
-        'Mijozlarning savollari shu yerga keladi. Javob berish uchun ' +
-        'kelgan xabarning ustiga bosib (reply qilib) javobingizni yozing.',
-    });
+  // 1) /start → ask the operator to verify by sharing their contact.
+  if (text.startsWith('/start')) {
+    const outcome = await tryBindOperator(chatId);
+    if (outcome === 'bound') {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text:
+          '✅ Siz DEFT MOTO operatori sifatida ulandingiz.\n\n' +
+          'Mijoz savollari shu yerga keladi — javob berish uchun xabarga ' +
+          'reply qiling.',
+      });
+    } else {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text:
+          '👋 DEFT MOTO operator ulanishi.\n\n' +
+          'Tasdiqlash uchun pastdagi tugma orqali kontaktingizni yuboring.',
+        reply_markup: {
+          keyboard: [
+            [{ text: '📱 Kontaktni yuborish', request_contact: true }],
+          ],
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      });
+    }
     return;
   }
 
-  // Operator answered a forwarded question (reply-to).
+  // 2) Shared contact → verify phone and bind.
+  if (msg.contact?.phone_number) {
+    const outcome = await tryBindOperator(chatId, msg.contact.phone_number);
+    if (outcome === 'bound') {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text:
+          '✅ Tasdiqlandi! Siz endi DEFT MOTO operatorisiz. Mijoz xabarlari ' +
+          'shu yerga keladi — reply qilib javob bering.',
+        reply_markup: { remove_keyboard: true },
+      });
+    } else {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text:
+          '⛔️ Bu raqam admin tomonidan operator sifatida belgilanmagan. ' +
+          'Admin paneldagi raqam bilan bir xil akkauntdan urinib ko‘ring.',
+        reply_markup: { remove_keyboard: true },
+      });
+    }
+    return;
+  }
+
+  // 3) Operator answered a forwarded question (reply-to).
   if (msg.reply_to_message?.message_id && text) {
     ingestOperatorReply(msg.reply_to_message.message_id, text);
   }
 }
 
 async function loop() {
-  // Ensure webhook is off so getUpdates is allowed.
   try {
     await tg('deleteWebhook', { drop_pending_updates: false });
   } catch {
@@ -78,7 +121,7 @@ async function loop() {
         for (const update of r.result as TgUpdate[]) {
           offset = update.update_id + 1;
           try {
-            handleUpdate(update);
+            await handleUpdate(update);
           } catch {
             /* keep polling even if one update fails */
           }

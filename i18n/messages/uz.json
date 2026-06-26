@@ -744,7 +744,20 @@
     "tgRelayDisabled": "Bot hali sozlanmagan",
     "tgRelayConnectBtn": "Botga ulanish",
     "tgRelayHowto": "Botga /start bosing — shu Telegram akkaunt operator bo‘ladi. Mijoz xabariga reply qilib javob yozasiz.",
-    "tgRelayChecking": "Tekshirilmoqda…"
+    "tgRelayChecking": "Tekshirilmoqda…",
+    "opSectionTitle": "Operator akkaunti",
+    "opNameLabel": "Operator ismi",
+    "opNamePlaceholder": "Sardor",
+    "opPhoneLabel": "Telegram telefon raqami",
+    "opPhonePlaceholder": "+998 90 123 45 67",
+    "opSaveBtn": "Saqlash",
+    "opClearBtn": "O‘chirish",
+    "opSavedToast": "Operator saqlandi",
+    "opClearedToast": "Operator o‘chirildi",
+    "opHowto": "Operator ismi va Telegram raqamini kiriting. So‘ng o‘sha akkaunt botga /start bosib, kontaktini yuborib tasdiqlaydi — shundan keyin mijoz xabarlari shu akkauntga keladi.",
+    "opStatusConnected": "Ulangan",
+    "opStatusPending": "Kutilmoqda — botga /start bosing",
+    "opStatusNone": "Operator belgilanmagan"
   },
   "categories": {
     "motorcycles": "Mototsikllar",
