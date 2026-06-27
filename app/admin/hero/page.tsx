@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
@@ -201,6 +201,9 @@ function SlideRow({
   onLinkChange: (link: string) => void;
 }) {
   const t = useTranslations('admin');
+  const [link, setLink] = useState(slide.link ?? '');
+  const [dirty, setDirty] = useState(false);
+  useEffect(() => { setLink(slide.link ?? ''); setDirty(false); }, [slide.link]);
 
   return (
     <li className="space-y-2.5 rounded-xl border border-brand-surface-border bg-brand-dark/40 p-3">
@@ -235,12 +238,29 @@ function SlideRow({
           </IconAction>
         </div>
       </div>
-      <Input
-        leftIcon={<Link2 className="h-3.5 w-3.5" />}
-        placeholder={t('linkPlaceholder')}
-        value={slide.link ?? ''}
-        onChange={(e) => onLinkChange(e.target.value)}
-      />
+      <div className="flex items-center gap-2">
+        <Input
+          leftIcon={<Link2 className="h-3.5 w-3.5" />}
+          placeholder={t('linkPlaceholder')}
+          value={link}
+          onChange={(e) => { setLink(e.target.value); setDirty(true); }}
+        />
+        <button
+          type="button"
+          onClick={() => { onLinkChange(link); setDirty(false); }}
+          disabled={!dirty}
+          aria-label={t('itemSaveBtn')}
+          className={cn(
+            'inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl px-4 text-sm font-bold transition-all',
+            dirty
+              ? 'bg-gradient-yellow text-brand-dark shadow-glow-sm hover:brightness-110'
+              : 'cursor-not-allowed bg-brand-surface-elevated text-white/35',
+          )}
+        >
+          <Check className="h-4 w-4" />
+          {t('itemSaveBtn')}
+        </button>
+      </div>
     </li>
   );
 }

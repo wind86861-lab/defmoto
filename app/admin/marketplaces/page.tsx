@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Plus,
@@ -161,6 +161,11 @@ function MarketplaceRow({
   onMove: (dir: -1 | 1) => void;
 }) {
   const t = useTranslations('admin');
+  const [draft, setDraft] = useState<Marketplace>(item);
+  const [dirty, setDirty] = useState(false);
+  useEffect(() => { setDraft(item); setDirty(false); }, [item]);
+  const set = (patch: Partial<Marketplace>) => { setDraft((d) => ({ ...d, ...patch })); setDirty(true); };
+  const save = () => { onChange(draft); setDirty(false); };
 
   return (
     <li className="rounded-xl border border-brand-surface-border bg-brand-dark/40 p-3.5">
@@ -168,15 +173,15 @@ function MarketplaceRow({
         {/* Live badge preview */}
         <span
           className="inline-flex h-8 min-w-[3rem] items-center justify-center rounded-md px-2.5 text-xs font-bold text-white shadow-sm"
-          style={{ background: item.color || '#333' }}
+          style={{ background: draft.color || '#333' }}
         >
-          {item.label || '—'}
+          {draft.label || '—'}
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold">
-            {item.name || t('mpNamePlaceholder')}
+            {draft.name || t('mpNamePlaceholder')}
           </p>
-          <p className="truncate text-[10px] text-white/45">{item.url || '—'}</p>
+          <p className="truncate text-[10px] text-white/45">{draft.url || '—'}</p>
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
           <IconAction
@@ -203,23 +208,23 @@ function MarketplaceRow({
         <Field label={t('mpNameLabel')}>
           <Input
             placeholder={t('mpNamePlaceholder')}
-            value={item.name}
-            onChange={(e) => onChange({ name: e.target.value })}
+            value={draft.name}
+            onChange={(e) => set({ name: e.target.value })}
           />
         </Field>
         <Field label={t('mpLabelLabel')}>
           <Input
             placeholder={t('mpLabelPlaceholder')}
-            value={item.label}
-            onChange={(e) => onChange({ label: e.target.value })}
+            value={draft.label}
+            onChange={(e) => set({ label: e.target.value })}
           />
         </Field>
         <Field label={t('mpUrlLabel')}>
           <Input
             leftIcon={<Link2 className="h-3.5 w-3.5" />}
             placeholder={t('mpUrlPlaceholder')}
-            value={item.url}
-            onChange={(e) => onChange({ url: e.target.value })}
+            value={draft.url}
+            onChange={(e) => set({ url: e.target.value })}
           />
         </Field>
         <div className="flex items-end gap-3">
@@ -227,26 +232,46 @@ function MarketplaceRow({
             <div className="flex h-12 items-center gap-2 rounded-xl border border-brand-surface-border bg-brand-surface px-3">
               <input
                 type="color"
-                value={item.color}
-                onChange={(e) => onChange({ color: e.target.value })}
+                value={draft.color}
+                onChange={(e) => set({ color: e.target.value })}
                 className="h-7 w-9 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0"
                 aria-label={t('mpColorLabel')}
               />
               <span className="text-sm font-semibold uppercase text-white/70">
-                {item.color}
+                {draft.color}
               </span>
             </div>
           </Field>
           <label className="flex h-12 shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-brand-surface-border bg-brand-surface px-3 text-sm font-semibold">
             <input
               type="checkbox"
-              checked={item.enabled}
-              onChange={(e) => onChange({ enabled: e.target.checked })}
+              checked={draft.enabled}
+              onChange={(e) => set({ enabled: e.target.checked })}
               className="h-4 w-4 cursor-pointer accent-brand-yellow"
             />
             {t('mpEnabledLabel')}
           </label>
         </div>
+      </div>
+
+      <div className="mt-3 flex items-center justify-end gap-2">
+        {dirty && (
+          <span className="text-[11px] font-semibold text-brand-yellow">{t('unsavedHint')}</span>
+        )}
+        <button
+          type="button"
+          onClick={save}
+          disabled={!dirty}
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold transition-all',
+            dirty
+              ? 'bg-gradient-yellow text-brand-dark shadow-glow-sm hover:brightness-110'
+              : 'cursor-not-allowed bg-brand-surface-elevated text-white/35',
+          )}
+        >
+          <Check className="h-4 w-4" />
+          {t('itemSaveBtn')}
+        </button>
       </div>
     </li>
   );
