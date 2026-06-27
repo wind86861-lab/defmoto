@@ -29,6 +29,15 @@ interface OperatorState {
   operator: { name: string; phone: string } | null;
 }
 
+interface RelaySession {
+  id: string;
+  customerName?: string;
+  lastText: string;
+  lastActivity: number;
+  messageCount: number;
+  customerCount: number;
+}
+
 export default function AdminChatsPage() {
   const t = useTranslations('admin');
   const tChat = useTranslations('chat');
@@ -39,6 +48,7 @@ export default function AdminChatsPage() {
   const operator = useChatStore((s) => s.operator);
 
   const [relay, setRelay] = useState<OperatorState | null>(null);
+  const [sessions, setSessions] = useState<RelaySession[]>([]);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
@@ -46,7 +56,7 @@ export default function AdminChatsPage() {
 
   useEffect(() => {
     let active = true;
-    const load = () =>
+    const load = () => {
       fetch('/api/chat/operator', { cache: 'no-store' })
         .then((r) => r.json())
         .then((d: OperatorState) => {
@@ -58,6 +68,11 @@ export default function AdminChatsPage() {
           }
         })
         .catch(() => {});
+      fetch('/api/chat/sessions', { cache: 'no-store' })
+        .then((r) => r.json())
+        .then((d: { sessions: RelaySession[] }) => active && setSessions(d.sessions || []))
+        .catch(() => {});
+    };
     load();
     const iv = setInterval(load, 5000);
     return () => {
@@ -241,7 +256,55 @@ export default function AdminChatsPage() {
         </p>
       </article>
 
-      {/* Single active chat (demo) */}
+      {/* Live conversations (real, from the relay) */}
+      {sessions.length > 0 ? (
+        <section>
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-white/45">
+            {t('liveSessionsTitle', { count: sessions.length })}
+          </h2>
+          <ul className="space-y-2.5">
+            {sessions.map((s) => (
+              <li
+                key={s.id}
+                className="flex items-start gap-3 rounded-2xl border border-brand-surface-border bg-brand-surface p-4"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-yellow font-display text-sm font-extrabold text-brand-dark">
+                  {(s.customerName || 'M').slice(0, 1).toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="truncate font-bold">
+                      {s.customerName || t('customerLabel')}{' '}
+                      <span className="font-mono text-[11px] font-normal text-white/40">
+                        #{s.id.slice(-6)}
+                      </span>
+                    </h3>
+                    <span className="shrink-0 text-[10px] text-white/40">
+                      {formatDateTime(new Date(s.lastActivity).toISOString())}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 line-clamp-1 text-sm text-white/65">
+                    {s.lastText}
+                  </p>
+                  <p className="mt-1 text-[10px] text-white/40">
+                    {t('messageCountText', { count: s.messageCount })}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : (
+        relay?.configured && (
+          <div className="rounded-2xl border border-dashed border-brand-surface-border bg-brand-surface/50 p-8 text-center">
+            <MessageCircle className="mx-auto mb-3 h-10 w-10 text-white/30" />
+            <p className="text-sm text-white/55">{t('liveSessionsEmpty')}</p>
+          </div>
+        )
+      )}
+
+      {/* Local demo chat preview (shown when relay is off) */}
+      {!relay?.configured && (
       <article className="rounded-2xl border border-brand-yellow/30 bg-brand-surface p-5">
         <div className="flex items-start gap-4">
           <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-yellow font-display text-base font-extrabold text-brand-dark shadow-glow-sm">
@@ -292,17 +355,7 @@ export default function AdminChatsPage() {
           <Stat label={t('statResponseTime')} value="~5m" />
         </div>
       </article>
-
-      <div className="rounded-2xl border border-dashed border-brand-surface-border bg-brand-surface/50 p-8 text-center">
-        <MessageCircle className="mx-auto mb-3 h-10 w-10 text-white/30" />
-        <h3 className="font-display text-base font-bold">{t('noOtherChatsTitle')}</h3>
-        <p className="mt-1 text-sm text-white/55">
-          {t('noOtherChatsDesc')}
-        </p>
-        <p className="mt-3 text-[11px] text-white/35">
-          {t('backendNoteText')}
-        </p>
-      </div>
+      )}
     </div>
   );
 }

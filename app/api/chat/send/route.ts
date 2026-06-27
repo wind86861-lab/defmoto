@@ -1,9 +1,5 @@
 import { NextResponse } from 'next/server';
-import {
-  forwardToOperator,
-  isRelayConfigured,
-  isOperatorConnected,
-} from '@/lib/server/chatRelay';
+import { forwardToOperator, isRelayConfigured } from '@/lib/server/chatRelay';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -21,12 +17,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
 
-  // Token not set or no operator connected → tell the client to use its
-  // local auto-reply fallback instead.
-  if (!isRelayConfigured() || !isOperatorConnected()) {
+  // Relay off (no bot token) → pure client-side mock, store nothing.
+  if (!isRelayConfigured()) {
     return NextResponse.json({ ok: true, relayed: false });
   }
 
+  // Token set → store the message + try to deliver to the connected operator.
+  // `relayed` is false when no operator is connected yet (client falls back to
+  // the auto-reply bot), but the message is still recorded for the admin panel.
   const { relayed } = await forwardToOperator(sessionId, text.trim(), customerName);
   return NextResponse.json({ ok: true, relayed });
 }

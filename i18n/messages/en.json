@@ -757,7 +757,9 @@
     "opHowto": "Enter the operator name and Telegram phone. Then that account presses /start in the bot and shares its contact to verify — after that customer messages arrive on that account.",
     "opStatusConnected": "Connected",
     "opStatusPending": "Pending — press /start in the bot",
-    "opStatusNone": "No operator set"
+    "opStatusNone": "No operator set",
+    "liveSessionsTitle": "Live conversations ({count})",
+    "liveSessionsEmpty": "No live conversations yet. They appear here when customers write in."
   },
   "categories": {
     "motorcycles": "Motorcycles",

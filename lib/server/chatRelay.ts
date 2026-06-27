@@ -5,12 +5,13 @@
  *  - customer message  →  forwardToOperator()  →  Telegram DM to the operator
  *  - operator replies in Telegram (reply-to the message)  →  ingestOperatorReply()
  *  - website polls getMessagesSince() to pull the operator's answers
+ *  - admin panel reads listSessions() to see live conversations + history
  *
- * The operator account is configured by the admin (name + phone). That phone
- * is the allow-list: when someone presses /start and shares their contact, the
- * bot binds them as operator only if the phone matches. The operator config is
- * persisted to a small JSON file so it survives restarts/redeploys; live
- * session state is in-memory (resets on restart — fine for an MVP relay).
+ * Operator account is configured by the admin (name + phone). The phone is the
+ * allow-list: a /start + shared contact only binds if the phone matches.
+ *
+ * Operator config AND chat sessions are persisted to JSON files under .data/
+ * so conversations and routing survive restarts/redeploys.
  */
 
 import { promises as fs } from 'fs';
@@ -21,10 +22,11 @@ const ENV_OPERATOR = process.env.TELEGRAM_OPERATOR_CHAT_ID || '';
 
 const DATA_DIR = path.join(process.cwd(), '.data');
 const CONFIG_FILE = path.join(DATA_DIR, 'chat-operator.json');
+const SESSIONS_FILE = path.join(DATA_DIR, 'chat-sessions.json');
 
 export interface RelayMessage {
   id: string;
-  author: 'operator';
+  author: 'operator' | 'customer';
   text: string;
   createdAt: string;
 }
@@ -38,6 +40,16 @@ interface Session {
   messages: RelayMessage[];
   lastActivity: number;
   customerName?: string;
+}
+
+export interface SessionSummary {
+  id: string;
+  customerName?: string;
+  lastText: string;
+  lastActivity: number;
+  messageCount: number;
+  customerCount: number;
+  messages: RelayMessage[];
 }
 
 interface RelayState {
@@ -67,26 +79,44 @@ export function normalizePhone(raw: string): string {
 async function ensureLoaded() {
   if (state.loaded) return;
   state.loaded = true;
+
+  // operator config
   try {
     const raw = await fs.readFile(CONFIG_FILE, 'utf8');
     const parsed = JSON.parse(raw) as Partial<OperatorConfig> & {
       operatorChatId?: number | null;
     };
     if (parsed.name && parsed.phone) {
-      state.operatorConfig = {
-        name: parsed.name,
-        phone: normalizePhone(parsed.phone),
-      };
+      state.operatorConfig = { name: parsed.name, phone: normalizePhone(parsed.phone) };
     }
     if (parsed.operatorChatId != null && state.operatorChatId == null) {
       state.operatorChatId = parsed.operatorChatId;
     }
   } catch {
-    /* no config yet */
+    /* none yet */
+  }
+
+  // sessions + routing
+  try {
+    const raw = await fs.readFile(SESSIONS_FILE, 'utf8');
+    const parsed = JSON.parse(raw) as {
+      sessions?: Record<string, Session>;
+      forwarded?: [number, string][];
+    };
+    if (parsed.sessions) {
+      for (const [k, v] of Object.entries(parsed.sessions)) {
+        state.sessions.set(k, v);
+      }
+    }
+    if (parsed.forwarded) {
+      for (const [k, v] of parsed.forwarded) state.forwarded.set(k, v);
+    }
+  } catch {
+    /* none yet */
   }
 }
 
-async function persist() {
+async function persistConfig() {
   try {
     await fs.mkdir(DATA_DIR, { recursive: true });
     await fs.writeFile(
@@ -106,6 +136,26 @@ async function persist() {
   }
 }
 
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+function persistSessions() {
+  if (saveTimer) return;
+  saveTimer = setTimeout(async () => {
+    saveTimer = null;
+    try {
+      await fs.mkdir(DATA_DIR, { recursive: true });
+      await fs.writeFile(
+        SESSIONS_FILE,
+        JSON.stringify({
+          sessions: Object.fromEntries(state.sessions),
+          forwarded: Array.from(state.forwarded.entries()),
+        }),
+      );
+    } catch {
+      /* best-effort */
+    }
+  }, 400);
+}
+
 export function isRelayConfigured(): boolean {
   return Boolean(BOT_TOKEN);
 }
@@ -122,42 +172,32 @@ export async function getOperatorConfig(): Promise<OperatorConfig | null> {
 export async function setOperatorConfig(name: string, phone: string) {
   await ensureLoaded();
   state.operatorConfig = { name: name.trim(), phone: normalizePhone(phone) };
-  // Re-binding required: a freshly configured operator must /start again.
-  state.operatorChatId = null;
-  await persist();
+  state.operatorChatId = null; // must re-/start to bind the new account
+  await persistConfig();
 }
 
 export async function clearOperator() {
   await ensureLoaded();
   state.operatorConfig = null;
   state.operatorChatId = null;
-  await persist();
+  await persistConfig();
 }
 
-/**
- * Attempt to bind a Telegram chat as the operator.
- * If a phone is configured it must match the shared contact's phone.
- * Returns the bind outcome so the poller can message the user accordingly.
- */
 export async function tryBindOperator(
   chatId: number,
   sharedPhone?: string,
 ): Promise<'bound' | 'need-contact' | 'phone-mismatch'> {
   await ensureLoaded();
   const cfg = state.operatorConfig;
-
-  // No phone configured → first /start binds (open mode).
   if (!cfg || !cfg.phone) {
     state.operatorChatId = chatId;
-    await persist();
+    await persistConfig();
     return 'bound';
   }
-
   if (!sharedPhone) return 'need-contact';
-
   if (normalizePhone(sharedPhone).endsWith(cfg.phone.slice(-9))) {
     state.operatorChatId = chatId;
-    await persist();
+    await persistConfig();
     return 'bound';
   }
   return 'phone-mismatch';
@@ -181,18 +221,26 @@ function getSession(id: string): Session {
   return s;
 }
 
-/** Customer → operator. Returns whether it was actually relayed to Telegram. */
+/** Customer → operator. Stores the message and tries to relay to Telegram. */
 export async function forwardToOperator(
   sessionId: string,
   text: string,
   customerName?: string,
 ): Promise<{ relayed: boolean }> {
   await ensureLoaded();
-  if (!BOT_TOKEN || state.operatorChatId == null) return { relayed: false };
 
   const session = getSession(sessionId);
   session.lastActivity = Date.now();
   if (customerName) session.customerName = customerName;
+  session.messages.push({
+    id: `cu_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    author: 'customer',
+    text,
+    createdAt: new Date().toISOString(),
+  });
+  persistSessions();
+
+  if (!BOT_TOKEN || state.operatorChatId == null) return { relayed: false };
 
   const who = (customerName || session.customerName || 'Mijoz').slice(0, 40);
   const shortId = sessionId.slice(-6);
@@ -208,19 +256,17 @@ export async function forwardToOperator(
     });
     if (r?.ok && r.result?.message_id) {
       state.forwarded.set(r.result.message_id, sessionId);
+      persistSessions();
       return { relayed: true };
     }
   } catch {
-    /* network hiccup — treated as not relayed, client falls back */
+    /* network hiccup */
   }
   return { relayed: false };
 }
 
 /** Operator reply (from the Telegram poller) → stored for the website to poll. */
-export function ingestOperatorReply(
-  replyToMessageId: number,
-  text: string,
-): boolean {
+export function ingestOperatorReply(replyToMessageId: number, text: string): boolean {
   const sessionId = state.forwarded.get(replyToMessageId);
   if (!sessionId) return false;
   const session = getSession(sessionId);
@@ -231,12 +277,34 @@ export function ingestOperatorReply(
     createdAt: new Date().toISOString(),
   });
   session.lastActivity = Date.now();
+  persistSessions();
   return true;
 }
 
-/** Operator messages newer than `since` (epoch ms). */
+/** Operator messages newer than `since` (epoch ms) — for the customer poll. */
 export function getMessagesSince(sessionId: string, since: number): RelayMessage[] {
   const s = state.sessions.get(sessionId);
   if (!s) return [];
-  return s.messages.filter((m) => new Date(m.createdAt).getTime() > since);
+  return s.messages.filter(
+    (m) => m.author === 'operator' && new Date(m.createdAt).getTime() > since,
+  );
+}
+
+/** All sessions (newest first) — for the admin operator panel. */
+export async function listSessions(): Promise<SessionSummary[]> {
+  await ensureLoaded();
+  return Array.from(state.sessions.entries())
+    .map(([id, s]) => {
+      const last = s.messages[s.messages.length - 1];
+      return {
+        id,
+        customerName: s.customerName,
+        lastText: last?.text ?? '',
+        lastActivity: s.lastActivity,
+        messageCount: s.messages.length,
+        customerCount: s.messages.filter((m) => m.author === 'customer').length,
+        messages: s.messages.slice(-50),
+      };
+    })
+    .sort((a, b) => b.lastActivity - a.lastActivity);
 }

@@ -757,7 +757,9 @@
     "opHowto": "Operator ismi va Telegram raqamini kiriting. So‘ng o‘sha akkaunt botga /start bosib, kontaktini yuborib tasdiqlaydi — shundan keyin mijoz xabarlari shu akkauntga keladi.",
     "opStatusConnected": "Ulangan",
     "opStatusPending": "Kutilmoqda — botga /start bosing",
-    "opStatusNone": "Operator belgilanmagan"
+    "opStatusNone": "Operator belgilanmagan",
+    "liveSessionsTitle": "Jonli suhbatlar ({count})",
+    "liveSessionsEmpty": "Hozircha jonli suhbat yo‘q. Mijozlar yozganda shu yerda ko‘rinadi."
   },
   "categories": {
     "motorcycles": "Mototsikllar",
