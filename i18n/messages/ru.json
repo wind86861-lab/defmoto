@@ -798,7 +798,10 @@
     "frStatPayback": "Значение окупаемости",
     "frStatBranches": "Значение филиалов",
     "frOverrideHint": "Если оставить пустым — показывается стандартный (переведённый) текст.",
-    "locDeleteConfirm": "Подтвердите удаление?"
+    "locDeleteConfirm": "Подтвердите удаление?",
+    "itemSaveBtn": "Сохранить",
+    "itemSavedToast": "Сохранено",
+    "unsavedHint": "Несохранённые изменения"
   },
   "categories": {
     "motorcycles": "Мотоциклы",

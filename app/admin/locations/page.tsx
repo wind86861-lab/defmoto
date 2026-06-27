@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Plus,
@@ -11,12 +11,14 @@ import {
   Building2,
   Wrench,
   Sparkles,
+  Check,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useMounted } from '@/hooks/useMounted';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useToast } from '@/components/ui/Toaster';
 import { useContentStore } from '@/lib/stores/content';
 import type { Branch, ServiceCenter, ServiceItem } from '@/types/content';
 
@@ -118,39 +120,49 @@ function BranchesTab() {
 
 function BranchCard({ branch, index, total }: { branch: Branch; index: number; total: number }) {
   const t = useTranslations('admin');
+  const { notify } = useHaptic();
+  const toast = useToast();
   const update = useContentStore((s) => s.updateBranch);
   const remove = useContentStore((s) => s.removeBranch);
   const reorder = useContentStore((s) => s.reorderBranch);
-  const set = (patch: Partial<Branch>) => update(branch.id, patch);
+
+  const [draft, setDraft] = useState<Branch>(branch);
+  const [dirty, setDirty] = useState(false);
+  useEffect(() => { setDraft(branch); setDirty(false); }, [branch]);
+  const set = (patch: Partial<Branch>) => { setDraft((d) => ({ ...d, ...patch })); setDirty(true); };
+  const save = () => { update(branch.id, draft); setDirty(false); notify('success'); toast.success(t('itemSavedToast')); };
 
   return (
     <article className="rounded-2xl border border-brand-surface-border bg-brand-surface p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <span className="truncate font-display text-sm font-extrabold">
-          №{branch.number} · {branch.name || t('fldName')}
+          №{draft.number} · {draft.name || t('fldName')}
         </span>
         <RowActions index={index} total={total} onUp={() => reorder(branch.id, -1)} onDown={() => reorder(branch.id, 1)} onRemove={() => { if (confirm(t('locDeleteConfirm'))) remove(branch.id); }} />
       </div>
       <div className="grid gap-2.5 sm:grid-cols-2">
-        <F label={t('fldName')}><Input value={branch.name} onChange={(e) => set({ name: e.target.value })} /></F>
-        <F label={t('fldNumber')}><Input type="number" value={String(branch.number)} onChange={(e) => set({ number: Number(e.target.value) || 0 })} /></F>
-        <F label={t('fldLegalName')}><Input value={branch.legalName ?? ''} onChange={(e) => set({ legalName: e.target.value })} /></F>
-        <F label={t('fldDirector')}><Input value={branch.director ?? ''} onChange={(e) => set({ director: e.target.value })} /></F>
-        <F label={t('fldCity')}><Input value={branch.city} onChange={(e) => set({ city: e.target.value })} /></F>
-        <F label={t('fldAddress')}><Input value={branch.address} onChange={(e) => set({ address: e.target.value })} /></F>
-        <F label={t('fldPhone')}><Input value={branch.phone} onChange={(e) => set({ phone: e.target.value })} /></F>
-        <F label={t('fldSecondaryPhone')}><Input value={branch.secondaryPhone ?? ''} onChange={(e) => set({ secondaryPhone: e.target.value })} /></F>
-        <F label={t('fldEmail')}><Input value={branch.email ?? ''} onChange={(e) => set({ email: e.target.value })} /></F>
-        <F label={t('fldHours')}><Input value={branch.workingHours} onChange={(e) => set({ workingHours: e.target.value })} /></F>
-        <F label={t('fldImage')} full><Input value={branch.image ?? ''} onChange={(e) => set({ image: e.target.value })} /></F>
-        <F label={t('fldLat')}><Input value={String(branch.lat)} onChange={(e) => set({ lat: Number(e.target.value) || 0 })} /></F>
-        <F label={t('fldLng')}><Input value={String(branch.lng)} onChange={(e) => set({ lng: Number(e.target.value) || 0 })} /></F>
-        <F label={t('fldVideo')} full><Input value={branch.videoUrl ?? ''} onChange={(e) => set({ videoUrl: e.target.value })} /></F>
+        <F label={t('fldName')}><Input value={draft.name} onChange={(e) => set({ name: e.target.value })} /></F>
+        <F label={t('fldNumber')}><Input type="number" value={String(draft.number)} onChange={(e) => set({ number: Number(e.target.value) || 0 })} /></F>
+        <F label={t('fldLegalName')}><Input value={draft.legalName ?? ''} onChange={(e) => set({ legalName: e.target.value })} /></F>
+        <F label={t('fldDirector')}><Input value={draft.director ?? ''} onChange={(e) => set({ director: e.target.value })} /></F>
+        <F label={t('fldCity')}><Input value={draft.city} onChange={(e) => set({ city: e.target.value })} /></F>
+        <F label={t('fldAddress')}><Input value={draft.address} onChange={(e) => set({ address: e.target.value })} /></F>
+        <F label={t('fldPhone')}><Input value={draft.phone} onChange={(e) => set({ phone: e.target.value })} /></F>
+        <F label={t('fldSecondaryPhone')}><Input value={draft.secondaryPhone ?? ''} onChange={(e) => set({ secondaryPhone: e.target.value })} /></F>
+        <F label={t('fldEmail')}><Input value={draft.email ?? ''} onChange={(e) => set({ email: e.target.value })} /></F>
+        <F label={t('fldHours')}><Input value={draft.workingHours} onChange={(e) => set({ workingHours: e.target.value })} /></F>
+        <F label={t('fldImage')} full><Input value={draft.image ?? ''} onChange={(e) => set({ image: e.target.value })} /></F>
+        <F label={t('fldLat')}><Input value={String(draft.lat)} onChange={(e) => set({ lat: Number(e.target.value) || 0 })} /></F>
+        <F label={t('fldLng')}><Input value={String(draft.lng)} onChange={(e) => set({ lng: Number(e.target.value) || 0 })} /></F>
+        <F label={t('fldVideo')} full><Input value={draft.videoUrl ?? ''} onChange={(e) => set({ videoUrl: e.target.value })} /></F>
       </div>
-      <label className="mt-3 inline-flex cursor-pointer items-center gap-2 text-sm font-semibold">
-        <input type="checkbox" checked={Boolean(branch.isHeadOffice)} onChange={(e) => set({ isHeadOffice: e.target.checked })} className="h-4 w-4 cursor-pointer accent-brand-yellow" />
-        {t('fldHeadOffice')}
-      </label>
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold">
+          <input type="checkbox" checked={Boolean(draft.isHeadOffice)} onChange={(e) => set({ isHeadOffice: e.target.checked })} className="h-4 w-4 cursor-pointer accent-brand-yellow" />
+          {t('fldHeadOffice')}
+        </label>
+        <SaveBtn dirty={dirty} onClick={save} label={t('itemSaveBtn')} hint={t('unsavedHint')} />
+      </div>
     </article>
   );
 }
@@ -196,60 +208,72 @@ function ServiceTab() {
 
 function ServiceCard({ center, index, total }: { center: ServiceCenter; index: number; total: number }) {
   const t = useTranslations('admin');
+  const { notify } = useHaptic();
+  const toast = useToast();
   const update = useContentStore((s) => s.updateServiceCenter);
   const remove = useContentStore((s) => s.removeServiceCenter);
   const reorder = useContentStore((s) => s.reorderServiceCenter);
-  const addItem = useContentStore((s) => s.addServiceItem);
-  const updItem = useContentStore((s) => s.updateServiceItem);
-  const rmItem = useContentStore((s) => s.removeServiceItem);
-  const set = (patch: Partial<ServiceCenter>) => update(center.id, patch);
+
+  const [draft, setDraft] = useState<ServiceCenter>(center);
+  const [dirty, setDirty] = useState(false);
+  useEffect(() => { setDraft(center); setDirty(false); }, [center]);
+  const set = (patch: Partial<ServiceCenter>) => { setDraft((d) => ({ ...d, ...patch })); setDirty(true); };
+  const setItem = (itemId: string, patch: Partial<ServiceItem>) =>
+    set({ services: draft.services.map((it) => (it.id === itemId ? { ...it, ...patch } : it)) });
+  const addItem = () => set({ services: [...draft.services, { id: `it_${Date.now()}`, title: '' }] });
+  const rmItem = (itemId: string) => set({ services: draft.services.filter((it) => it.id !== itemId) });
+  const save = () => { update(center.id, draft); setDirty(false); notify('success'); toast.success(t('itemSavedToast')); };
 
   return (
     <article className="rounded-2xl border border-brand-surface-border bg-brand-surface p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <span className="truncate font-display text-sm font-extrabold">{center.name || t('fldName')}</span>
+        <span className="truncate font-display text-sm font-extrabold">{draft.name || t('fldName')}</span>
         <RowActions index={index} total={total} onUp={() => reorder(center.id, -1)} onDown={() => reorder(center.id, 1)} onRemove={() => { if (confirm(t('locDeleteConfirm'))) remove(center.id); }} />
       </div>
       <div className="grid gap-2.5 sm:grid-cols-2">
-        <F label={t('fldName')}><Input value={center.name} onChange={(e) => set({ name: e.target.value })} /></F>
-        <F label={t('fldShortName')}><Input value={center.shortName ?? ''} onChange={(e) => set({ shortName: e.target.value })} /></F>
-        <F label={t('fldAddress')}><Input value={center.address} onChange={(e) => set({ address: e.target.value })} /></F>
-        <F label={t('fldHours')}><Input value={center.workingHours} onChange={(e) => set({ workingHours: e.target.value })} /></F>
-        <F label={t('fldPhone')}><Input value={center.phone} onChange={(e) => set({ phone: e.target.value })} /></F>
-        <F label={t('fldSecondaryPhone')}><Input value={center.secondaryPhone ?? ''} onChange={(e) => set({ secondaryPhone: e.target.value })} /></F>
-        <F label={t('fldEmail')}><Input value={center.email ?? ''} onChange={(e) => set({ email: e.target.value })} /></F>
-        <F label={t('fldImage')}><Input value={center.image ?? ''} onChange={(e) => set({ image: e.target.value })} /></F>
+        <F label={t('fldName')}><Input value={draft.name} onChange={(e) => set({ name: e.target.value })} /></F>
+        <F label={t('fldShortName')}><Input value={draft.shortName ?? ''} onChange={(e) => set({ shortName: e.target.value })} /></F>
+        <F label={t('fldAddress')}><Input value={draft.address} onChange={(e) => set({ address: e.target.value })} /></F>
+        <F label={t('fldHours')}><Input value={draft.workingHours} onChange={(e) => set({ workingHours: e.target.value })} /></F>
+        <F label={t('fldPhone')}><Input value={draft.phone} onChange={(e) => set({ phone: e.target.value })} /></F>
+        <F label={t('fldSecondaryPhone')}><Input value={draft.secondaryPhone ?? ''} onChange={(e) => set({ secondaryPhone: e.target.value })} /></F>
+        <F label={t('fldEmail')}><Input value={draft.email ?? ''} onChange={(e) => set({ email: e.target.value })} /></F>
+        <F label={t('fldImage')}><Input value={draft.image ?? ''} onChange={(e) => set({ image: e.target.value })} /></F>
         <F label={t('fldAbout')} full>
-          <textarea value={center.about ?? ''} onChange={(e) => set({ about: e.target.value })} rows={2} className="w-full rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-2.5 text-base text-white outline-none focus:border-brand-yellow/60" />
+          <textarea value={draft.about ?? ''} onChange={(e) => set({ about: e.target.value })} rows={2} className="w-full rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-2.5 text-base text-white outline-none focus:border-brand-yellow/60" />
         </F>
-        <F label={t('fldVideo')} full><Input value={center.videoUrl ?? ''} onChange={(e) => set({ videoUrl: e.target.value })} /></F>
+        <F label={t('fldVideo')} full><Input value={draft.videoUrl ?? ''} onChange={(e) => set({ videoUrl: e.target.value })} /></F>
       </div>
 
       {/* services list */}
       <div className="mt-4">
         <div className="mb-2 flex items-center justify-between">
           <h4 className="text-[11px] font-bold uppercase tracking-wider text-white/45">{t('servicesListLabel')}</h4>
-          <button type="button" onClick={() => addItem(center.id, { id: `it_${Date.now()}`, title: '' })} className="inline-flex items-center gap-1 rounded-lg border border-brand-surface-border px-2.5 py-1 text-[11px] font-bold text-white/75 hover:border-brand-yellow/40 hover:text-brand-yellow">
+          <button type="button" onClick={addItem} className="inline-flex items-center gap-1 rounded-lg border border-brand-surface-border px-2.5 py-1 text-[11px] font-bold text-white/75 hover:border-brand-yellow/40 hover:text-brand-yellow">
             <Plus className="h-3 w-3" /> {t('addServiceItemBtn')}
           </button>
         </div>
         <div className="space-y-2">
-          {center.services.map((it: ServiceItem) => (
+          {draft.services.map((it: ServiceItem) => (
             <div key={it.id} className="rounded-xl border border-brand-surface-border bg-brand-dark/40 p-3">
               <div className="mb-2 flex items-center justify-between">
-                <Input value={it.title} placeholder={t('svcItemTitle')} onChange={(e) => updItem(center.id, it.id, { title: e.target.value })} />
-                <button type="button" onClick={() => rmItem(center.id, it.id)} className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/55 hover:bg-danger/15 hover:text-danger">
+                <Input value={it.title} placeholder={t('svcItemTitle')} onChange={(e) => setItem(it.id, { title: e.target.value })} />
+                <button type="button" onClick={() => rmItem(it.id)} className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/55 hover:bg-danger/15 hover:text-danger">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
               <div className="grid gap-2 sm:grid-cols-3">
-                <Input value={it.description ?? ''} placeholder={t('svcItemDesc')} onChange={(e) => updItem(center.id, it.id, { description: e.target.value })} />
-                <Input value={it.priceFrom != null ? String(it.priceFrom) : ''} placeholder={t('svcItemPrice')} onChange={(e) => updItem(center.id, it.id, { priceFrom: e.target.value ? Number(e.target.value.replace(/\D/g, '')) : undefined })} />
-                <Input value={it.duration ?? ''} placeholder={t('svcItemDuration')} onChange={(e) => updItem(center.id, it.id, { duration: e.target.value })} />
+                <Input value={it.description ?? ''} placeholder={t('svcItemDesc')} onChange={(e) => setItem(it.id, { description: e.target.value })} />
+                <Input value={it.priceFrom != null ? String(it.priceFrom) : ''} placeholder={t('svcItemPrice')} onChange={(e) => setItem(it.id, { priceFrom: e.target.value ? Number(e.target.value.replace(/\D/g, '')) : undefined })} />
+                <Input value={it.duration ?? ''} placeholder={t('svcItemDuration')} onChange={(e) => setItem(it.id, { duration: e.target.value })} />
               </div>
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="mt-4 flex justify-end">
+        <SaveBtn dirty={dirty} onClick={save} label={t('itemSaveBtn')} hint={t('unsavedHint')} />
       </div>
     </article>
   );
@@ -260,11 +284,18 @@ function ServiceCard({ center, index, total }: { center: ServiceCenter; index: n
 function FranchiseTab() {
   const t = useTranslations('admin');
   const { notify } = useHaptic();
+  const toast = useToast();
   const mounted = useMounted();
   const fr = useContentStore((s) => s.franchise);
   const setFr = useContentStore((s) => s.setFranchise);
   const resetFr = useContentStore((s) => s.resetFranchise);
-  const v = mounted ? fr : {};
+
+  const [draft, setDraft] = useState(fr);
+  const [dirty, setDirty] = useState(false);
+  useEffect(() => { if (mounted) { setDraft(fr); setDirty(false); } }, [mounted, fr]);
+  const set = (patch: Partial<typeof fr>) => { setDraft((d) => ({ ...d, ...patch })); setDirty(true); };
+  const save = () => { setFr(draft); setDirty(false); notify('success'); toast.success(t('itemSavedToast')); };
+  const v = mounted ? draft : {};
 
   return (
     <section className="space-y-3">
@@ -275,21 +306,50 @@ function FranchiseTab() {
       </div>
       <article className="rounded-2xl border border-brand-surface-border bg-brand-surface p-4">
         <div className="grid gap-2.5 sm:grid-cols-2">
-          <F label={t('frTitleLabel')} full><Input value={v.title ?? ''} onChange={(e) => setFr({ title: e.target.value })} /></F>
+          <F label={t('frTitleLabel')} full><Input value={v.title ?? ''} onChange={(e) => set({ title: e.target.value })} /></F>
           <F label={t('frDescLabel')} full>
-            <textarea value={v.description ?? ''} onChange={(e) => setFr({ description: e.target.value })} rows={2} className="w-full rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-2.5 text-base text-white outline-none focus:border-brand-yellow/60" />
+            <textarea value={v.description ?? ''} onChange={(e) => set({ description: e.target.value })} rows={2} className="w-full rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-2.5 text-base text-white outline-none focus:border-brand-yellow/60" />
           </F>
-          <F label={t('frStatInvestment')}><Input value={v.statInvestment ?? ''} onChange={(e) => setFr({ statInvestment: e.target.value })} /></F>
-          <F label={t('frStatPayback')}><Input value={v.statPayback ?? ''} onChange={(e) => setFr({ statPayback: e.target.value })} /></F>
-          <F label={t('frStatBranches')}><Input value={v.statBranches ?? ''} onChange={(e) => setFr({ statBranches: e.target.value })} /></F>
+          <F label={t('frStatInvestment')}><Input value={v.statInvestment ?? ''} onChange={(e) => set({ statInvestment: e.target.value })} /></F>
+          <F label={t('frStatPayback')}><Input value={v.statPayback ?? ''} onChange={(e) => set({ statPayback: e.target.value })} /></F>
+          <F label={t('frStatBranches')}><Input value={v.statBranches ?? ''} onChange={(e) => set({ statBranches: e.target.value })} /></F>
         </div>
-        <p className="mt-3 text-[11px] text-white/45">{t('frOverrideHint')}</p>
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <p className="text-[11px] text-white/45">{t('frOverrideHint')}</p>
+          <SaveBtn dirty={dirty} onClick={save} label={t('itemSaveBtn')} hint={t('unsavedHint')} />
+        </div>
       </article>
     </section>
   );
 }
 
 /* ============================ shared ============================ */
+
+function SaveBtn({ dirty, onClick, label, hint }: { dirty: boolean; onClick: () => void; label: string; hint: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      {dirty && (
+        <span className="hidden text-[11px] font-semibold text-brand-yellow sm:inline">
+          {hint}
+        </span>
+      )}
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={!dirty}
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold transition-all',
+          dirty
+            ? 'bg-gradient-yellow text-brand-dark shadow-glow-sm hover:brightness-110'
+            : 'cursor-not-allowed bg-brand-surface-elevated text-white/35',
+        )}
+      >
+        <Check className="h-4 w-4" />
+        {label}
+      </button>
+    </div>
+  );
+}
 
 function F({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) {
   return (
