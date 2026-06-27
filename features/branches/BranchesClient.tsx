@@ -27,15 +27,21 @@ import { ContactRow } from '@/components/ui/ContactRow';
 import { OpenStatusBadge } from '@/components/ui/OpenStatusBadge';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useClickOutside } from '@/hooks/useClickOutside';
+import { useMounted } from '@/hooks/useMounted';
 import { useToast } from '@/components/ui/Toaster';
+import { useContentStore } from '@/lib/stores/content';
 import { mockBranches } from '@/mocks/branches';
 import type { Branch } from '@/types/content';
 
 export function BranchesClient() {
   const t = useTranslations('branches');
+  const mounted = useMounted();
+  const storeBranches = useContentStore((s) => s.branches);
+  const branches = mounted && storeBranches.length > 0 ? storeBranches : mockBranches;
   const [view, setView] = useState<'branches' | 'franchise'>('branches');
   const [activeId, setActiveId] = useState(mockBranches[0].id);
-  const active = mockBranches.find((b) => b.id === activeId) ?? mockBranches[0];
+  const active =
+    branches.find((b) => b.id === activeId) ?? branches[0] ?? mockBranches[0];
 
   return (
     <div className="mx-auto max-w-[1320px] px-4 pb-16 pt-6 sm:px-6 sm:py-10 lg:px-8">
@@ -65,7 +71,7 @@ export function BranchesClient() {
       {view === 'branches' ? (
         <div className="animate-fade-in">
           {/* === Branch selector === */}
-          <BranchSelector activeId={activeId} onChange={setActiveId} />
+          <BranchSelector branches={branches} activeId={activeId} onChange={setActiveId} />
 
           {/* === Branch detail === */}
           <Reveal direction="up">
@@ -110,14 +116,16 @@ function TabButton({
 }
 
 function BranchSelector({
+  branches,
   activeId,
   onChange,
 }: {
+  branches: Branch[];
   activeId: string;
   onChange: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const active = mockBranches.find((b) => b.id === activeId);
+  const active = branches.find((b) => b.id === activeId);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickOutside(containerRef, () => setOpen(false), open);
 
@@ -149,7 +157,7 @@ function BranchSelector({
 
       {open && (
         <ul className="absolute inset-x-0 top-[3.25rem] z-30 max-h-72 overflow-y-auto rounded-2xl border border-brand-surface-border bg-brand-surface p-1 shadow-card-hover backdrop-blur-md animate-fade-in">
-          {mockBranches.map((b) => (
+          {branches.map((b) => (
             <li key={b.id}>
               <button
                 type="button"
@@ -404,6 +412,9 @@ function FranchiseSection() {
   const t = useTranslations('branches');
   const { notify } = useHaptic();
   const toast = useToast();
+  const mounted = useMounted();
+  const fr = useContentStore((s) => s.franchise);
+  const ov = mounted ? fr : {};
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
@@ -436,9 +447,9 @@ function FranchiseSection() {
   ];
 
   const stats = [
-    { value: t('franchiseStatInvestmentValue'), label: t('franchiseStatInvestmentLabel') },
-    { value: t('franchiseStatPaybackValue'), label: t('franchiseStatPaybackLabel') },
-    { value: t('franchiseStatBranchesValue'), label: t('franchiseStatBranchesLabel') },
+    { value: ov.statInvestment || t('franchiseStatInvestmentValue'), label: t('franchiseStatInvestmentLabel') },
+    { value: ov.statPayback || t('franchiseStatPaybackValue'), label: t('franchiseStatPaybackLabel') },
+    { value: ov.statBranches || t('franchiseStatBranchesValue'), label: t('franchiseStatBranchesLabel') },
   ];
 
   return (
@@ -455,10 +466,10 @@ function FranchiseSection() {
               {t('franchiseBadge')}
             </div>
             <h2 className="font-display text-display-md font-extrabold leading-tight text-brand-dark sm:text-display-lg">
-              {t('franchiseTitle')}
+              {ov.title || t('franchiseTitle')}
             </h2>
             <p className="mt-3 text-sm font-medium text-brand-dark/80 sm:text-base">
-              {t('franchiseDesc')}
+              {ov.description || t('franchiseDesc')}
             </p>
           </div>
 

@@ -22,16 +22,21 @@ import { ContactRow } from '@/components/ui/ContactRow';
 import { OpenStatusBadge } from '@/components/ui/OpenStatusBadge';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useClickOutside } from '@/hooks/useClickOutside';
+import { useMounted } from '@/hooks/useMounted';
 import { useToast } from '@/components/ui/Toaster';
+import { useContentStore } from '@/lib/stores/content';
 import { formatPrice } from '@/lib/format';
 import { mockServiceCenters } from '@/mocks/services';
 import type { ServiceCenter, ServiceItem } from '@/types/content';
 
 export function ServiceClient() {
   const t = useTranslations('service');
+  const mounted = useMounted();
+  const storeCenters = useContentStore((s) => s.serviceCenters);
+  const centers = mounted && storeCenters.length > 0 ? storeCenters : mockServiceCenters;
   const [activeId, setActiveId] = useState(mockServiceCenters[0].id);
   const active =
-    mockServiceCenters.find((s) => s.id === activeId) ?? mockServiceCenters[0];
+    centers.find((s) => s.id === activeId) ?? centers[0] ?? mockServiceCenters[0];
 
   return (
     <div className="mx-auto max-w-[1320px] px-4 pb-16 pt-6 sm:px-6 sm:py-10 lg:px-8">
@@ -40,13 +45,13 @@ export function ServiceClient() {
           {t('title')}
         </h1>
         <p className="mt-2 text-sm text-white/55 sm:text-base">
-          <span className="font-bold text-white">{mockServiceCenters.length}</span>{' '}
+          <span className="font-bold text-white">{centers.length}</span>{' '}
           {t('centers')} · {t('subtitle')}
         </p>
       </header>
 
       {/* === Center selector === */}
-      <CenterSelector activeId={activeId} onChange={setActiveId} />
+      <CenterSelector centers={centers} activeId={activeId} onChange={setActiveId} />
 
       {/* === Center detail === */}
       <Reveal direction="left">
@@ -57,14 +62,16 @@ export function ServiceClient() {
 }
 
 function CenterSelector({
+  centers,
   activeId,
   onChange,
 }: {
+  centers: ServiceCenter[];
   activeId: string;
   onChange: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const active = mockServiceCenters.find((s) => s.id === activeId);
+  const active = centers.find((s) => s.id === activeId);
   const containerRef = useRef<HTMLDivElement>(null);
   useClickOutside(containerRef, () => setOpen(false), open);
 
@@ -96,7 +103,7 @@ function CenterSelector({
 
       {open && (
         <ul className="absolute inset-x-0 top-[3.25rem] z-30 max-h-72 overflow-y-auto rounded-2xl border border-brand-surface-border bg-brand-surface p-1 shadow-card-hover backdrop-blur-md animate-fade-in">
-          {mockServiceCenters.map((s) => (
+          {centers.map((s) => (
             <li key={s.id}>
               <button
                 type="button"
