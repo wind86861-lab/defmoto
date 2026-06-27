@@ -801,7 +801,11 @@
     "locDeleteConfirm": "O‘chirishni tasdiqlaysizmi?",
     "itemSaveBtn": "Saqlash",
     "itemSavedToast": "Saqlandi",
-    "unsavedHint": "Saqlanmagan o‘zgarishlar"
+    "unsavedHint": "Saqlanmagan o‘zgarishlar",
+    "mpIconLabel": "Logo / Ikona",
+    "mpIconUploadBtn": "Logo yuklash",
+    "mpIconRemoveBtn": "O‘chirish",
+    "mpIconHint": "PNG/SVG logo yuklang. Logo bo‘lsa, rangli matn-badge o‘rniga shu ko‘rinadi."
   },
   "categories": {
     "motorcycles": "Mototsikllar",

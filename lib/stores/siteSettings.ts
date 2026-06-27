@@ -21,9 +21,10 @@ export interface PromoBanner {
 export interface Marketplace {
   id: string;
   name: string; // full name — used as aria-label / tooltip (e.g. "Uzum Market")
-  label: string; // short badge text (e.g. "Uzum")
+  label: string; // short badge text (e.g. "Uzum") — shown when no icon
   url: string;
   color: string; // hex brand colour for the badge
+  icon?: string; // uploaded logo (data URL) or remote image URL — overrides the label badge
   enabled: boolean;
 }
 

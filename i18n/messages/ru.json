@@ -801,7 +801,11 @@
     "locDeleteConfirm": "Подтвердите удаление?",
     "itemSaveBtn": "Сохранить",
     "itemSavedToast": "Сохранено",
-    "unsavedHint": "Несохранённые изменения"
+    "unsavedHint": "Несохранённые изменения",
+    "mpIconLabel": "Логотип / Иконка",
+    "mpIconUploadBtn": "Загрузить логотип",
+    "mpIconRemoveBtn": "Удалить",
+    "mpIconHint": "Загрузите PNG/SVG логотип. Если он есть — показывается вместо цветного бейджа."
   },
   "categories": {
     "motorcycles": "Мотоциклы",

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Plus,
@@ -11,6 +11,8 @@ import {
   Store,
   Link2,
   Check,
+  Upload,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
@@ -161,22 +163,39 @@ function MarketplaceRow({
   onMove: (dir: -1 | 1) => void;
 }) {
   const t = useTranslations('admin');
+  const fileRef = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState<Marketplace>(item);
   const [dirty, setDirty] = useState(false);
   useEffect(() => { setDraft(item); setDirty(false); }, [item]);
   const set = (patch: Partial<Marketplace>) => { setDraft((d) => ({ ...d, ...patch })); setDirty(true); };
   const save = () => { onChange(draft); setDirty(false); };
 
+  const handleIcon = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const r = new FileReader();
+    r.onload = () => set({ icon: r.result as string });
+    r.readAsDataURL(file);
+    e.target.value = '';
+  };
+
   return (
     <li className="rounded-xl border border-brand-surface-border bg-brand-dark/40 p-3.5">
       <div className="flex items-center gap-3">
-        {/* Live badge preview */}
-        <span
-          className="inline-flex h-8 min-w-[3rem] items-center justify-center rounded-md px-2.5 text-xs font-bold text-white shadow-sm"
-          style={{ background: draft.color || '#333' }}
-        >
-          {draft.label || '—'}
-        </span>
+        {/* Live preview — uploaded logo or colour badge */}
+        {draft.icon ? (
+          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white shadow-sm">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={draft.icon} alt="" className="h-full w-full object-contain p-0.5" />
+          </span>
+        ) : (
+          <span
+            className="inline-flex h-8 min-w-[3rem] items-center justify-center rounded-md px-2.5 text-xs font-bold text-white shadow-sm"
+            style={{ background: draft.color || '#333' }}
+          >
+            {draft.label || '—'}
+          </span>
+        )}
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold">
             {draft.name || t('mpNamePlaceholder')}
@@ -252,6 +271,46 @@ function MarketplaceRow({
             {t('mpEnabledLabel')}
           </label>
         </div>
+
+        {/* Icon / logo upload */}
+        <Field label={t('mpIconLabel')} className="sm:col-span-2">
+          <div className="flex items-center gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-brand-surface-border bg-white">
+              {draft.icon ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={draft.icon} alt="" className="h-full w-full object-contain p-1" />
+              ) : (
+                <Store className="h-5 w-5 text-brand-dark/40" />
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-brand-yellow/40 hover:text-brand-yellow"
+            >
+              <Upload className="h-4 w-4" />
+              {t('mpIconUploadBtn')}
+            </button>
+            {draft.icon && (
+              <button
+                type="button"
+                onClick={() => set({ icon: undefined })}
+                className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-white/55 transition-colors hover:text-danger"
+              >
+                <X className="h-4 w-4" />
+                {t('mpIconRemoveBtn')}
+              </button>
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              hidden
+              onChange={handleIcon}
+            />
+          </div>
+          <p className="mt-1.5 text-[11px] text-white/40">{t('mpIconHint')}</p>
+        </Field>
       </div>
 
       <div className="mt-3 flex items-center justify-end gap-2">

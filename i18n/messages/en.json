@@ -801,7 +801,11 @@
     "locDeleteConfirm": "Confirm deletion?",
     "itemSaveBtn": "Save",
     "itemSavedToast": "Saved",
-    "unsavedHint": "Unsaved changes"
+    "unsavedHint": "Unsaved changes",
+    "mpIconLabel": "Logo / Icon",
+    "mpIconUploadBtn": "Upload logo",
+    "mpIconRemoveBtn": "Remove",
+    "mpIconHint": "Upload a PNG/SVG logo. If set, it replaces the coloured text badge."
   },
   "categories": {
     "motorcycles": "Motorcycles",
