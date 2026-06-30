@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { createServerPersist } from '@/lib/serverPersist';
 
 export interface HeroSlide {
   id: string;
@@ -149,6 +150,8 @@ export const useSiteSettings = create<SiteSettingsState>()(
     {
       name: 'deftmoto-site-settings',
       version: 2,
+      // Persist to the server (global) instead of localStorage.
+      storage: createServerPersist('site-settings'),
       // v0 persisted state had no seeded slides — backfill so existing
       // browsers also get an editable/linkable default banner.
       // v2 introduces marketplaces — seed them for older persisted state.

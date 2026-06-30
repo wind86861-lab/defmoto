@@ -839,7 +839,8 @@
     "fldCatImage": "Фото",
     "fldCatCount": "Кол-во товаров",
     "catNoneTitle": "Категорий нет",
-    "catSlugHint": "Slug — адрес URL (напр. helmets). Стандартные категории на 3 языках, новые — по введённому названию."
+    "catSlugHint": "Slug — адрес URL (напр. helmets). Стандартные категории на 3 языках, новые — по введённому названию.",
+    "refreshButton": "Обновить"
   },
   "categories": {
     "motorcycles": "Мотоциклы",

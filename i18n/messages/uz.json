@@ -839,7 +839,8 @@
     "fldCatImage": "Rasm",
     "fldCatCount": "Tovarlar soni",
     "catNoneTitle": "Kategoriyalar yoʻq",
-    "catSlugHint": "Slug — URL manzili (masalan helmets). Standart kategoriyalar 3 tilda, yangilari kiritilgan nom bilan koʻrsatiladi."
+    "catSlugHint": "Slug — URL manzili (masalan helmets). Standart kategoriyalar 3 tilda, yangilari kiritilgan nom bilan koʻrsatiladi.",
+    "refreshButton": "Yangilash"
   },
   "categories": {
     "motorcycles": "Mototsikllar",

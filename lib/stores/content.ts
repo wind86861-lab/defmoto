@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { createServerPersist } from '@/lib/serverPersist';
 import { mockBranches } from '@/mocks/branches';
 import { mockServiceCenters } from '@/mocks/services';
 import { mockProducts } from '@/mocks/products';
@@ -160,6 +161,8 @@ export const useContentStore = create<ContentState>()(
     {
       name: 'deftmoto-content',
       version: 2,
+      // Persist to the server (global) instead of localStorage.
+      storage: createServerPersist('content-store'),
       // v2 adds products + categories — seed them for older persisted state.
       migrate: (persisted) => {
         const s = persisted as ContentState;

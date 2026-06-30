@@ -839,7 +839,8 @@
     "fldCatImage": "Image",
     "fldCatCount": "Product count",
     "catNoneTitle": "No categories",
-    "catSlugHint": "Slug is the URL path (e.g. helmets). Built-in categories are in 3 languages; new ones show the entered name."
+    "catSlugHint": "Slug is the URL path (e.g. helmets). Built-in categories are in 3 languages; new ones show the entered name.",
+    "refreshButton": "Refresh"
   },
   "categories": {
     "motorcycles": "Motorcycles",

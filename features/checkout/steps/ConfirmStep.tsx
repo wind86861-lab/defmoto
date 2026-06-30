@@ -86,6 +86,20 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
     };
 
     addOrder(order);
+    // Persist a global copy for the admin (fire-and-forget).
+    fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: order.id,
+        number: order.number,
+        status: order.status,
+        customerName: order.contact.name,
+        phone: order.contact.phone,
+        total: order.total,
+        payload: order,
+      }),
+    }).catch(() => {});
     clearCart();
 
     // Cash → straight to success page (no online payment)

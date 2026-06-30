@@ -1,17 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Search, Eye, MoreVertical } from 'lucide-react';
+import { Search, Eye, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Input } from '@/components/ui/Input';
 import { formatPrice, formatDateTime } from '@/lib/format';
-import { useOrdersStore } from '@/lib/stores/orders';
-import { useMounted } from '@/hooks/useMounted';
 import { useHaptic } from '@/hooks/useHaptic';
 import { OrderStatusBadge, getOrderStatusMeta } from '@/features/orders/OrderStatus';
-import type { OrderStatus } from '@/types/order';
+import type { Order, OrderStatus } from '@/types/order';
 
 const STATUS_OPTIONS: OrderStatus[] = [
   'pending',
@@ -22,66 +20,101 @@ const STATUS_OPTIONS: OrderStatus[] = [
   'cancelled',
 ];
 
+interface ServerOrder {
+  id: string;
+  number: string;
+  status: OrderStatus;
+  customerName?: string;
+  phone?: string;
+  total: number;
+  createdAt: number;
+  payload: Order;
+}
+
 export default function AdminOrdersPage() {
   const t = useTranslations('orders');
   const tAdmin = useTranslations('admin');
   const statusMeta = getOrderStatusMeta(t);
-  const mounted = useMounted();
-  const orders = useOrdersStore((s) => s.orders);
-  const updateStatus = useOrdersStore((s) => s.updateStatus);
   const { notify } = useHaptic();
+  const [orders, setOrders] = useState<ServerOrder[]>([]);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('');
 
-  const list = mounted ? orders : [];
+  const load = useCallback(() => {
+    fetch('/api/orders', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => setOrders(d.orders || []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    load();
+    const iv = setInterval(load, 10000);
+    return () => clearInterval(iv);
+  }, [load]);
+
+  const itemsCount = (o: ServerOrder) => o.payload?.items?.length ?? 0;
+  const name = (o: ServerOrder) => o.customerName || o.payload?.contact?.name || '—';
+  const phone = (o: ServerOrder) => o.phone || o.payload?.contact?.phone || '';
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return list.filter((o) => {
-      if (q && !o.number.toLowerCase().includes(q) && !o.contact.name.toLowerCase().includes(q) && !o.contact.phone.includes(q))
+    return orders.filter((o) => {
+      if (
+        q &&
+        !o.number.toLowerCase().includes(q) &&
+        !name(o).toLowerCase().includes(q) &&
+        !phone(o).includes(q)
+      )
         return false;
       if (statusFilter && o.status !== statusFilter) return false;
       return true;
     });
-  }, [list, query, statusFilter]);
+  }, [orders, query, statusFilter]);
 
   const handleStatusChange = (id: string, status: OrderStatus) => {
     notify('success');
-    updateStatus(id, status);
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
+    fetch(`/api/orders/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    }).catch(() => {});
   };
 
   return (
     <div className="space-y-5">
-      <header>
-        <h1 className="font-display text-display-sm font-extrabold sm:text-display-md">
-          {tAdmin('navOrders')}
-        </h1>
-        <p className="mt-1 text-sm text-white/55">
-          {tAdmin('totalLabel')} <span className="font-bold text-white">{list.length}</span> ·{' '}
-          {tAdmin('filteredLabel')} <span className="font-bold text-brand-yellow">{filtered.length}</span>
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-display-sm font-extrabold sm:text-display-md">
+            {tAdmin('navOrders')}
+          </h1>
+          <p className="mt-1 text-sm text-white/55">
+            {tAdmin('totalLabel')} <span className="font-bold text-white">{orders.length}</span> ·{' '}
+            {tAdmin('filteredLabel')} <span className="font-bold text-brand-yellow">{filtered.length}</span>
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={load}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-brand-surface-border bg-brand-surface px-3 py-2 text-sm font-semibold text-white/75 transition-colors hover:border-brand-yellow/40 hover:text-brand-yellow"
+        >
+          <RotateCcw className="h-4 w-4" />
+          {tAdmin('refreshButton')}
+        </button>
       </header>
 
-      {/* Status pills */}
       <div className="-mx-1 flex gap-2 overflow-x-auto px-1 scrollbar-hide">
-        <StatusPill
-          label={tAdmin('stockAllOption')}
-          count={list.length}
-          active={!statusFilter}
-          onClick={() => setStatusFilter('')}
-        />
-        {STATUS_OPTIONS.map((s) => {
-          const count = list.filter((o) => o.status === s).length;
-          return (
-            <StatusPill
-              key={s}
-              label={statusMeta[s].label}
-              count={count}
-              active={statusFilter === s}
-              onClick={() => setStatusFilter(s)}
-            />
-          );
-        })}
+        <StatusPill label={tAdmin('stockAllOption')} count={orders.length} active={!statusFilter} onClick={() => setStatusFilter('')} />
+        {STATUS_OPTIONS.map((s) => (
+          <StatusPill
+            key={s}
+            label={statusMeta[s].label}
+            count={orders.filter((o) => o.status === s).length}
+            active={statusFilter === s}
+            onClick={() => setStatusFilter(s)}
+          />
+        ))}
       </div>
 
       <Input
@@ -109,28 +142,20 @@ export default function AdminOrdersPage() {
               <tr key={o.id} className="transition-colors hover:bg-white/3">
                 <td className="px-4 py-3">
                   <div className="font-display text-sm font-bold">#{o.number}</div>
-                  <div className="text-[11px] text-white/45">
-                    {tAdmin('productCountText', { count: o.items.length })}
-                  </div>
+                  <div className="text-[11px] text-white/45">{tAdmin('productCountText', { count: itemsCount(o) })}</div>
                 </td>
                 <td className="px-4 py-3 text-sm">
-                  <div className="font-semibold">{o.contact.name}</div>
-                  <div className="text-[11px] text-white/45">{o.contact.phone}</div>
+                  <div className="font-semibold">{name(o)}</div>
+                  <div className="text-[11px] text-white/45">{phone(o)}</div>
                 </td>
-                <td className="px-4 py-3 text-sm text-white/65">
-                  {formatDateTime(o.createdAt)}
-                </td>
+                <td className="px-4 py-3 text-sm text-white/65">{formatDateTime(new Date(o.createdAt).toISOString())}</td>
                 <td className="px-4 py-3">
-                  <div className="font-display text-sm font-extrabold text-brand-yellow">
-                    {formatPrice(o.total)}
-                  </div>
+                  <div className="font-display text-sm font-extrabold text-brand-yellow">{formatPrice(o.total)}</div>
                 </td>
                 <td className="px-4 py-3">
                   <select
                     value={o.status}
-                    onChange={(e) =>
-                      handleStatusChange(o.id, e.target.value as OrderStatus)
-                    }
+                    onChange={(e) => handleStatusChange(o.id, e.target.value as OrderStatus)}
                     className={cn(
                       'h-8 rounded-lg border bg-brand-dark px-2 text-xs font-bold uppercase tracking-wider outline-none',
                       o.status === 'cancelled'
@@ -163,9 +188,7 @@ export default function AdminOrdersPage() {
         </table>
         {filtered.length === 0 && (
           <div className="px-4 py-12 text-center text-sm text-white/45">
-            {list.length === 0
-              ? tAdmin('noOrdersText')
-              : tAdmin('noFilterResultsText')}
+            {orders.length === 0 ? tAdmin('noOrdersText') : tAdmin('noFilterResultsText')}
           </div>
         )}
       </div>
@@ -173,38 +196,36 @@ export default function AdminOrdersPage() {
       {/* Cards — mobile */}
       <div className="space-y-2 lg:hidden">
         {filtered.map((o) => (
-          <Link
-            key={o.id}
-            href={`/orders/${o.id}`}
-            target="_blank"
-            className="block rounded-xl border border-brand-surface-border bg-brand-surface p-3"
-          >
+          <div key={o.id} className="rounded-xl border border-brand-surface-border bg-brand-surface p-3">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <div className="font-display text-sm font-bold">
-                  #{o.number}
-                </div>
+                <div className="font-display text-sm font-bold">#{o.number}</div>
                 <div className="mt-0.5 text-[11px] text-white/45">
-                  {formatDateTime(o.createdAt)} · {o.contact.name}
+                  {formatDateTime(new Date(o.createdAt).toISOString())} · {name(o)}
                 </div>
+                <div className="text-[11px] text-white/45">{phone(o)}</div>
               </div>
               <OrderStatusBadge status={o.status} />
             </div>
-            <div className="mt-2 flex items-center justify-between">
-              <div className="text-xs text-white/55">
-                {tAdmin('productCountText', { count: o.items.length })}
-              </div>
-              <div className="font-display text-sm font-extrabold text-brand-yellow">
-                {formatPrice(o.total)}
-              </div>
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <select
+                value={o.status}
+                onChange={(e) => handleStatusChange(o.id, e.target.value as OrderStatus)}
+                className="h-8 rounded-lg border border-brand-surface-border bg-brand-dark px-2 text-[11px] font-bold uppercase tracking-wider text-white outline-none"
+              >
+                {STATUS_OPTIONS.map((s) => (
+                  <option key={s} value={s} className="bg-brand-dark text-white">
+                    {statusMeta[s].label}
+                  </option>
+                ))}
+              </select>
+              <div className="font-display text-sm font-extrabold text-brand-yellow">{formatPrice(o.total)}</div>
             </div>
-          </Link>
+          </div>
         ))}
         {filtered.length === 0 && (
           <div className="rounded-xl border border-dashed border-brand-surface-border py-10 text-center text-sm text-white/45">
-            {list.length === 0
-              ? tAdmin('noOrdersText')
-              : tAdmin('noFilterResultsText')}
+            {orders.length === 0 ? tAdmin('noOrdersText') : tAdmin('noFilterResultsText')}
           </div>
         )}
       </div>
