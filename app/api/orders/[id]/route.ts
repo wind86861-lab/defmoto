@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { updateOrderStatus, getOrder } from '@/lib/db';
+import { isAdminRequest } from '@/lib/server/adminAuth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -8,6 +9,9 @@ export async function PATCH(
   req: Request,
   { params }: { params: { id: string } },
 ) {
+  if (!isAdminRequest(req)) {
+    return NextResponse.json({ ok: false }, { status: 401 });
+  }
   let body: { status?: string };
   try {
     body = await req.json();

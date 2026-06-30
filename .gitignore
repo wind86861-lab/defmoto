@@ -49,3 +49,6 @@ storybook-static
 
 # runtime data (operator config)
 .data/
+
+# runtime uploads
+/public/uploads/

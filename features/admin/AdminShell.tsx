@@ -28,7 +28,31 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const mounted = useMounted();
   const isAuthed = useAdminAuth((s) => s.isAuthed);
+  const markAuthed = useAdminAuth((s) => s.markAuthed);
   const logout = useAdminAuth((s) => s.logout);
+
+  // Verify the real server session — stale client state without a valid
+  // cookie must not show the admin (its API calls would 401 anyway).
+  useEffect(() => {
+    if (!mounted || pathname === '/admin/login') return;
+    fetch('/api/admin/login', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.authed) markAuthed();
+        else {
+          logout();
+          router.replace('/admin/login');
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, pathname]);
+
+  const doLogout = () => {
+    fetch('/api/admin/login', { method: 'DELETE' }).catch(() => {});
+    logout();
+    router.replace('/admin/login');
+  };
 
   const nav = [
     { href: '/admin', label: t('navDashboard'), icon: LayoutDashboard, exact: true },
@@ -113,10 +137,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           </Link>
           <button
             type="button"
-            onClick={() => {
-              logout();
-              router.replace('/admin/login');
-            }}
+            onClick={doLogout}
             className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-white/65 transition-colors hover:bg-danger/10 hover:text-danger"
           >
             <LogOut className="h-4 w-4 text-white/45 group-hover:text-danger" />

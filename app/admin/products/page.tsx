@@ -20,6 +20,7 @@ import { useMounted } from '@/hooks/useMounted';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useToast } from '@/components/ui/Toaster';
 import { categoryName } from '@/lib/categoryName';
+import { uploadImage } from '@/lib/uploadImage';
 import type { Product } from '@/types/product';
 
 function slugify(s: string) {
@@ -152,13 +153,16 @@ function ProductCardRow({ product }: { product: Product }) {
     toast.success(t('itemSavedToast'));
   };
 
-  const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    const r = new FileReader();
-    r.onload = () => set({ images: [r.result as string, ...draft.images.slice(1)] });
-    r.readAsDataURL(file);
     e.target.value = '';
+    if (!file) return;
+    try {
+      const url = await uploadImage(file);
+      set({ images: [url, ...draft.images.slice(1)] });
+    } catch {
+      /* upload failed — ignore */
+    }
   };
 
   const onPickCategory = (slug: string) => {

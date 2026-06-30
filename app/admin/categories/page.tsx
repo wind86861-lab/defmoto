@@ -21,6 +21,7 @@ import { useMounted } from '@/hooks/useMounted';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useToast } from '@/components/ui/Toaster';
 import { categoryName } from '@/lib/categoryName';
+import { uploadImage } from '@/lib/uploadImage';
 import type { Category } from '@/types/product';
 
 function slugify(s: string) {
@@ -136,13 +137,15 @@ function CategoryRow({ category, index, total }: { category: Category; index: nu
     toast.success(t('itemSavedToast'));
   };
 
-  const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    const r = new FileReader();
-    r.onload = () => set({ image: r.result as string });
-    r.readAsDataURL(file);
     e.target.value = '';
+    if (!file) return;
+    try {
+      set({ image: await uploadImage(file) });
+    } catch {
+      /* upload failed — ignore */
+    }
   };
 
   return (

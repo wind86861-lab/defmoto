@@ -6,11 +6,15 @@ import {
   isRelayConfigured,
   isOperatorConnected,
 } from '@/lib/server/chatRelay';
+import { isAdminRequest } from '@/lib/server/adminAuth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
+  if (!isAdminRequest(req)) {
+    return NextResponse.json({ ok: false }, { status: 401 });
+  }
   const cfg = await getOperatorConfig();
   return NextResponse.json({
     configured: isRelayConfigured(),
@@ -20,6 +24,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  if (!isAdminRequest(req)) {
+    return NextResponse.json({ ok: false }, { status: 401 });
+  }
   let body: { name?: string; phone?: string; clear?: boolean };
   try {
     body = await req.json();

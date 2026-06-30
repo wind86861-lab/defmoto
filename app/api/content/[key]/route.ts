@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getContent, setContent, hasContent } from '@/lib/db';
+import { isAdminRequest } from '@/lib/server/adminAuth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -21,6 +22,9 @@ export async function PUT(
   req: Request,
   { params }: { params: { key: string } },
 ) {
+  if (!isAdminRequest(req)) {
+    return NextResponse.json({ ok: false }, { status: 401 });
+  }
   if (!ALLOWED.has(params.key)) {
     return NextResponse.json({ ok: false }, { status: 404 });
   }

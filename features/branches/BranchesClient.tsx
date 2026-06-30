@@ -334,6 +334,17 @@ function RequestForm({ branchName }: { branchName: string }) {
     e.preventDefault();
     notify('success');
     setSubmitted(true);
+    void fetch('/api/lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'branch',
+        name: form.name,
+        phone: form.phone,
+        message: form.message,
+        place: branchName,
+      }),
+    }).catch(() => {});
     toast.success(
       t('requestSuccessTitle'),
       t('requestSuccessDesc', { branchName }),
@@ -429,6 +440,18 @@ function FranchiseSection() {
     e.preventDefault();
     notify('success');
     setSubmitted(true);
+    void fetch('/api/lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'franchise',
+        name: form.name,
+        phone: form.phone,
+        city: form.city,
+        budget: form.budget,
+        message: form.message,
+      }),
+    }).catch(() => {});
     toast.success(t('franchiseSuccessTitle'), t('franchiseSuccessDesc'));
     setTimeout(() => {
       setSubmitted(false);

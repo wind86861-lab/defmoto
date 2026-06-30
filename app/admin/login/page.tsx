@@ -13,7 +13,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 export default function AdminLoginPage() {
   const t = useTranslations('admin');
   const router = useRouter();
-  const login = useAdminAuth((s) => s.login);
+  const markAuthed = useAdminAuth((s) => s.markAuthed);
   const { notify } = useHaptic();
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
@@ -24,10 +24,20 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    await new Promise((r) => setTimeout(r, 600));
-    const ok = login(password);
+    let ok = false;
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      ok = res.ok;
+    } catch {
+      ok = false;
+    }
     setLoading(false);
     if (ok) {
+      markAuthed();
       notify('success');
       router.replace('/admin');
     } else {

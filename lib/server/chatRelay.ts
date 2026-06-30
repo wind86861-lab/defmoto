@@ -265,6 +265,22 @@ export async function forwardToOperator(
   return { relayed: false };
 }
 
+/** Send a one-way notification (lead / new order) to the operator's Telegram. */
+export async function notifyOperator(text: string): Promise<boolean> {
+  await ensureLoaded();
+  if (!BOT_TOKEN || state.operatorChatId == null) return false;
+  try {
+    const r = await tg('sendMessage', {
+      chat_id: state.operatorChatId,
+      text,
+      parse_mode: 'Markdown',
+    });
+    return Boolean(r?.ok);
+  } catch {
+    return false;
+  }
+}
+
 /** Operator reply (from the Telegram poller) → stored for the website to poll. */
 export function ingestOperatorReply(replyToMessageId: number, text: string): boolean {
   const sessionId = state.forwarded.get(replyToMessageId);

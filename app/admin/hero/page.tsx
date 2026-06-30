@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/Input';
 import { useSiteSettings, type HeroSlide } from '@/lib/stores/siteSettings';
 import { useMounted } from '@/hooks/useMounted';
 import { useHaptic } from '@/hooks/useHaptic';
+import { uploadImage } from '@/lib/uploadImage';
 
 export default function AdminHeroPage() {
   const t = useTranslations('admin');
@@ -38,27 +39,20 @@ export default function AdminHeroPage() {
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
+    e.target.value = '';
     if (files.length === 0) return;
-    Promise.all(
-      files.map(
-        (file) =>
-          new Promise<string>((resolve) => {
-            const r = new FileReader();
-            r.onload = () => resolve(r.result as string);
-            r.readAsDataURL(file);
+    Promise.all(files.map((file) => uploadImage(file).catch(() => null))).then((urls) => {
+      urls
+        .filter((u): u is string => Boolean(u))
+        .forEach((url) =>
+          addSlide({
+            id: `s_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            image: url,
           }),
-      ),
-    ).then((urls) => {
-      urls.forEach((url) =>
-        addSlide({
-          id: `s_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-          image: url,
-        }),
-      );
+        );
       notify('success');
       flash();
     });
-    e.target.value = '';
   };
 
   const flash = () => {

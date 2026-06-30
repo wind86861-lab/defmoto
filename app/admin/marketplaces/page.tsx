@@ -23,6 +23,7 @@ import {
 } from '@/lib/stores/siteSettings';
 import { useMounted } from '@/hooks/useMounted';
 import { useHaptic } from '@/hooks/useHaptic';
+import { uploadImage } from '@/lib/uploadImage';
 
 export default function AdminMarketplacesPage() {
   const t = useTranslations('admin');
@@ -170,13 +171,15 @@ function MarketplaceRow({
   const set = (patch: Partial<Marketplace>) => { setDraft((d) => ({ ...d, ...patch })); setDirty(true); };
   const save = () => { onChange(draft); setDirty(false); };
 
-  const handleIcon = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleIcon = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    const r = new FileReader();
-    r.onload = () => set({ icon: r.result as string });
-    r.readAsDataURL(file);
     e.target.value = '';
+    if (!file) return;
+    try {
+      set({ icon: await uploadImage(file) });
+    } catch {
+      /* upload failed — ignore */
+    }
   };
 
   return (

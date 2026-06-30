@@ -281,6 +281,19 @@ function BookingForm({ centerName }: { centerName: string }) {
     e.preventDefault();
     notify('success');
     setSubmitted(true);
+    void fetch('/api/lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'service',
+        name: form.name,
+        phone: form.phone,
+        service: form.service,
+        date: form.date,
+        message: form.comment,
+        place: centerName,
+      }),
+    }).catch(() => {});
     toast.success(t('bookSuccess'), t('bookSuccessDesc', { centerName }));
     setTimeout(() => {
       setSubmitted(false);
