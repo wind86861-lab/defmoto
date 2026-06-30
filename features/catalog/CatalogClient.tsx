@@ -12,19 +12,30 @@ import { FilterPanel } from './FilterPanel';
 import { CatalogToolbar, ActiveFilterChips } from './CatalogToolbar';
 import { ProductGrid } from './ProductGrid';
 import { useCatalogQuery } from './useCatalogQuery';
-import { queryProducts, getCategoryBySlug } from '@/mocks/api';
+import { queryProducts } from '@/mocks/api';
 import { mockCategories } from '@/mocks/categories';
+import { mockProducts } from '@/mocks/products';
+import { useContentStore } from '@/lib/stores/content';
+import { useMounted } from '@/hooks/useMounted';
+import { categoryName } from '@/lib/categoryName';
 
 export function CatalogClient() {
   const t = useTranslations('catalog');
   const tCategories = useTranslations('categories');
+  const mounted = useMounted();
+  const storeProducts = useContentStore((s) => s.products);
+  const storeCategories = useContentStore((s) => s.categories);
+  const products = mounted && storeProducts.length ? storeProducts : mockProducts;
+  const categories = mounted && storeCategories.length ? storeCategories : mockCategories;
   const { query, activeFilterCount, reset } = useCatalogQuery();
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const result = useMemo(() => queryProducts(query), [query]);
+  const result = useMemo(() => queryProducts(query, products), [query, products]);
 
-  const category = query.category ? getCategoryBySlug(query.category) : undefined;
-  const title = category ? tCategories(category.slug) : t('title');
+  const category = query.category
+    ? categories.find((c) => c.slug === query.category)
+    : undefined;
+  const title = category ? categoryName(tCategories, category) : t('title');
   const subtitle = category
     ? t('subtitleCount', { count: category.productCount ?? result.total })
     : t('subtitleAll');
@@ -34,7 +45,7 @@ export function CatalogClient() {
       <SectionHeader title={title} subtitle={subtitle} />
 
       {/* === Categories strip — visible always, active highlighted === */}
-      <CategoriesStrip activeSlug={query.category} />
+      <CategoriesStrip activeSlug={query.category} categories={categories} />
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[280px_1fr] lg:gap-8">
         {/* Desktop sidebar */}
@@ -112,7 +123,13 @@ export function CatalogClient() {
   );
 }
 
-function CategoriesStrip({ activeSlug }: { activeSlug?: string }) {
+function CategoriesStrip({
+  activeSlug,
+  categories,
+}: {
+  activeSlug?: string;
+  categories: typeof mockCategories;
+}) {
   const t = useTranslations('catalog');
   return (
     <div className="mt-5">
@@ -138,7 +155,7 @@ function CategoriesStrip({ activeSlug }: { activeSlug?: string }) {
             href="/catalog"
             active={!activeSlug}
           />
-          {mockCategories.map((c) => (
+          {categories.map((c) => (
             <CategoryCard
               key={c.id}
               category={c}

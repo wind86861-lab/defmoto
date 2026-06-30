@@ -1,63 +1,69 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
-  Search,
   Plus,
-  Filter,
-  Edit3,
   Trash2,
-  Eye,
-  Star,
+  RotateCcw,
+  Search,
+  Check,
+  Upload,
+  Package,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { ProductImage } from '@/components/ui/ProductImage';
-import { Badge } from '@/components/ui/Badge';
-import { formatPrice } from '@/lib/format';
-import { mockProducts } from '@/mocks/products';
-import { mockCategories } from '@/mocks/categories';
+import { useContentStore } from '@/lib/stores/content';
+import { useMounted } from '@/hooks/useMounted';
+import { useHaptic } from '@/hooks/useHaptic';
+import { useToast } from '@/components/ui/Toaster';
+import { categoryName } from '@/lib/categoryName';
 import type { Product } from '@/types/product';
+
+function slugify(s: string) {
+  return (
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .slice(0, 50) || `product-${Date.now().toString(36)}`
+  );
+}
 
 export default function AdminProductsPage() {
   const t = useTranslations('admin');
-  const tCommon = useTranslations('common');
-  const tCategories = useTranslations('categories');
-  const [query, setQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('');
-  const [stockFilter, setStockFilter] = useState<'all' | 'in' | 'out'>('all');
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const mounted = useMounted();
+  const { notify } = useHaptic();
+  const products = useContentStore((s) => s.products);
+  const addProduct = useContentStore((s) => s.addProduct);
+  const resetProducts = useContentStore((s) => s.resetProducts);
+  const [q, setQ] = useState('');
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return mockProducts.filter((p) => {
-      if (q && !p.name.toLowerCase().includes(q) && !p.brand?.toLowerCase().includes(q))
-        return false;
-      if (categoryFilter && p.categorySlug !== categoryFilter) return false;
-      if (stockFilter === 'in' && !p.inStock) return false;
-      if (stockFilter === 'out' && p.inStock) return false;
-      return true;
+  const list = mounted ? products : [];
+  const filtered = q.trim()
+    ? list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q.toLowerCase()) ||
+          p.brand?.toLowerCase().includes(q.toLowerCase()),
+      )
+    : list;
+
+  const handleAdd = () => {
+    notify('success');
+    addProduct({
+      id: `p_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      slug: `product-${Date.now().toString(36)}`,
+      name: '',
+      category: '',
+      categorySlug: '',
+      images: [],
+      price: 0,
+      currency: 'UZS',
+      inStock: true,
     });
-  }, [query, categoryFilter, stockFilter]);
-
-  const toggleSelect = (id: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const toggleAll = () => {
-    if (selected.size === filtered.length) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(filtered.map((p) => p.id)));
-    }
   };
 
   return (
@@ -68,277 +74,242 @@ export default function AdminProductsPage() {
             {t('navProducts')}
           </h1>
           <p className="mt-1 text-sm text-white/55">
-            {t('totalLabel')} <span className="font-bold text-white">{mockProducts.length}</span> {t('productUnit', { count: mockProducts.length })} ·{' '}
-            {t('filteredLabel')} <span className="font-bold text-brand-yellow">{filtered.length}</span>
+            {t('prodSectionTitle', { count: list.length })}
           </p>
         </div>
-        <Button size="md" glow leftIcon={<Plus className="h-4 w-4" />}>
-          {t('newProductButton')}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="md"
+            leftIcon={<RotateCcw className="h-4 w-4" />}
+            onClick={() => {
+              if (confirm(t('resetConfirmText'))) {
+                resetProducts();
+                notify('warning');
+              }
+            }}
+          >
+            {t('resetButton')}
+          </Button>
+          <Button size="md" glow leftIcon={<Plus className="h-4 w-4" />} onClick={handleAdd}>
+            {t('prodAddBtn')}
+          </Button>
+        </div>
       </header>
 
-      {/* Filters */}
-      <div className="grid gap-3 sm:grid-cols-[1fr_220px_180px]">
-        <Input
-          placeholder={t('productSearchPlaceholder')}
-          leftIcon={<Search className="h-4 w-4" />}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="h-12 rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 text-base font-semibold text-white outline-none focus:border-brand-yellow/60"
-        >
-          <option value="">{t('allCategoriesOption')}</option>
-          {mockCategories.map((c) => (
-            <option key={c.id} value={c.slug}>
-              {tCategories(c.slug)}
-            </option>
-          ))}
-        </select>
-        <select
-          value={stockFilter}
-          onChange={(e) => setStockFilter(e.target.value as typeof stockFilter)}
-          className="h-12 rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 text-base font-semibold text-white outline-none focus:border-brand-yellow/60"
-        >
-          <option value="all">{t('stockAllOption')}</option>
-          <option value="in">{t('stockInOption')}</option>
-          <option value="out">{t('stockOutOption')}</option>
-        </select>
-      </div>
+      <Input
+        leftIcon={<Search className="h-4 w-4" />}
+        placeholder={t('prodSearchPh')}
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+      />
 
-      {/* Bulk actions */}
-      {selected.size > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-brand-yellow/40 bg-brand-yellow/10 px-4 py-3 animate-fade-in">
-          <span className="text-sm font-bold text-brand-yellow">
-            {t('selectedCountText', { count: selected.size })}
-          </span>
-          <div className="ml-auto flex flex-wrap gap-2">
-            <Button size="sm" variant="secondary" leftIcon={<Filter className="h-3 w-3" />}>
-              {t('changeStockButton')}
-            </Button>
-            <Button size="sm" variant="danger" leftIcon={<Trash2 className="h-3 w-3" />}>
-              {t('bulkDeleteButton')}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
-              {tCommon('cancel')}
-            </Button>
-          </div>
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-brand-surface-border py-12 text-center">
+          <Package className="mb-3 h-9 w-9 text-white/30" />
+          <p className="text-sm font-semibold text-white/65">{t('prodNoneTitle')}</p>
+          <p className="mt-1 text-xs text-white/45">{t('prodNoneDesc')}</p>
         </div>
+      ) : (
+        <ul className="space-y-3">
+          {filtered.map((p) => (
+            <ProductCardRow key={p.id} product={p} />
+          ))}
+        </ul>
       )}
-
-      {/* Table — desktop */}
-      <div className="hidden overflow-hidden rounded-2xl border border-brand-surface-border bg-brand-surface lg:block">
-        <table className="w-full">
-          <thead className="bg-brand-dark/40 text-left text-[11px] font-bold uppercase tracking-wider text-white/45">
-            <tr>
-              <th className="w-10 px-4 py-3">
-                <input
-                  type="checkbox"
-                  checked={selected.size === filtered.length && filtered.length > 0}
-                  onChange={toggleAll}
-                  className="h-4 w-4 cursor-pointer accent-brand-yellow"
-                />
-              </th>
-              <th className="px-4 py-3">{t('tableHeadProduct')}</th>
-              <th className="px-4 py-3">{t('tableHeadCategory')}</th>
-              <th className="px-4 py-3">{t('tableHeadPrice')}</th>
-              <th className="px-4 py-3">{t('tableHeadStatus')}</th>
-              <th className="px-4 py-3">{t('tableHeadRating')}</th>
-              <th className="px-4 py-3 text-right">{t('tableHeadActions')}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-brand-surface-border">
-            {filtered.map((p) => (
-              <Row
-                key={p.id}
-                product={p}
-                selected={selected.has(p.id)}
-                onToggle={() => toggleSelect(p.id)}
-              />
-            ))}
-          </tbody>
-        </table>
-        {filtered.length === 0 && (
-          <div className="px-4 py-12 text-center text-sm text-white/45">
-            {t('noProductsFoundText')}
-          </div>
-        )}
-      </div>
-
-      {/* Cards — mobile */}
-      <div className="space-y-2 lg:hidden">
-        {filtered.map((p) => (
-          <MobileCard
-            key={p.id}
-            product={p}
-            selected={selected.has(p.id)}
-            onToggle={() => toggleSelect(p.id)}
-          />
-        ))}
-      </div>
     </div>
   );
 }
 
-function Row({
-  product,
-  selected,
-  onToggle,
-}: {
-  product: Product;
-  selected: boolean;
-  onToggle: () => void;
-}) {
+function ProductCardRow({ product }: { product: Product }) {
   const t = useTranslations('admin');
   const tCategories = useTranslations('categories');
+  const { notify } = useHaptic();
+  const toast = useToast();
+  const update = useContentStore((s) => s.updateProduct);
+  const remove = useContentStore((s) => s.removeProduct);
+  const categories = useContentStore((s) => s.categories);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const [draft, setDraft] = useState<Product>(product);
+  const [dirty, setDirty] = useState(false);
+  const [open, setOpen] = useState(!product.name);
+  useEffect(() => {
+    setDraft(product);
+    setDirty(false);
+  }, [product]);
+  const set = (patch: Partial<Product>) => {
+    setDraft((d) => ({ ...d, ...patch }));
+    setDirty(true);
+  };
+
+  const save = () => {
+    const next = { ...draft };
+    if (!next.slug || next.slug.startsWith('product-')) next.slug = slugify(next.name);
+    update(product.id, next);
+    setDirty(false);
+    notify('success');
+    toast.success(t('itemSavedToast'));
+  };
+
+  const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const r = new FileReader();
+    r.onload = () => set({ images: [r.result as string, ...draft.images.slice(1)] });
+    r.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const onPickCategory = (slug: string) => {
+    const c = categories.find((x) => x.slug === slug);
+    set({ categorySlug: slug, category: c ? c.name : '' });
+  };
 
   return (
-    <tr className={cn('transition-colors hover:bg-white/3', selected && 'bg-brand-yellow/5')}>
-      <td className="px-4 py-3">
-        <input
-          type="checkbox"
-          checked={selected}
-          onChange={onToggle}
-          className="h-4 w-4 cursor-pointer accent-brand-yellow"
-        />
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-3">
+    <li className="rounded-2xl border border-brand-surface-border bg-brand-surface p-4">
+      <div className="flex items-center gap-3">
+        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-brand-dark">
           <ProductImage
-            src={product.images[0]}
-            alt={product.name}
-            className="h-12 w-12 shrink-0 rounded-lg object-cover"
-            fallbackClassName="h-12 w-12 shrink-0 rounded-lg"
+            src={draft.images[0]}
+            alt={draft.name}
+            className="h-full w-full object-cover"
+            fallbackClassName="h-full w-full"
           />
-          <div className="min-w-0">
-            {product.brand && (
-              <p className="text-[10px] font-bold uppercase tracking-wider text-white/45">
-                {product.brand}
-              </p>
-            )}
-            <p className="line-clamp-1 text-sm font-semibold">{product.name}</p>
+        </div>
+        <button type="button" onClick={() => setOpen((o) => !o)} className="min-w-0 flex-1 text-left">
+          <p className="truncate text-sm font-bold">{draft.name || t('fldProdName')}</p>
+          <p className="text-[11px] text-white/45">
+            {draft.price ? `${draft.price.toLocaleString('ru-RU')} so'm` : '—'}
+            {draft.brand ? ` · ${draft.brand}` : ''}
+          </p>
+        </button>
+        {dirty && (
+          <span className="hidden text-[11px] font-semibold text-brand-yellow sm:inline">
+            {t('unsavedHint')}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={save}
+          disabled={!dirty}
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-bold transition-all',
+            dirty
+              ? 'bg-gradient-yellow text-brand-dark shadow-glow-sm hover:brightness-110'
+              : 'cursor-not-allowed bg-brand-surface-elevated text-white/35',
+          )}
+        >
+          <Check className="h-4 w-4" /> {t('itemSaveBtn')}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (confirm(t('locDeleteConfirm'))) remove(product.id);
+          }}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/55 transition-colors hover:bg-danger/15 hover:text-danger"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+
+      {open && (
+        <div className="mt-4 grid gap-2.5 border-t border-brand-surface-border pt-4 sm:grid-cols-2">
+          <PF label={t('fldProdName')} full>
+            <Input value={draft.name} onChange={(e) => set({ name: e.target.value })} />
+          </PF>
+          <PF label={t('fldProdBrand')}>
+            <Input value={draft.brand ?? ''} onChange={(e) => set({ brand: e.target.value })} />
+          </PF>
+          <PF label={t('fldProdCategory')}>
+            <select
+              value={draft.categorySlug}
+              onChange={(e) => onPickCategory(e.target.value)}
+              className="h-12 w-full rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 text-base font-semibold text-white outline-none focus:border-brand-yellow/60"
+            >
+              <option value="">—</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.slug}>
+                  {categoryName(tCategories, c)}
+                </option>
+              ))}
+            </select>
+          </PF>
+          <PF label={t('fldProdPrice')}>
+            <Input value={String(draft.price)} onChange={(e) => set({ price: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
+          </PF>
+          <PF label={t('fldProdOldPrice')}>
+            <Input value={draft.oldPrice != null ? String(draft.oldPrice) : ''} onChange={(e) => set({ oldPrice: e.target.value ? Number(e.target.value.replace(/\D/g, '')) : undefined })} />
+          </PF>
+          <PF label={t('fldProdRating')}>
+            <Input value={draft.rating != null ? String(draft.rating) : ''} onChange={(e) => set({ rating: e.target.value ? Number(e.target.value) : undefined })} />
+          </PF>
+          <PF label={t('fldProdReviews')}>
+            <Input value={draft.reviewCount != null ? String(draft.reviewCount) : ''} onChange={(e) => set({ reviewCount: e.target.value ? Number(e.target.value.replace(/\D/g, '')) : undefined })} />
+          </PF>
+          <PF label={t('fldProdBadges')} full>
+            <Input value={(draft.badges ?? []).join(', ')} onChange={(e) => set({ badges: e.target.value.split(',').map((x) => x.trim()).filter(Boolean) })} />
+          </PF>
+          <PF label={t('fldProdDesc')} full>
+            <textarea
+              value={draft.description ?? ''}
+              onChange={(e) => set({ description: e.target.value })}
+              rows={2}
+              className="w-full rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-2.5 text-base text-white outline-none focus:border-brand-yellow/60"
+            />
+          </PF>
+
+          <PF label={t('fldProdImage')} full>
+            <div className="flex items-center gap-3">
+              <span className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-brand-surface-border bg-brand-dark">
+                <ProductImage src={draft.images[0]} alt="" className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
+              </span>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-2.5 text-sm font-semibold text-white/80 hover:border-brand-yellow/40 hover:text-brand-yellow"
+              >
+                <Upload className="h-4 w-4" /> {t('uploadImageBtn')}
+              </button>
+              <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={handleImage} />
+            </div>
+          </PF>
+          <PF label={t('fldProdImageMore')} full>
+            <Input
+              value={draft.images.slice(1).join(', ')}
+              onChange={(e) =>
+                set({
+                  images: [draft.images[0] ?? '', ...e.target.value.split(',').map((x) => x.trim()).filter(Boolean)].filter(Boolean),
+                })
+              }
+            />
+          </PF>
+
+          <div className="flex flex-wrap items-center gap-4 sm:col-span-2">
+            <Toggle checked={draft.inStock} onChange={(v) => set({ inStock: v })} label={t('fldProdInStock')} />
+            <Toggle checked={Boolean(draft.isNew)} onChange={(v) => set({ isNew: v })} label={t('fldProdNew')} />
+            <Toggle checked={Boolean(draft.isBestseller)} onChange={(v) => set({ isBestseller: v })} label={t('fldProdBestseller')} />
           </div>
         </div>
-      </td>
-      <td className="px-4 py-3 text-sm text-white/65">{tCategories(product.categorySlug)}</td>
-      <td className="px-4 py-3">
-        <div className="font-display text-sm font-extrabold text-brand-yellow">
-          {formatPrice(product.price)}
-        </div>
-        {product.oldPrice && (
-          <div className="text-[10px] text-white/35 line-through">
-            {formatPrice(product.oldPrice)}
-          </div>
-        )}
-      </td>
-      <td className="px-4 py-3">
-        {product.inStock ? (
-          <Badge variant="success" size="sm">
-            {t('stockInOption')}
-          </Badge>
-        ) : (
-          <Badge variant="danger" size="sm">
-            {t('stockOutOption')}
-          </Badge>
-        )}
-      </td>
-      <td className="px-4 py-3">
-        {typeof product.rating === 'number' ? (
-          <div className="flex items-center gap-1 text-sm">
-            <Star className="h-3 w-3 fill-brand-yellow text-brand-yellow" />
-            <span className="font-semibold">{product.rating}</span>
-            <span className="text-[11px] text-white/45">({product.reviewCount})</span>
-          </div>
-        ) : (
-          <span className="text-xs text-white/35">—</span>
-        )}
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center justify-end gap-1">
-          <Link
-            href={`/product/${product.slug}`}
-            target="_blank"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/55 transition-colors hover:bg-white/8 hover:text-brand-yellow"
-            aria-label={t('viewOnSiteAria')}
-          >
-            <Eye className="h-3.5 w-3.5" />
-          </Link>
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/55 transition-colors hover:bg-white/8 hover:text-brand-yellow"
-            aria-label={t('editAria')}
-          >
-            <Edit3 className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/55 transition-colors hover:bg-danger/15 hover:text-danger"
-            aria-label={t('deleteAria')}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </td>
-    </tr>
+      )}
+    </li>
   );
 }
 
-function MobileCard({
-  product,
-  selected,
-  onToggle,
-}: {
-  product: Product;
-  selected: boolean;
-  onToggle: () => void;
-}) {
-  const t = useTranslations('admin');
-
+function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
-    <div
-      className={cn(
-        'flex items-start gap-3 rounded-xl border bg-brand-surface p-3 transition-colors',
-        selected ? 'border-brand-yellow bg-brand-yellow/5' : 'border-brand-surface-border',
-      )}
-    >
-      <input
-        type="checkbox"
-        checked={selected}
-        onChange={onToggle}
-        className="mt-1 h-4 w-4 cursor-pointer accent-brand-yellow"
-      />
-      <ProductImage
-        src={product.images[0]}
-        alt={product.name}
-        className="h-14 w-14 shrink-0 rounded-lg object-cover"
-        fallbackClassName="h-14 w-14 shrink-0 rounded-lg"
-      />
-      <div className="min-w-0 flex-1">
-        {product.brand && (
-          <p className="text-[10px] font-bold uppercase tracking-wider text-white/45">
-            {product.brand}
-          </p>
-        )}
-        <p className="line-clamp-2 text-sm font-semibold leading-tight">
-          {product.name}
-        </p>
-        <div className="mt-1 flex items-center gap-2">
-          <span className="font-display text-sm font-extrabold text-brand-yellow">
-            {formatPrice(product.price)}
-          </span>
-          {product.inStock ? (
-            <Badge variant="success" size="sm">
-              {t('stockInOption')}
-            </Badge>
-          ) : (
-            <Badge variant="danger" size="sm">
-              {t('stockOutOption')}
-            </Badge>
-          )}
-        </div>
-      </div>
-    </div>
+    <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4 cursor-pointer accent-brand-yellow" />
+      {label}
+    </label>
+  );
+}
+
+function PF({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) {
+  return (
+    <label className={cn('block', full && 'sm:col-span-2')}>
+      <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-white/45">{label}</span>
+      {children}
+    </label>
   );
 }

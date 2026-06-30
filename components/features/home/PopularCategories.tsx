@@ -4,11 +4,20 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
 import { CategoryCard } from '@/components/features/CategoryCard';
+import { useContentStore } from '@/lib/stores/content';
+import { useMounted } from '@/hooks/useMounted';
 import type { Category } from '@/types/product';
 
 export function PopularCategories({ categories }: { categories: Category[] }) {
   const t = useTranslations('home');
   const tCommon = useTranslations('common');
+  const mounted = useMounted();
+  const storeCategories = useContentStore((s) => s.categories);
+  // Admin-managed categories (with images) override the server-passed list.
+  const list =
+    mounted && storeCategories.length
+      ? storeCategories.filter((c) => c.image).slice(0, 5)
+      : categories;
 
   return (
     <section className="relative pb-10 pt-7 sm:pb-14 sm:pt-9 lg:pt-11">
@@ -30,7 +39,7 @@ export function PopularCategories({ categories }: { categories: Category[] }) {
         {/* Mobile: horizontal scroll. Desktop: 5-column grid */}
         <div className="-mx-4 overflow-x-auto px-4 scrollbar-hide sm:mx-0 sm:px-0">
           <div className="flex gap-3 sm:grid sm:grid-cols-2 sm:gap-4 lg:grid-cols-5">
-            {categories.map((cat) => (
+            {list.map((cat) => (
               <CategoryCard key={cat.id} category={cat} />
             ))}
           </div>

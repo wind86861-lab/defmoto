@@ -40,7 +40,10 @@ const sortFns: Record<SortKey, (a: Product, b: Product) => number> = {
   rating: (a, b) => (b.rating ?? 0) - (a.rating ?? 0),
 };
 
-export function queryProducts(q: ProductQuery = {}): ProductListResponse {
+export function queryProducts(
+  q: ProductQuery = {},
+  source: Product[] = mockProducts,
+): ProductListResponse {
   const {
     category,
     brands = [],
@@ -54,7 +57,7 @@ export function queryProducts(q: ProductQuery = {}): ProductListResponse {
     pageSize = 12,
   } = q;
 
-  let items = [...mockProducts];
+  let items = [...source];
 
   if (category) {
     items = items.filter((p) => p.categorySlug === category);
@@ -95,11 +98,11 @@ export function queryProducts(q: ProductQuery = {}): ProductListResponse {
   const paged = items.slice(start, start + pageSize);
 
   // Facets — based on full (filtered) set, so user can refine further
-  const allPrices = mockProducts.map((p) => p.price);
+  const allPrices = source.map((p) => p.price);
   const brandCounts = new Map<string, number>();
   const colorCounts = new Map<string, { hex: string; name: string; count: number }>();
 
-  for (const p of mockProducts) {
+  for (const p of source) {
     if (p.brand) {
       brandCounts.set(p.brand, (brandCounts.get(p.brand) ?? 0) + 1);
     }

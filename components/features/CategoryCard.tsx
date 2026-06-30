@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ProductImage } from '@/components/ui/ProductImage';
+import { categoryName as resolveCategoryName } from '@/lib/categoryName';
 import type { Category } from '@/types/product';
 
 interface CategoryCardProps {
@@ -16,7 +17,9 @@ interface CategoryCardProps {
 export function CategoryCard({ category, href, active }: CategoryCardProps) {
   const t = useTranslations('common');
   const tCategories = useTranslations('categories');
-  const categoryName = category.slug ? tCategories(category.slug) : category.name;
+  const categoryName = category.slug
+    ? resolveCategoryName(tCategories, category)
+    : category.name;
 
   return (
     <Link
