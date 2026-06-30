@@ -31,7 +31,9 @@ export async function POST(req: Request) {
     sameSite: 'lax',
     path: '/',
     maxAge: ADMIN_COOKIE_MAX_AGE,
-    secure: process.env.NODE_ENV === 'production',
+    // Only mark Secure when actually served over HTTPS, otherwise the cookie
+    // would never be sent back on the current HTTP host (locking admins out).
+    secure: (process.env.NEXT_PUBLIC_APP_URL || '').startsWith('https'),
   });
   return res;
 }
