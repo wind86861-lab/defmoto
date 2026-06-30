@@ -4,6 +4,7 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { Footer } from '@/components/layout/Footer';
 import { Reveal } from '@/components/ui/Reveal';
 import { Hero } from '@/components/features/home/Hero';
+import { MarketplaceDealBanner } from '@/components/features/MarketplaceDealBanner';
 import { PopularCategories } from '@/components/features/home/PopularCategories';
 import { ProductShowcase } from '@/components/features/home/ProductShowcase';
 import { Advantages } from '@/components/features/home/Advantages';
@@ -26,6 +27,13 @@ export default async function HomePage() {
           can't cause horizontal scroll on mobile (clip keeps sticky working) */}
       <main className="overflow-x-clip pb-20 md:pb-0">
         <Hero />
+
+        {/* "Cheaper than marketplaces" promo — between hero and categories */}
+        <div className="mx-auto max-w-[1320px] px-4 pt-7 sm:px-6 sm:pt-9 lg:px-8">
+          <Reveal direction="up">
+            <MarketplaceDealBanner withCta />
+          </Reveal>
+        </div>
 
         <Reveal direction="left">
           <PopularCategories categories={popularCategories} />

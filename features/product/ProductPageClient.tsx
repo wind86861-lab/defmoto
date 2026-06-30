@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Star, ShoppingBag, Heart, Share2 } from 'lucide-react';
 import { PriceCompare } from '@/components/features/PriceCompare';
+import { MarketplaceDealBanner } from '@/components/features/MarketplaceDealBanner';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ProductCard } from '@/components/features/ProductCard';
@@ -102,6 +103,14 @@ export function ProductPageClient({ product, similar }: Props) {
     product.oldPrice && product.oldPrice > product.price
       ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
       : 0;
+
+  const maxCompetitor = product.competitorPrices?.length
+    ? Math.max(...product.competitorPrices.map((c) => c.price))
+    : 0;
+  const marketSavings = maxCompetitor > product.price ? maxCompetitor - product.price : 0;
+  const savingsText = marketSavings
+    ? formatPrice(marketSavings).replace(/[^\d\s]/g, '').trim()
+    : '';
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-32 pt-6 sm:px-6 sm:pb-10 sm:pt-10">
@@ -206,12 +215,15 @@ export function ProductPageClient({ product, similar }: Props) {
             </div>
           </div>
 
-          {/* USP — Price compare */}
+          {/* USP — "cheaper than marketplaces" banner + price compare */}
           {product.competitorPrices && product.competitorPrices.length > 0 && (
-            <PriceCompare
-              ourPrice={product.price}
-              competitors={product.competitorPrices}
-            />
+            <>
+              {savingsText && <MarketplaceDealBanner savings={savingsText} />}
+              <PriceCompare
+                ourPrice={product.price}
+                competitors={product.competitorPrices}
+              />
+            </>
           )}
 
           {/* Variants */}

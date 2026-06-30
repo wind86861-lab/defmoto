@@ -128,7 +128,11 @@
     "yandex": "Yandex Market",
     "ourPrice": "DEFT MOTO",
     "youSave": "You save {amount} UZS!",
-    "cheapest": "Lowest price"
+    "cheapest": "Lowest price",
+    "cheaperHeading": "CHEAPER THAN MARKETPLACES!",
+    "cheaperSubtitle": "Cheaper than {markets} prices",
+    "cheaperHomeTagline": "The lowest prices on the market — straight from our warehouse, no markups",
+    "cheaperCta": "Browse catalog"
   },
   "demo": {
     "badge": "DEMO MODE",

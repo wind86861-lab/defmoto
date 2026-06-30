@@ -128,7 +128,11 @@
     "yandex": "Yandex Market",
     "ourPrice": "DEFT MOTO",
     "youSave": "Siz {amount} so'm tejaysiz!",
-    "cheapest": "Eng arzon"
+    "cheapest": "Eng arzon",
+    "cheaperHeading": "MARKETPLEYSLARDAN ARZON!",
+    "cheaperSubtitle": "{markets} narxlaridan arzon",
+    "cheaperHomeTagline": "Bozordagi eng arzon narxlar — toʻgʻridan-toʻgʻri ombordan, ortiqcha toʻlovsiz",
+    "cheaperCta": "Katalogni koʻrish"
   },
   "demo": {
     "badge": "DEMO REJIMI",
