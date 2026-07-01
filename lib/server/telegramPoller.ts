@@ -17,6 +17,7 @@ import {
   tryBindOperator,
   handleCallback,
   startKeyboard,
+  customerKeyboard,
   ensureRelayLoaded,
 } from './chatRelay';
 
@@ -64,39 +65,49 @@ async function handleUpdate(update: TgUpdate) {
   if (chatId == null) return;
   const text = (msg.text || '').trim();
 
-  // 1) /start → operator verifies by sharing their contact. Random visitors
-  //    are never bound — only the admin-configured phone can become operator.
+  // 1) /start
+  //    - the bound operator          → operator dashboard
+  //    - everyone else               → ordinary-user welcome + shop button
+  //    - operator configured, unbound→ also offer the operator to verify
+  //      (only the admin-configured phone can ever become operator)
   if (text.startsWith('/start')) {
     const outcome = await tryBindOperator(chatId);
+
     if (outcome === 'already') {
       await tg('sendMessage', {
         chat_id: chatId,
         text:
-          '✅ Siz allaqachon DEFT MOTO operatorisiz.\n\n' +
+          '✅ Siz DEFT MOTO operatorisiz.\n\n' +
           'Mijoz savollari shu yerga keladi — javob berish uchun xabarga ' +
           'reply qiling yoki tez javob tugmalaridan foydalaning.',
         reply_markup: startKeyboard(),
       });
-    } else if (outcome === 'not-configured') {
+      return;
+    }
+
+    // Ordinary user — always welcomed and offered the shop.
+    await tg('sendMessage', {
+      chat_id: chatId,
+      text:
+        'Assalomu alaykum! 👋\n\n' +
+        '*DEFT MOTO* — mototsikllar, ehtiyot qismlar va aksessuarlar. ' +
+        'Doʻkonni ochish uchun quyidagi tugmani bosing 👇',
+      parse_mode: 'Markdown',
+      reply_markup: customerKeyboard(),
+    });
+
+    // If the admin has configured an operator but nobody is bound yet, let
+    // that operator verify by sharing their contact.
+    if (outcome === 'need-contact') {
       await tg('sendMessage', {
         chat_id: chatId,
         text:
-          'ℹ️ Bu DEFT MOTO operator boti.\n\n' +
-          'Operator hali admin panelida sozlanmagan. Iltimos, avval admin ' +
-          'paneldan operator telefon raqamini kiriting, soʻng shu yerda ' +
-          'kontaktingizni yuboring.',
-      });
-    } else {
-      // need-contact
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text:
-          '👋 DEFT MOTO operator ulanishi.\n\n' +
-          'Tasdiqlash uchun pastdagi tugma orqali kontaktingizni yuboring. ' +
-          'Faqat admin belgilagan raqam operator sifatida ulanadi.',
+          'ℹ️ Agar siz DEFT MOTO operatori boʻlsangiz, tasdiqlash uchun ' +
+          'pastdagi tugma orqali kontaktingizni yuboring. Faqat admin ' +
+          'belgilagan raqam operator sifatida ulanadi.',
         reply_markup: {
           keyboard: [
-            [{ text: '📱 Kontaktni yuborish', request_contact: true }],
+            [{ text: '📱 Operator sifatida ulanish', request_contact: true }],
           ],
           resize_keyboard: true,
           one_time_keyboard: true,
@@ -125,10 +136,14 @@ async function handleUpdate(update: TgUpdate) {
     } else if (outcome === 'not-configured') {
       await tg('sendMessage', {
         chat_id: chatId,
-        text:
-          'ℹ️ Operator hali admin panelida sozlanmagan. Avval admin paneldan ' +
-          'operator telefon raqamini kiriting.',
+        text: 'Rahmat! Doʻkonni ochish uchun tugmani bosing 👇',
         reply_markup: { remove_keyboard: true },
+      });
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: '*DEFT MOTO*',
+        parse_mode: 'Markdown',
+        reply_markup: customerKeyboard(),
       });
     } else {
       await tg('sendMessage', {

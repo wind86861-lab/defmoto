@@ -394,6 +394,14 @@ export function startKeyboard() {
   return { inline_keyboard: rows };
 }
 
+/** Inline keyboard shown to ordinary users — opens the shop. */
+export function customerKeyboard() {
+  const site = process.env.NEXT_PUBLIC_APP_URL || '';
+  const rows: { text: string; url?: string }[][] = [];
+  if (site) rows.push([{ text: '🛍 Doʻkonni ochish', url: site }]);
+  return { inline_keyboard: rows };
+}
+
 /** Send a one-way notification (lead / new order) to the operator's Telegram. */
 export async function notifyOperator(text: string): Promise<boolean> {
   await ensureLoaded();
