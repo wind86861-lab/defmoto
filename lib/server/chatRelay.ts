@@ -188,17 +188,33 @@ export async function clearOperator() {
   await persistConfig();
 }
 
+export type BindOutcome =
+  | 'bound'
+  | 'already'
+  | 'need-contact'
+  | 'phone-mismatch'
+  | 'not-configured';
+
 export async function tryBindOperator(
   chatId: number,
   sharedPhone?: string,
-): Promise<'bound' | 'need-contact' | 'phone-mismatch'> {
+): Promise<BindOutcome> {
   await ensureLoaded();
-  const cfg = state.operatorConfig;
-  if (!cfg || !cfg.phone) {
-    state.operatorChatId = chatId;
-    await persistConfig();
-    return 'bound';
+
+  // Already the bound operator — never re-ask or re-bind.
+  if (state.operatorChatId != null && state.operatorChatId === chatId) {
+    return 'already';
   }
+
+  const cfg = state.operatorConfig;
+  // No operator configured by the admin yet → never auto-bind a random
+  // visitor. The admin must set the operator phone in the admin panel first.
+  if (!cfg || !cfg.phone) {
+    return 'not-configured';
+  }
+
+  // A configured operator must verify by sharing their contact; only the
+  // matching phone binds.
   if (!sharedPhone) return 'need-contact';
   if (normalizePhone(sharedPhone).endsWith(cfg.phone.slice(-9))) {
     state.operatorChatId = chatId;

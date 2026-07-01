@@ -64,24 +64,36 @@ async function handleUpdate(update: TgUpdate) {
   if (chatId == null) return;
   const text = (msg.text || '').trim();
 
-  // 1) /start → ask the operator to verify by sharing their contact.
+  // 1) /start → operator verifies by sharing their contact. Random visitors
+  //    are never bound — only the admin-configured phone can become operator.
   if (text.startsWith('/start')) {
     const outcome = await tryBindOperator(chatId);
-    if (outcome === 'bound') {
+    if (outcome === 'already') {
       await tg('sendMessage', {
         chat_id: chatId,
         text:
-          '✅ Siz DEFT MOTO operatori sifatida ulandingiz.\n\n' +
+          '✅ Siz allaqachon DEFT MOTO operatorisiz.\n\n' +
           'Mijoz savollari shu yerga keladi — javob berish uchun xabarga ' +
           'reply qiling yoki tez javob tugmalaridan foydalaning.',
         reply_markup: startKeyboard(),
       });
+    } else if (outcome === 'not-configured') {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text:
+          'ℹ️ Bu DEFT MOTO operator boti.\n\n' +
+          'Operator hali admin panelida sozlanmagan. Iltimos, avval admin ' +
+          'paneldan operator telefon raqamini kiriting, soʻng shu yerda ' +
+          'kontaktingizni yuboring.',
+      });
     } else {
+      // need-contact
       await tg('sendMessage', {
         chat_id: chatId,
         text:
           '👋 DEFT MOTO operator ulanishi.\n\n' +
-          'Tasdiqlash uchun pastdagi tugma orqali kontaktingizni yuboring.',
+          'Tasdiqlash uchun pastdagi tugma orqali kontaktingizni yuboring. ' +
+          'Faqat admin belgilagan raqam operator sifatida ulanadi.',
         reply_markup: {
           keyboard: [
             [{ text: '📱 Kontaktni yuborish', request_contact: true }],
@@ -97,7 +109,7 @@ async function handleUpdate(update: TgUpdate) {
   // 2) Shared contact → verify phone and bind.
   if (msg.contact?.phone_number) {
     const outcome = await tryBindOperator(chatId, msg.contact.phone_number);
-    if (outcome === 'bound') {
+    if (outcome === 'bound' || outcome === 'already') {
       await tg('sendMessage', {
         chat_id: chatId,
         text:
@@ -109,6 +121,14 @@ async function handleUpdate(update: TgUpdate) {
         chat_id: chatId,
         text: 'Foydali havolalar:',
         reply_markup: startKeyboard(),
+      });
+    } else if (outcome === 'not-configured') {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text:
+          'ℹ️ Operator hali admin panelida sozlanmagan. Avval admin paneldan ' +
+          'operator telefon raqamini kiriting.',
+        reply_markup: { remove_keyboard: true },
       });
     } else {
       await tg('sendMessage', {
