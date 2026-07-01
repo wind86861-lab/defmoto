@@ -17,7 +17,9 @@ import {
   tryBindOperator,
   handleCallback,
   startKeyboard,
-  customerKeyboard,
+  customerMenuKeyboard,
+  handleCustomerMenu,
+  isOperatorChat,
   ensureRelayLoaded,
 } from './chatRelay';
 
@@ -85,15 +87,15 @@ async function handleUpdate(update: TgUpdate) {
       return;
     }
 
-    // Ordinary user — always welcomed and offered the shop.
+    // Ordinary user — always welcomed with the persistent bottom menu.
     await tg('sendMessage', {
       chat_id: chatId,
       text:
         'Assalomu alaykum! 👋\n\n' +
         '*DEFT MOTO* — mototsikllar, ehtiyot qismlar va aksessuarlar. ' +
-        'Doʻkonni ochish uchun quyidagi tugmani bosing 👇',
+        'Quyidagi menyudan foydalaning 👇',
       parse_mode: 'Markdown',
-      reply_markup: customerKeyboard(),
+      reply_markup: customerMenuKeyboard(),
     });
 
     // If the admin has configured an operator but nobody is bound yet, let
@@ -136,14 +138,8 @@ async function handleUpdate(update: TgUpdate) {
     } else if (outcome === 'not-configured') {
       await tg('sendMessage', {
         chat_id: chatId,
-        text: 'Rahmat! Doʻkonni ochish uchun tugmani bosing 👇',
-        reply_markup: { remove_keyboard: true },
-      });
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text: '*DEFT MOTO*',
-        parse_mode: 'Markdown',
-        reply_markup: customerKeyboard(),
+        text: 'Rahmat! Quyidagi menyudan foydalaning 👇',
+        reply_markup: customerMenuKeyboard(),
       });
     } else {
       await tg('sendMessage', {
@@ -160,6 +156,12 @@ async function handleUpdate(update: TgUpdate) {
   // 3) Operator answered a forwarded question (reply-to).
   if (msg.reply_to_message?.message_id && text) {
     ingestOperatorReply(msg.reply_to_message.message_id, text);
+    return;
+  }
+
+  // 4) Ordinary user tapped a persistent menu button.
+  if (text && !isOperatorChat(chatId)) {
+    await handleCustomerMenu(chatId, text);
   }
 }
 
