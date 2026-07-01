@@ -17,6 +17,7 @@ import {
   tryBindOperator,
   handleCallback,
   startKeyboard,
+  ensureRelayLoaded,
 } from './chatRelay';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
@@ -128,6 +129,8 @@ async function handleUpdate(update: TgUpdate) {
 }
 
 async function loop() {
+  // Warm the persisted operator binding into memory on startup.
+  await ensureRelayLoaded();
   try {
     await tg('deleteWebhook', { drop_pending_updates: false });
   } catch {

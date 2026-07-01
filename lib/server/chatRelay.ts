@@ -156,6 +156,11 @@ function persistSessions() {
   }, 400);
 }
 
+/** Warm the in-memory state from disk (operator binding/config) on startup. */
+export async function ensureRelayLoaded(): Promise<void> {
+  await ensureLoaded();
+}
+
 export function isRelayConfigured(): boolean {
   return Boolean(BOT_TOKEN);
 }
