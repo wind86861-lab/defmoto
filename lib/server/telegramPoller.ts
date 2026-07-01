@@ -12,7 +12,12 @@
  *  reply-to a message→ routed back to the originating website session
  */
 
-import { ingestOperatorReply, tryBindOperator } from './chatRelay';
+import {
+  ingestOperatorReply,
+  tryBindOperator,
+  handleCallback,
+  startKeyboard,
+} from './chatRelay';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 
@@ -38,9 +43,20 @@ interface TgUpdate {
     contact?: { phone_number?: string; user_id?: number };
     reply_to_message?: { message_id: number };
   };
+  callback_query?: {
+    id: string;
+    data?: string;
+    message?: { message_id?: number };
+  };
 }
 
 async function handleUpdate(update: TgUpdate) {
+  // Inline button taps.
+  if (update.callback_query) {
+    await handleCallback(update.callback_query);
+    return;
+  }
+
   const msg = update.message;
   if (!msg) return;
   const chatId = msg.chat?.id;
@@ -56,7 +72,8 @@ async function handleUpdate(update: TgUpdate) {
         text:
           '✅ Siz DEFT MOTO operatori sifatida ulandingiz.\n\n' +
           'Mijoz savollari shu yerga keladi — javob berish uchun xabarga ' +
-          'reply qiling.',
+          'reply qiling yoki tez javob tugmalaridan foydalaning.',
+        reply_markup: startKeyboard(),
       });
     } else {
       await tg('sendMessage', {
@@ -86,6 +103,11 @@ async function handleUpdate(update: TgUpdate) {
           '✅ Tasdiqlandi! Siz endi DEFT MOTO operatorisiz. Mijoz xabarlari ' +
           'shu yerga keladi — reply qilib javob bering.',
         reply_markup: { remove_keyboard: true },
+      });
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: 'Foydali havolalar:',
+        reply_markup: startKeyboard(),
       });
     } else {
       await tg('sendMessage', {

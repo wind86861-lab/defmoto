@@ -246,13 +246,14 @@ export async function forwardToOperator(
   const shortId = sessionId.slice(-6);
   const payload =
     `👤 *${who}*  \`#${shortId}\`\n\n${text}\n\n` +
-    `↩️ _Javob berish uchun shu xabarga reply qiling._`;
+    `↩️ _Reply qilib yozing yoki tez javob tugmalaridan foydalaning:_`;
 
   try {
     const r = await tg('sendMessage', {
       chat_id: state.operatorChatId,
       text: payload,
       parse_mode: 'Markdown',
+      reply_markup: quickReplyKeyboard(),
     });
     if (r?.ok && r.result?.message_id) {
       state.forwarded.set(r.result.message_id, sessionId);
@@ -263,6 +264,113 @@ export async function forwardToOperator(
     /* network hiccup */
   }
   return { relayed: false };
+}
+
+/* ----------------------- quick-reply inline buttons ---------------------- */
+
+interface QuickReply {
+  code: string;
+  label: string;
+  text: string;
+}
+
+const QUICK_REPLIES: QuickReply[] = [
+  {
+    code: 'hi',
+    label: '👋 Salom',
+    text: 'Assalomu alaykum! 👋 DEFT MOTO xizmatida. Sizga qanday yordam bera olaman?',
+  },
+  {
+    code: 'wait',
+    label: '⏳ Kuting',
+    text: 'Bir daqiqa kuting, hozir aniqlab beraman ⏳',
+  },
+  {
+    code: 'stock',
+    label: '✅ Mavjud',
+    text: 'Ha, mavjud ✅. Saytdan buyurtma berishingiz mumkin — yordam kerak boʻlsa yozing.',
+  },
+  {
+    code: 'call',
+    label: '📞 Qoʻngʻiroq',
+    text: 'Sizga qulay vaqtda qoʻngʻiroq qilsak boʻladimi? Raqamingizni yozib qoldiring 📞',
+  },
+  {
+    code: 'thanks',
+    label: '🙌 Rahmat',
+    text: 'Murojaatingiz uchun rahmat! Yana savollaringiz boʻlsa, yozing 🙌',
+  },
+];
+
+function quickReplyKeyboard() {
+  const rows: { text: string; callback_data: string }[][] = [];
+  for (let i = 0; i < QUICK_REPLIES.length; i += 2) {
+    rows.push(
+      QUICK_REPLIES.slice(i, i + 2).map((q) => ({
+        text: q.label,
+        callback_data: `qr:${q.code}`,
+      })),
+    );
+  }
+  return { inline_keyboard: rows };
+}
+
+/**
+ * Handle an operator tapping an inline button. Quick-reply buttons send a
+ * canned answer to the originating website session; always acknowledges the
+ * callback so Telegram stops the button spinner.
+ */
+export async function handleCallback(cb: {
+  id: string;
+  data?: string;
+  message?: { message_id?: number };
+}): Promise<void> {
+  await ensureLoaded();
+  const data = cb.data || '';
+  const msgId = cb.message?.message_id;
+
+  if (data.startsWith('qr:') && msgId != null) {
+    const qr = QUICK_REPLIES.find((q) => q.code === data.slice(3));
+    const sessionId = state.forwarded.get(msgId);
+    if (qr && sessionId) {
+      ingestOperatorReply(msgId, qr.text);
+      await tg('answerCallbackQuery', {
+        callback_query_id: cb.id,
+        text: `✅ Yuborildi: ${qr.label}`,
+      });
+      return;
+    }
+    await tg('answerCallbackQuery', {
+      callback_query_id: cb.id,
+      text: '⚠️ Bu suhbat topilmadi (server qayta ishga tushgan boʻlishi mumkin).',
+      show_alert: true,
+    });
+    return;
+  }
+
+  if (data === 'help') {
+    await tg('answerCallbackQuery', {
+      callback_query_id: cb.id,
+      text:
+        'Mijoz savoli shu yerga keladi. Javob berish uchun:\n' +
+        '• xabarga reply qilib yozing, yoki\n' +
+        '• tez javob tugmalaridan birini bosing.\n' +
+        'Javobingiz saytdagi chatga darhol yetib boradi.',
+      show_alert: true,
+    });
+    return;
+  }
+
+  await tg('answerCallbackQuery', { callback_query_id: cb.id });
+}
+
+/** Inline keyboard for the operator welcome / start message. */
+export function startKeyboard() {
+  const site = process.env.NEXT_PUBLIC_APP_URL || '';
+  const rows: { text: string; url?: string; callback_data?: string }[][] = [];
+  if (site) rows.push([{ text: '🌐 Saytni ochish', url: site }]);
+  rows.push([{ text: 'ℹ️ Qanday ishlaydi', callback_data: 'help' }]);
+  return { inline_keyboard: rows };
 }
 
 /** Send a one-way notification (lead / new order) to the operator's Telegram. */
