@@ -7,6 +7,55 @@ import type {
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+/* ===================== real provider redirect (go-live) =====================
+ * When the merchant ids are configured (NEXT_PUBLIC_* build vars) we redirect
+ * the buyer to the real Payme / Click checkout page. The provider then calls
+ * our server callback (/api/payment/payme | /api/payment/click) which marks the
+ * order paid, and finally returns the buyer to /order/<id>/success.
+ * Until the ids are set, we fall back to the simulated flow below so the demo
+ * keeps working. Requires HTTPS in production.
+ */
+const PAYME_MERCHANT_ID = process.env.NEXT_PUBLIC_PAYME_MERCHANT_ID || '';
+const CLICK_SERVICE_ID = process.env.NEXT_PUBLIC_CLICK_SERVICE_ID || '';
+const CLICK_MERCHANT_ID = process.env.NEXT_PUBLIC_CLICK_MERCHANT_ID || '';
+
+function returnUrl(orderId: string): string {
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  return `${origin}/order/${orderId}/success`;
+}
+
+/** Payme checkout URL — params are base64-encoded. Amount in tiyin (so'm×100). */
+function paymeCheckoutUrl(req: PaymentRequest): string {
+  const amountTiyin = Math.round(req.amount * 100);
+  const params =
+    `m=${PAYME_MERCHANT_ID};ac.order_id=${req.orderId};a=${amountTiyin};` +
+    `c=${returnUrl(req.orderId)}`;
+  const encoded =
+    typeof window !== 'undefined'
+      ? window.btoa(params)
+      : Buffer.from(params).toString('base64');
+  return `https://checkout.paycom.uz/${encoded}`;
+}
+
+/** Click checkout URL. transaction_param becomes our order id in the callback. */
+function clickCheckoutUrl(req: PaymentRequest): string {
+  const p = new URLSearchParams({
+    service_id: CLICK_SERVICE_ID,
+    merchant_id: CLICK_MERCHANT_ID,
+    amount: String(req.amount),
+    transaction_param: req.orderId,
+    return_url: returnUrl(req.orderId),
+  });
+  return `https://my.click.uz/services/pay?${p.toString()}`;
+}
+
+/** Redirect the buyer to a provider checkout page. Never resolves (page unloads). */
+function redirectTo(url: string, onStatus: (s: PaymentStatus) => void): Promise<PaymentResult> {
+  onStatus('redirecting');
+  if (typeof window !== 'undefined') window.location.href = url;
+  return new Promise<PaymentResult>(() => {});
+}
+
 // === Mock helper: simulates a realistic provider flow ===
 // Stages: redirecting → pending → processing → success
 // Backend swap: replace this with real provider SDK calls (initPayment, pollStatus...)
@@ -62,22 +111,26 @@ export const clickAdapter: PaymentAdapter = {
   method: 'click',
   label: 'Click',
   pay: (req, onStatus) =>
-    simulatePaymentFlow(req, onStatus, {
-      redirectMs: 1100,
-      pendingMs: 1300,
-      processingMs: 1800,
-    }),
+    CLICK_SERVICE_ID && CLICK_MERCHANT_ID
+      ? redirectTo(clickCheckoutUrl(req), onStatus)
+      : simulatePaymentFlow(req, onStatus, {
+          redirectMs: 1100,
+          pendingMs: 1300,
+          processingMs: 1800,
+        }),
 };
 
 export const paymeAdapter: PaymentAdapter = {
   method: 'payme',
   label: 'Payme',
   pay: (req, onStatus) =>
-    simulatePaymentFlow(req, onStatus, {
-      redirectMs: 1000,
-      pendingMs: 1500,
-      processingMs: 1700,
-    }),
+    PAYME_MERCHANT_ID
+      ? redirectTo(paymeCheckoutUrl(req), onStatus)
+      : simulatePaymentFlow(req, onStatus, {
+          redirectMs: 1000,
+          pendingMs: 1500,
+          processingMs: 1700,
+        }),
 };
 
 export const btsAdapter: PaymentAdapter = {
