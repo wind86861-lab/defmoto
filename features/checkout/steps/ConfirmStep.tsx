@@ -206,7 +206,7 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
 
       <p className="text-center text-[11px] text-white/45">
         {t('termsPrefix')}{' '}
-        <a className="text-brand-yellow underline-offset-2 hover:underline" href="#">
+        <a className="text-brand-yellow underline-offset-2 hover:underline" href="/about">
           {t('termsLink')}
         </a>
         {t('termsSuffix') && <>{' '}{t('termsSuffix')}</>}

@@ -8,7 +8,6 @@ import {
   MapPin,
   MessageCircle,
   Send,
-  Bell,
   FileText,
   LogOut,
   ChevronRight,
@@ -22,7 +21,7 @@ import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 
 export function ProfileClient() {
   const t = useTranslations('profile');
-  const { user, isInTelegram } = useTelegram();
+  const { user, isInTelegram, webApp } = useTelegram();
   const orderCount = useOrdersStore((s) => s.orders.length);
   const wishlistCount = useWishlistStore((s) => s.ids.length);
 
@@ -90,15 +89,24 @@ export function ProfileClient() {
 
       <section className="mt-6 space-y-1.5">
         <SectionTitle>{t('settingsSectionTitle')}</SectionTitle>
-        <MenuLink href="#" icon={Bell} label={t('notificationsLabel')} />
         <LanguageSwitcher />
       </section>
 
       <section className="mt-6 space-y-1.5">
         <SectionTitle>{t('helpSectionTitle')}</SectionTitle>
-        <MenuLink href="#" icon={Phone} label={t('contactPhone')} external />
-        <MenuLink href="#" icon={Mail} label={t('contactEmail')} external />
-        <MenuLink href="#" icon={FileText} label={t('termsLabel')} />
+        <MenuLink
+          href="tel:+998998107090"
+          icon={Phone}
+          label={t('contactPhone')}
+          external
+        />
+        <MenuLink
+          href="mailto:info@deftmoto.uz"
+          icon={Mail}
+          label={t('contactEmail')}
+          external
+        />
+        <MenuLink href="/about" icon={FileText} label={t('termsLabel')} />
         <MenuLink
           href="https://t.me/DeftMotoBot"
           icon={Send}
@@ -110,6 +118,7 @@ export function ProfileClient() {
       {isInTelegram && (
         <button
           type="button"
+          onClick={() => webApp?.close()}
           className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl border border-brand-surface-border bg-brand-surface p-4 text-sm font-semibold text-white/65 transition-colors hover:border-danger/40 hover:text-danger touch-feedback"
         >
           <LogOut className="h-4 w-4" />
