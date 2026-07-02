@@ -90,6 +90,16 @@ export function getOrSeedContent<T>(key: string, seed: T): T {
 
 /* -------------------------------- orders -------------------------------- */
 
+export interface OrderBts {
+  orderId: number; // BTS-side order id
+  barcode: string;
+  tracking?: string;
+  cost?: number;
+  statusCode?: number;
+  statusName?: string;
+  updatedAt: number;
+}
+
 export interface OrderRecord {
   id: string;
   number: string;
@@ -99,6 +109,7 @@ export interface OrderRecord {
   total: number;
   payload: unknown;
   createdAt: number;
+  bts?: OrderBts;
 }
 
 export function listOrders(): OrderRecord[] {
@@ -144,6 +155,22 @@ export function updateOrderStatus(id: string, status: string): boolean {
   o.status = status;
   atomicWrite(ORDERS_FILE, store.orders);
   return true;
+}
+
+/** Attach/merge BTS shipment info onto an order. */
+export function setOrderBts(id: string, bts: Partial<OrderBts>): OrderRecord | null {
+  load();
+  const o = store.orders.find((x) => x.id === id);
+  if (!o) return null;
+  o.bts = { ...(o.bts ?? { orderId: 0, barcode: '' }), ...bts, updatedAt: Date.now() } as OrderBts;
+  atomicWrite(ORDERS_FILE, store.orders);
+  return o;
+}
+
+/** Find an order by its BTS-side order id (for webhooks). */
+export function getOrderByBtsId(btsOrderId: number): OrderRecord | null {
+  load();
+  return store.orders.find((o) => o.bts?.orderId === btsOrderId) ?? null;
 }
 
 /* ------------------------------- payments ------------------------------- */
