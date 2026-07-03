@@ -860,7 +860,9 @@
     "fldProdMarketPrices": "Цены маркетплейсов",
     "fldProdAddMarket": "Добавить маркетплейс",
     "fldProdMarketHint": "Добавьте цены маркетплейсов — клиенту покажется наибольшая разница.",
-    "fldProdMarketDerive": "Как старая цена показывается самая высокая цена маркетплейса."
+    "fldProdMarketDerive": "Как старая цена показывается самая высокая цена маркетплейса.",
+    "fldTelegram": "Telegram",
+    "fldMapUrl": "Ссылка Google Maps"
   },
   "categories": {
     "motorcycles": "Мотоциклы",

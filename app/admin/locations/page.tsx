@@ -1,26 +1,63 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Plus,
   Trash2,
   ArrowUp,
   ArrowDown,
-  RotateCcw,
   Building2,
   Wrench,
   Sparkles,
   Check,
+  Upload,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { ProductImage } from '@/components/ui/ProductImage';
 import { useMounted } from '@/hooks/useMounted';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useToast } from '@/components/ui/Toaster';
 import { useContentStore } from '@/lib/stores/content';
+import { uploadImage } from '@/lib/uploadImage';
 import type { Branch, ServiceCenter, ServiceItem } from '@/types/content';
+
+/** Image upload field — replaces raw-URL inputs. */
+function ImageUpload({ value, onChange, label }: { value?: string; onChange: (url: string) => void; label: string }) {
+  const t = useTranslations('admin');
+  const ref = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const pick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    setBusy(true);
+    try { onChange(await uploadImage(f)); } catch { /* ignore */ } finally { setBusy(false); }
+  };
+  return (
+    <label className="block sm:col-span-2">
+      <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-white/55">{label}</span>
+      <div className="flex items-center gap-3">
+        <span className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-brand-surface-border bg-brand-dark">
+          <ProductImage src={value ?? ''} alt="" className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
+        </span>
+        <button
+          type="button"
+          onClick={() => ref.current?.click()}
+          disabled={busy}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-2.5 text-sm font-semibold text-white/80 hover:border-brand-yellow/40 hover:text-brand-yellow disabled:opacity-50"
+        >
+          <Upload className="h-4 w-4" /> {busy ? '…' : t('uploadImageBtn')}
+        </button>
+        {value && (
+          <button type="button" onClick={() => onChange('')} className="text-xs text-white/45 hover:text-danger">✕</button>
+        )}
+        <input ref={ref} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={pick} />
+      </div>
+    </label>
+  );
+}
 
 type Tab = 'branches' | 'service' | 'franchise';
 
@@ -74,7 +111,6 @@ function BranchesTab() {
   const mounted = useMounted();
   const branches = useContentStore((s) => s.branches);
   const add = useContentStore((s) => s.addBranch);
-  const reset = useContentStore((s) => s.resetBranches);
   const list = mounted ? branches : [];
 
   return (
@@ -83,32 +119,25 @@ function BranchesTab() {
         <h2 className="text-xs font-bold uppercase tracking-wider text-white/45">
           {t('locBranchesCount', { count: list.length })}
         </h2>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" leftIcon={<RotateCcw className="h-3.5 w-3.5" />} onClick={() => { if (confirm(t('resetConfirmText'))) { reset(); notify('warning'); } }}>
-            {t('resetButton')}
-          </Button>
-          <button
-            type="button"
-            onClick={() => {
-              impact('light');
-              add({
-                id: `b_${Date.now()}`,
-                number: list.length + 1,
-                name: '',
-                address: '',
-                city: '',
-                phone: '',
-                workingHours: '',
-                lat: 41.3111,
-                lng: 69.2797,
-              });
-            }}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-yellow px-3 py-1.5 text-xs font-bold text-brand-dark shadow-glow-sm transition-all hover:brightness-110"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            {t('addBranchBtn')}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            impact('light');
+            add({
+              id: `b_${Date.now()}`,
+              number: list.length + 1,
+              name: '',
+              address: '',
+              city: '',
+              phone: '',
+              workingHours: '',
+            });
+          }}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-yellow px-3 py-1.5 text-xs font-bold text-brand-dark shadow-glow-sm transition-all hover:brightness-110"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {t('addBranchBtn')}
+        </button>
       </div>
 
       {list.map((b, i) => (
@@ -149,12 +178,11 @@ function BranchCard({ branch, index, total }: { branch: Branch; index: number; t
         <F label={t('fldAddress')}><Input value={draft.address} onChange={(e) => set({ address: e.target.value })} /></F>
         <F label={t('fldPhone')}><Input value={draft.phone} onChange={(e) => set({ phone: e.target.value })} /></F>
         <F label={t('fldSecondaryPhone')}><Input value={draft.secondaryPhone ?? ''} onChange={(e) => set({ secondaryPhone: e.target.value })} /></F>
-        <F label={t('fldEmail')}><Input value={draft.email ?? ''} onChange={(e) => set({ email: e.target.value })} /></F>
+        <F label={t('fldTelegram')}><Input value={draft.telegram ?? ''} placeholder="@username" onChange={(e) => set({ telegram: e.target.value })} /></F>
         <F label={t('fldHours')}><Input value={draft.workingHours} onChange={(e) => set({ workingHours: e.target.value })} /></F>
-        <F label={t('fldImage')} full><Input value={draft.image ?? ''} onChange={(e) => set({ image: e.target.value })} /></F>
-        <F label={t('fldLat')}><Input value={String(draft.lat)} onChange={(e) => set({ lat: Number(e.target.value) || 0 })} /></F>
-        <F label={t('fldLng')}><Input value={String(draft.lng)} onChange={(e) => set({ lng: Number(e.target.value) || 0 })} /></F>
-        <F label={t('fldVideo')} full><Input value={draft.videoUrl ?? ''} onChange={(e) => set({ videoUrl: e.target.value })} /></F>
+        <F label={t('fldMapUrl')} full><Input value={draft.mapUrl ?? ''} placeholder="https://maps.google.com/..." onChange={(e) => set({ mapUrl: e.target.value })} /></F>
+        <ImageUpload value={draft.image} onChange={(url) => set({ image: url })} label={t('fldImage')} />
+        <F label={t('fldVideo')} full><Input value={draft.videoUrl ?? ''} placeholder="https://youtube.com/..." onChange={(e) => set({ videoUrl: e.target.value })} /></F>
       </div>
       <div className="mt-3 flex items-center justify-between gap-2">
         <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold">
@@ -175,7 +203,6 @@ function ServiceTab() {
   const mounted = useMounted();
   const centers = useContentStore((s) => s.serviceCenters);
   const add = useContentStore((s) => s.addServiceCenter);
-  const reset = useContentStore((s) => s.resetServiceCenters);
   const list = mounted ? centers : [];
 
   return (
@@ -184,19 +211,14 @@ function ServiceTab() {
         <h2 className="text-xs font-bold uppercase tracking-wider text-white/45">
           {t('locServiceCount', { count: list.length })}
         </h2>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" leftIcon={<RotateCcw className="h-3.5 w-3.5" />} onClick={() => { if (confirm(t('resetConfirmText'))) { reset(); notify('warning'); } }}>
-            {t('resetButton')}
-          </Button>
-          <button
-            type="button"
-            onClick={() => { impact('light'); add({ id: `s_${Date.now()}`, name: '', address: '', phone: '', workingHours: '', services: [] }); }}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-yellow px-3 py-1.5 text-xs font-bold text-brand-dark shadow-glow-sm transition-all hover:brightness-110"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            {t('addServiceBtn')}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => { impact('light'); add({ id: `s_${Date.now()}`, name: '', address: '', phone: '', workingHours: '', services: [] }); }}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-yellow px-3 py-1.5 text-xs font-bold text-brand-dark shadow-glow-sm transition-all hover:brightness-110"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {t('addServiceBtn')}
+        </button>
       </div>
 
       {list.map((c, i) => (
@@ -237,12 +259,12 @@ function ServiceCard({ center, index, total }: { center: ServiceCenter; index: n
         <F label={t('fldHours')}><Input value={draft.workingHours} onChange={(e) => set({ workingHours: e.target.value })} /></F>
         <F label={t('fldPhone')}><Input value={draft.phone} onChange={(e) => set({ phone: e.target.value })} /></F>
         <F label={t('fldSecondaryPhone')}><Input value={draft.secondaryPhone ?? ''} onChange={(e) => set({ secondaryPhone: e.target.value })} /></F>
-        <F label={t('fldEmail')}><Input value={draft.email ?? ''} onChange={(e) => set({ email: e.target.value })} /></F>
-        <F label={t('fldImage')}><Input value={draft.image ?? ''} onChange={(e) => set({ image: e.target.value })} /></F>
+        <F label={t('fldTelegram')}><Input value={draft.telegram ?? ''} placeholder="@username" onChange={(e) => set({ telegram: e.target.value })} /></F>
         <F label={t('fldAbout')} full>
           <textarea value={draft.about ?? ''} onChange={(e) => set({ about: e.target.value })} rows={2} className="w-full rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-2.5 text-base text-white outline-none focus:border-brand-yellow/60" />
         </F>
-        <F label={t('fldVideo')} full><Input value={draft.videoUrl ?? ''} onChange={(e) => set({ videoUrl: e.target.value })} /></F>
+        <ImageUpload value={draft.image} onChange={(url) => set({ image: url })} label={t('fldImage')} />
+        <F label={t('fldVideo')} full><Input value={draft.videoUrl ?? ''} placeholder="https://youtube.com/..." onChange={(e) => set({ videoUrl: e.target.value })} /></F>
       </div>
 
       {/* services list */}
@@ -288,7 +310,6 @@ function FranchiseTab() {
   const mounted = useMounted();
   const fr = useContentStore((s) => s.franchise);
   const setFr = useContentStore((s) => s.setFranchise);
-  const resetFr = useContentStore((s) => s.resetFranchise);
 
   const [draft, setDraft] = useState(fr);
   const [dirty, setDirty] = useState(false);
@@ -299,20 +320,19 @@ function FranchiseTab() {
 
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-end">
-        <Button variant="ghost" size="sm" leftIcon={<RotateCcw className="h-3.5 w-3.5" />} onClick={() => { resetFr(); notify('warning'); }}>
-          {t('resetButton')}
-        </Button>
-      </div>
       <article className="rounded-2xl border border-brand-surface-border bg-brand-surface p-4">
         <div className="grid gap-2.5 sm:grid-cols-2">
           <F label={t('frTitleLabel')} full><Input value={v.title ?? ''} onChange={(e) => set({ title: e.target.value })} /></F>
           <F label={t('frDescLabel')} full>
             <textarea value={v.description ?? ''} onChange={(e) => set({ description: e.target.value })} rows={2} className="w-full rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-2.5 text-base text-white outline-none focus:border-brand-yellow/60" />
           </F>
-          <F label={t('frStatInvestment')}><Input value={v.statInvestment ?? ''} onChange={(e) => set({ statInvestment: e.target.value })} /></F>
-          <F label={t('frStatPayback')}><Input value={v.statPayback ?? ''} onChange={(e) => set({ statPayback: e.target.value })} /></F>
-          <F label={t('frStatBranches')}><Input value={v.statBranches ?? ''} onChange={(e) => set({ statBranches: e.target.value })} /></F>
+          <F label={t('fldCity')}><Input value={v.city ?? ''} onChange={(e) => set({ city: e.target.value })} /></F>
+          <F label={t('fldAddress')}><Input value={v.address ?? ''} onChange={(e) => set({ address: e.target.value })} /></F>
+          <F label={t('fldPhone')}><Input value={v.phone ?? ''} onChange={(e) => set({ phone: e.target.value })} /></F>
+          <F label={t('fldTelegram')}><Input value={v.telegram ?? ''} placeholder="@username" onChange={(e) => set({ telegram: e.target.value })} /></F>
+          <F label={t('fldHours')}><Input value={v.workingHours ?? ''} onChange={(e) => set({ workingHours: e.target.value })} /></F>
+          <F label={t('fldMapUrl')}><Input value={v.mapUrl ?? ''} placeholder="https://maps.google.com/..." onChange={(e) => set({ mapUrl: e.target.value })} /></F>
+          <ImageUpload value={v.image} onChange={(url) => set({ image: url })} label={t('fldImage')} />
         </div>
         <div className="mt-3 flex items-center justify-between gap-2">
           <p className="text-[11px] text-white/45">{t('frOverrideHint')}</p>

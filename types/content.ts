@@ -8,10 +8,12 @@ export interface Branch {
   city: string;
   phone: string;
   secondaryPhone?: string;
-  email?: string;
+  telegram?: string; // @username or full t.me link
+  email?: string; // legacy — no longer edited
   workingHours: string;
-  lat: number;
-  lng: number;
+  mapUrl?: string; // Google Maps link
+  lat?: number; // legacy — used to derive a maps link when mapUrl is empty
+  lng?: number;
   image?: string;
   videoUrl?: string;
   isHeadOffice?: boolean;
@@ -25,7 +27,8 @@ export interface ServiceCenter {
   address: string;
   phone: string;
   secondaryPhone?: string;
-  email?: string;
+  telegram?: string; // @username or full t.me link
+  email?: string; // legacy — no longer edited
   workingHours: string;
   image?: string;
   videoUrl?: string; // YouTube URL — conditional

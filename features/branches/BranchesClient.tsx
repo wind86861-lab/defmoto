@@ -6,7 +6,6 @@ import {
   MapPin,
   Phone,
   Clock,
-  Mail,
   Send,
   ChevronDown,
   Star,
@@ -30,6 +29,7 @@ import { useClickOutside } from '@/hooks/useClickOutside';
 import { useMounted } from '@/hooks/useMounted';
 import { useToast } from '@/components/ui/Toaster';
 import { useContentStore } from '@/lib/stores/content';
+import { mapsHref, telegramHref, telegramLabel } from '@/lib/contactLinks';
 import { mockBranches } from '@/mocks/branches';
 import type { Branch } from '@/types/content';
 
@@ -195,7 +195,8 @@ function BranchSelector({
 function BranchDetail({ branch }: { branch: Branch }) {
   const t = useTranslations('branches');
   const tCommon = useTranslations('common');
-  const mapUrl = `https://yandex.uz/maps/?pt=${branch.lng},${branch.lat}&z=15&l=map`;
+  const mapUrl = mapsHref(branch);
+  const tgHref = telegramHref(branch.telegram);
   const fullAddress = branch.address.startsWith(branch.city)
     ? branch.address
     : `${branch.city}, ${branch.address}`;
@@ -241,15 +242,17 @@ function BranchDetail({ branch }: { branch: Branch }) {
                 className="absolute inset-0 h-full w-full object-cover"
               />
             )}
-            <a
-              href={mapUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-xl bg-brand-dark/85 px-3 py-2 text-xs font-bold text-white backdrop-blur-md transition-all hover:bg-brand-dark"
-            >
-              <MapPin className="h-3.5 w-3.5 text-brand-yellow" />
-              {t('directions')}
-            </a>
+            {mapUrl && (
+              <a
+                href={mapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-xl bg-brand-dark/85 px-3 py-2 text-xs font-bold text-white backdrop-blur-md transition-all hover:bg-brand-dark"
+              >
+                <MapPin className="h-3.5 w-3.5 text-brand-yellow" />
+                {t('directions')}
+              </a>
+            )}
           </div>
         </div>
 
@@ -286,35 +289,32 @@ function BranchDetail({ branch }: { branch: Branch }) {
               copyable
             />
           )}
-          {branch.email && (
+          {tgHref && (
             <ContactRow
-              icon={Mail}
-              label="Email"
-              value={branch.email}
-              href={`mailto:${branch.email}`}
-              copyable
+              icon={Send}
+              label="Telegram"
+              value={telegramLabel(branch.telegram)}
+              href={tgHref}
             />
           )}
         </ul>
 
-        {/* RIGHT — Map */}
-        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl border border-brand-surface-border bg-brand-surface lg:aspect-auto lg:h-full">
-          <iframe
-            src={`https://yandex.uz/map-widget/v1/?ll=${branch.lng}%2C${branch.lat}&z=15&pt=${branch.lng},${branch.lat},pm2rdm`}
-            title={t('address')}
-            className="absolute inset-0 h-full w-full border-0"
-            loading="lazy"
-          />
+        {/* RIGHT — Map link */}
+        {mapUrl && (
           <a
             href={mapUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-xl bg-brand-dark/85 px-3 py-2 text-xs font-bold text-white backdrop-blur-md transition-all hover:bg-brand-dark"
+            className="group relative flex aspect-[16/10] w-full flex-col items-center justify-center overflow-hidden rounded-2xl border border-brand-surface-border bg-gradient-to-br from-brand-surface to-brand-dark lg:aspect-auto lg:h-full"
           >
-            <MapPin className="h-3.5 w-3.5 text-brand-yellow" />
-            {t('directions')}
+            <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-brand-yellow/15 blur-3xl" />
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-yellow/15 text-brand-yellow transition-transform group-hover:scale-110">
+              <MapPin className="h-7 w-7" />
+            </span>
+            <span className="mt-3 font-display text-base font-extrabold">{t('directions')}</span>
+            <span className="mt-1 text-xs text-white/55">Google Maps</span>
           </a>
-        </div>
+        )}
       </div>
 
       {/* YouTube — conditional, full width */}
@@ -419,6 +419,35 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+function FrContact({
+  icon: Icon,
+  label,
+  value,
+  href,
+}: {
+  icon: typeof MapPin;
+  label: string;
+  value: string;
+  href?: string;
+}) {
+  const inner = (
+    <div className="flex items-start gap-2.5 rounded-2xl bg-brand-dark/85 px-4 py-3 backdrop-blur-md">
+      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
+      <div className="min-w-0">
+        <div className="text-[10px] font-bold uppercase tracking-wider text-white/50">{label}</div>
+        <div className="truncate text-sm font-semibold text-white">{value}</div>
+      </div>
+    </div>
+  );
+  return href ? (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="transition-transform hover:-translate-y-0.5">
+      {inner}
+    </a>
+  ) : (
+    inner
+  );
+}
+
 function FranchiseSection() {
   const t = useTranslations('branches');
   const { notify } = useHaptic();
@@ -469,11 +498,10 @@ function FranchiseSection() {
     { icon: Truck, title: t('franchiseBenefit4Title'), desc: t('franchiseBenefit4Desc') },
   ];
 
-  const stats = [
-    { value: ov.statInvestment || t('franchiseStatInvestmentValue'), label: t('franchiseStatInvestmentLabel') },
-    { value: ov.statPayback || t('franchiseStatPaybackValue'), label: t('franchiseStatPaybackLabel') },
-    { value: ov.statBranches || t('franchiseStatBranchesValue'), label: t('franchiseStatBranchesLabel') },
-  ];
+  const frMap = mapsHref(ov);
+  const frTg = telegramHref(ov.telegram);
+  const frLocation = [ov.city, ov.address].filter(Boolean).join(', ');
+  const hasContact = Boolean(frLocation || ov.phone || frTg || ov.workingHours || frMap);
 
   return (
     <section>
@@ -496,22 +524,23 @@ function FranchiseSection() {
             </p>
           </div>
 
-          {/* Stats */}
-          <div className="mt-6 grid grid-cols-3 gap-2.5 sm:mt-8 sm:max-w-2xl sm:gap-4">
-            {stats.map((s) => (
-              <div
-                key={s.label}
-                className="rounded-2xl bg-brand-dark/85 px-3 py-3.5 text-center backdrop-blur-md sm:px-4 sm:py-5"
-              >
-                <div className="font-display text-lg font-extrabold leading-none text-brand-yellow sm:text-2xl">
-                  {s.value}
-                </div>
-                <div className="mt-1.5 text-[10px] font-bold uppercase leading-tight tracking-wider text-white/60 sm:text-[11px]">
-                  {s.label}
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* Location + contact — like a branch */}
+          {hasContact && (
+            <div className="mt-6 grid gap-2.5 sm:mt-8 sm:max-w-2xl sm:grid-cols-2">
+              {frLocation && (
+                <FrContact icon={MapPin} label={t('address')} value={frLocation} href={frMap ?? undefined} />
+              )}
+              {ov.workingHours && (
+                <FrContact icon={Clock} label={t('workingHours')} value={ov.workingHours} />
+              )}
+              {ov.phone && (
+                <FrContact icon={Phone} label="Tel" value={ov.phone} href={`tel:${ov.phone.replace(/\s/g, '')}`} />
+              )}
+              {frTg && (
+                <FrContact icon={Send} label="Telegram" value={telegramLabel(ov.telegram)} href={frTg} />
+              )}
+            </div>
+          )}
 
           {/* Benefits */}
           <div className="mt-8">

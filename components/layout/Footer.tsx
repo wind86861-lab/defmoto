@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
   Phone,
-  Mail,
   MapPin,
   Clock,
   Send,
@@ -18,6 +17,7 @@ import {
 import { Logo } from '@/components/ui/Logo';
 import { SocialDot, WhatsAppIcon, ViberIcon } from '@/components/ui/SocialIcons';
 import { FooterSmoke } from '@/components/ui/FooterSmoke';
+import { telegramHref, telegramLabel } from '@/lib/contactLinks';
 import { mockBranches } from '@/mocks/branches';
 
 const catalogLinks = [
@@ -142,11 +142,16 @@ export function Footer() {
                   {tContact('phone')}
                 </a>
               </li>
-              {headOffice.email && (
+              {telegramHref(headOffice.telegram) && (
                 <li className="flex items-start gap-2.5">
-                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
-                  <a href={`mailto:${headOffice.email}`} className="hover:text-brand-yellow">
-                    {headOffice.email}
+                  <Send className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
+                  <a
+                    href={telegramHref(headOffice.telegram)!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-brand-yellow"
+                  >
+                    {telegramLabel(headOffice.telegram)}
                   </a>
                 </li>
               )}

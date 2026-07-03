@@ -860,7 +860,9 @@
     "fldProdMarketPrices": "Marketplace prices",
     "fldProdAddMarket": "Add marketplace",
     "fldProdMarketHint": "Add marketplace prices — the biggest gap is shown to the customer.",
-    "fldProdMarketDerive": "The highest marketplace price is shown as the old price."
+    "fldProdMarketDerive": "The highest marketplace price is shown as the old price.",
+    "fldTelegram": "Telegram",
+    "fldMapUrl": "Google Maps link"
   },
   "categories": {
     "motorcycles": "Motorcycles",

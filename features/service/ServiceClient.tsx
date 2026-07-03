@@ -6,7 +6,6 @@ import {
   Wrench,
   Phone,
   Clock,
-  Mail,
   MapPin,
   Send,
   ChevronDown,
@@ -25,6 +24,7 @@ import { useClickOutside } from '@/hooks/useClickOutside';
 import { useMounted } from '@/hooks/useMounted';
 import { useToast } from '@/components/ui/Toaster';
 import { useContentStore } from '@/lib/stores/content';
+import { telegramHref, telegramLabel } from '@/lib/contactLinks';
 import { formatPrice } from '@/lib/format';
 import { mockServiceCenters } from '@/mocks/services';
 import type { ServiceCenter, ServiceItem } from '@/types/content';
@@ -197,13 +197,12 @@ function CenterDetail({ center }: { center: ServiceCenter }) {
               copyable
             />
           )}
-          {center.email && (
+          {telegramHref(center.telegram) && (
             <ContactRow
-              icon={Mail}
-              label="Email"
-              value={center.email}
-              href={`mailto:${center.email}`}
-              copyable
+              icon={Send}
+              label="Telegram"
+              value={telegramLabel(center.telegram)}
+              href={telegramHref(center.telegram)!}
             />
           )}
         </ul>

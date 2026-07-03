@@ -18,9 +18,14 @@ import type { Product, Category } from '@/types/product';
 export interface FranchiseOverride {
   title?: string;
   description?: string;
-  statInvestment?: string;
-  statPayback?: string;
-  statBranches?: string;
+  // Branch-like info shown to users considering a franchise.
+  address?: string;
+  city?: string;
+  phone?: string;
+  telegram?: string;
+  workingHours?: string;
+  mapUrl?: string;
+  image?: string;
 }
 
 interface ContentState {

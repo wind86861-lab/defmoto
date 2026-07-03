@@ -860,7 +860,9 @@
     "fldProdMarketPrices": "Marketplace narxlari",
     "fldProdAddMarket": "Marketplace qo'shish",
     "fldProdMarketHint": "Marketplace narxlarini qo'shing — eng katta farq mijozga ko'rsatiladi.",
-    "fldProdMarketDerive": "Eski narx sifatida eng qimmat marketplace narxi ko'rsatiladi."
+    "fldProdMarketDerive": "Eski narx sifatida eng qimmat marketplace narxi ko'rsatiladi.",
+    "fldTelegram": "Telegram",
+    "fldMapUrl": "Google Maps havolasi"
   },
   "categories": {
     "motorcycles": "Mototsikllar",
