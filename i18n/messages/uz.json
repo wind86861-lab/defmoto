@@ -852,7 +852,15 @@
     "fldCatCount": "Tovarlar soni",
     "catNoneTitle": "Kategoriyalar yoʻq",
     "catSlugHint": "Slug — URL manzili (masalan helmets). Standart kategoriyalar 3 tilda, yangilari kiritilgan nom bilan koʻrsatiladi.",
-    "refreshButton": "Yangilash"
+    "refreshButton": "Yangilash",
+    "itemEditBtn": "Tahrirlash",
+    "cancelBtn": "Bekor qilish",
+    "uploadFailed": "Rasm yuklashda xato",
+    "mainImageBadge": "Asosiy",
+    "fldProdMarketPrices": "Marketplace narxlari",
+    "fldProdAddMarket": "Marketplace qo'shish",
+    "fldProdMarketHint": "Marketplace narxlarini qo'shing — eng katta farq mijozga ko'rsatiladi.",
+    "fldProdMarketDerive": "Eski narx sifatida eng qimmat marketplace narxi ko'rsatiladi."
   },
   "categories": {
     "motorcycles": "Mototsikllar",

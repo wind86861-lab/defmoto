@@ -852,7 +852,15 @@
     "fldCatCount": "Кол-во товаров",
     "catNoneTitle": "Категорий нет",
     "catSlugHint": "Slug — адрес URL (напр. helmets). Стандартные категории на 3 языках, новые — по введённому названию.",
-    "refreshButton": "Обновить"
+    "refreshButton": "Обновить",
+    "itemEditBtn": "Редактировать",
+    "cancelBtn": "Отмена",
+    "uploadFailed": "Ошибка загрузки",
+    "mainImageBadge": "Главное",
+    "fldProdMarketPrices": "Цены маркетплейсов",
+    "fldProdAddMarket": "Добавить маркетплейс",
+    "fldProdMarketHint": "Добавьте цены маркетплейсов — клиенту покажется наибольшая разница.",
+    "fldProdMarketDerive": "Как старая цена показывается самая высокая цена маркетплейса."
   },
   "categories": {
     "motorcycles": "Мотоциклы",

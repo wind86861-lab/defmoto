@@ -1,7 +1,9 @@
 export type Currency = 'UZS';
 
 export interface CompetitorPrice {
-  source: 'uzum' | 'wildberries' | 'yandex';
+  source: string; // marketplace id (from site settings) or free label
+  label?: string; // short badge text, e.g. "Uzum"
+  color?: string; // brand colour for the chip
   price: number;
   url?: string;
 }

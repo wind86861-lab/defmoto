@@ -852,7 +852,15 @@
     "fldCatCount": "Product count",
     "catNoneTitle": "No categories",
     "catSlugHint": "Slug is the URL path (e.g. helmets). Built-in categories are in 3 languages; new ones show the entered name.",
-    "refreshButton": "Refresh"
+    "refreshButton": "Refresh",
+    "itemEditBtn": "Edit",
+    "cancelBtn": "Cancel",
+    "uploadFailed": "Upload failed",
+    "mainImageBadge": "Main",
+    "fldProdMarketPrices": "Marketplace prices",
+    "fldProdAddMarket": "Add marketplace",
+    "fldProdMarketHint": "Add marketplace prices — the biggest gap is shown to the customer.",
+    "fldProdMarketDerive": "The highest marketplace price is shown as the old price."
   },
   "categories": {
     "motorcycles": "Motorcycles",

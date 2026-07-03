@@ -15,14 +15,7 @@ interface PriceCompareProps {
   compact?: boolean;
 }
 
-const competitorMeta: Record<
-  CompetitorPrice['source'],
-  { label: string; color: string }
-> = {
-  uzum: { label: 'Uzum', color: '#7B2CBF' },
-  wildberries: { label: 'WB', color: '#CB11AB' },
-  yandex: { label: 'Yandex', color: '#FC3F1D' },
-};
+const DEFAULT_CHIP_COLOR = '#7B2CBF';
 
 export function PriceCompare({
   ourPrice,
@@ -64,11 +57,11 @@ export function PriceCompare({
         </div>
 
         <div className="space-y-2">
-          {competitors.map((c) => (
+          {competitors.map((c, i) => (
             <CompetitorRow
-              key={c.source}
-              label={competitorMeta[c.source].label}
-              color={competitorMeta[c.source].color}
+              key={`${c.source}-${i}`}
+              label={c.label || c.source}
+              color={c.color || DEFAULT_CHIP_COLOR}
               price={c.price}
               locale={locale}
               isMax={c.price === maxCompetitor}

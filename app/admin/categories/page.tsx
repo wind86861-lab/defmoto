@@ -7,7 +7,6 @@ import {
   Trash2,
   ArrowUp,
   ArrowDown,
-  RotateCcw,
   Check,
   Upload,
   Tag,
@@ -41,7 +40,6 @@ export default function AdminCategoriesPage() {
   const { notify } = useHaptic();
   const categories = useContentStore((s) => s.categories);
   const addCategory = useContentStore((s) => s.addCategory);
-  const resetCategories = useContentStore((s) => s.resetCategories);
 
   const list = mounted ? categories : [];
 
@@ -67,24 +65,9 @@ export default function AdminCategoriesPage() {
             {t('catSectionTitle', { count: list.length })}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="md"
-            leftIcon={<RotateCcw className="h-4 w-4" />}
-            onClick={() => {
-              if (confirm(t('resetConfirmText'))) {
-                resetCategories();
-                notify('warning');
-              }
-            }}
-          >
-            {t('resetButton')}
-          </Button>
-          <Button size="md" glow leftIcon={<Plus className="h-4 w-4" />} onClick={handleAdd}>
-            {t('catAddBtn')}
-          </Button>
-        </div>
+        <Button size="md" glow leftIcon={<Plus className="h-4 w-4" />} onClick={handleAdd}>
+          {t('catAddBtn')}
+        </Button>
       </header>
 
       {list.length === 0 ? (

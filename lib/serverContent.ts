@@ -8,7 +8,7 @@
  * under the `content-store` key; we read that and extract the slices.
  */
 
-import { getContent } from '@/lib/db';
+import { getContent, hasContent } from '@/lib/db';
 import { mockProducts } from '@/mocks/products';
 import { mockCategories } from '@/mocks/categories';
 import type { Product, Category } from '@/types/product';
@@ -23,9 +23,15 @@ function contentState(): ContentState | null {
   return blob?.state ?? null;
 }
 
+// Once the admin has saved content at least once, that store is the source of
+// truth — even an empty list (the admin deleted everything). The mock seed is
+// only used on a truly fresh install where nothing has ever been saved.
+const seeded = () => hasContent('content-store');
+
 export function getProductsServer(): Product[] {
   const p = contentState()?.products;
-  return p && p.length ? p : mockProducts;
+  if (Array.isArray(p) && (p.length || seeded())) return p;
+  return mockProducts;
 }
 
 export function getProductBySlugServer(slug: string): Product | undefined {
@@ -34,7 +40,8 @@ export function getProductBySlugServer(slug: string): Product | undefined {
 
 export function getCategoriesServer(): Category[] {
   const c = contentState()?.categories;
-  return c && c.length ? c : mockCategories;
+  if (Array.isArray(c) && (c.length || seeded())) return c;
+  return mockCategories;
 }
 
 export function getSimilarProductsServer(product: Product, limit = 4): Product[] {
