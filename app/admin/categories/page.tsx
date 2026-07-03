@@ -155,11 +155,11 @@ function CategoryRow({ category, index, total }: { category: Category; index: nu
           {draft.image ? (
             <ProductImage src={draft.image} alt="" className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
           ) : (
-            draft.icon || '🏷️'
+            <Tag className="h-5 w-5 text-white/40" />
           )}
         </span>
         <span className="min-w-0 flex-1 truncate font-display text-sm font-extrabold">
-          {draft.icon} {categoryName(tCategories, draft) || t('fldCatName')}
+          {categoryName(tCategories, draft) || t('fldCatName')}
         </span>
         <div className="flex shrink-0 items-center gap-0.5">
           <IconAction onClick={() => reorder(category.id, -1)} disabled={index === 0} aria-label={t('moveUpAria')}>
@@ -180,9 +180,6 @@ function CategoryRow({ category, index, total }: { category: Category; index: nu
         </CF>
         <CF label={t('fldCatSlug')}>
           <Input value={draft.slug} onChange={(e) => set({ slug: e.target.value })} />
-        </CF>
-        <CF label={t('fldCatIcon')}>
-          <Input value={draft.icon ?? ''} onChange={(e) => set({ icon: e.target.value })} />
         </CF>
         <CF label={t('fldCatCount')}>
           <Input
