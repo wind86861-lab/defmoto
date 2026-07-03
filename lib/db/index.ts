@@ -20,18 +20,26 @@ const DATA_DIR = path.join(process.cwd(), '.data');
 const CONTENT_FILE = path.join(DATA_DIR, 'content.json');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const PAYMENTS_FILE = path.join(DATA_DIR, 'payments.json');
+const REVIEWS_FILE = path.join(DATA_DIR, 'reviews.json');
 
 interface Store {
   content: Record<string, unknown>;
   orders: OrderRecord[];
   payments: PaymentRecord[];
+  reviews: ReviewRecord[];
   loaded: boolean;
 }
 
 const globalRef = globalThis as unknown as { __deftStore?: Store };
 const store: Store =
   globalRef.__deftStore ??
-  (globalRef.__deftStore = { content: {}, orders: [], payments: [], loaded: false });
+  (globalRef.__deftStore = {
+    content: {},
+    orders: [],
+    payments: [],
+    reviews: [],
+    loaded: false,
+  });
 
 function load() {
   if (store.loaded) return;
@@ -50,6 +58,11 @@ function load() {
     store.payments = JSON.parse(fs.readFileSync(PAYMENTS_FILE, 'utf8'));
   } catch {
     store.payments = [];
+  }
+  try {
+    store.reviews = JSON.parse(fs.readFileSync(REVIEWS_FILE, 'utf8'));
+  } catch {
+    store.reviews = [];
   }
 }
 
@@ -106,6 +119,7 @@ export interface OrderRecord {
   status: string;
   customerName?: string;
   phone?: string;
+  userId?: string; // Telegram user id, when ordered from the Mini App
   total: number;
   payload: unknown;
   createdAt: number;
@@ -128,6 +142,7 @@ export function createOrder(input: {
   status?: string;
   customerName?: string;
   phone?: string;
+  userId?: string;
   total?: number;
   payload?: unknown;
 }): OrderRecord {
@@ -139,6 +154,7 @@ export function createOrder(input: {
     status: input.status || 'received',
     customerName: input.customerName,
     phone: input.phone,
+    userId: input.userId ? String(input.userId) : undefined,
     total: input.total ?? 0,
     payload: input.payload ?? {},
     createdAt: now,
@@ -218,4 +234,101 @@ export function savePayment(p: PaymentRecord): PaymentRecord {
   else store.payments.push(p);
   atomicWrite(PAYMENTS_FILE, store.payments);
   return p;
+}
+
+/* ------------------------------- reviews -------------------------------- */
+
+export interface ReviewRecord {
+  id: string;
+  productId: string;
+  userId: string; // Telegram user id
+  userName: string;
+  photoUrl?: string;
+  rating: number; // 1..5
+  text: string;
+  createdAt: number;
+}
+
+export interface ReviewSummary {
+  average: number; // 1 decimal
+  count: number;
+  distribution: [number, number, number, number, number]; // counts for 1..5 stars
+}
+
+export function listReviews(productId: string): ReviewRecord[] {
+  load();
+  return store.reviews
+    .filter((r) => r.productId === productId)
+    .sort((a, b) => b.createdAt - a.createdAt);
+}
+
+export function getUserReview(productId: string, userId: string): ReviewRecord | null {
+  load();
+  return (
+    store.reviews.find((r) => r.productId === productId && r.userId === String(userId)) ?? null
+  );
+}
+
+export function reviewSummary(productId: string): ReviewSummary {
+  const list = listReviews(productId);
+  const distribution: [number, number, number, number, number] = [0, 0, 0, 0, 0];
+  let sum = 0;
+  for (const r of list) {
+    const s = Math.min(5, Math.max(1, Math.round(r.rating)));
+    distribution[s - 1] += 1;
+    sum += r.rating;
+  }
+  const count = list.length;
+  const average = count ? Math.round((sum / count) * 10) / 10 : 0;
+  return { average, count, distribution };
+}
+
+/** Upsert a review — one per (product, user). */
+export function saveReview(input: {
+  productId: string;
+  userId: string;
+  userName: string;
+  photoUrl?: string;
+  rating: number;
+  text: string;
+}): ReviewRecord {
+  load();
+  const userId = String(input.userId);
+  const rating = Math.min(5, Math.max(1, Math.round(input.rating)));
+  const existing = store.reviews.find(
+    (r) => r.productId === input.productId && r.userId === userId,
+  );
+  if (existing) {
+    existing.rating = rating;
+    existing.text = input.text;
+    existing.userName = input.userName || existing.userName;
+    existing.photoUrl = input.photoUrl ?? existing.photoUrl;
+    existing.createdAt = Date.now();
+    atomicWrite(REVIEWS_FILE, store.reviews);
+    return existing;
+  }
+  const review: ReviewRecord = {
+    id: `rv_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    productId: input.productId,
+    userId,
+    userName: input.userName,
+    photoUrl: input.photoUrl,
+    rating,
+    text: input.text,
+    createdAt: Date.now(),
+  };
+  store.reviews.push(review);
+  atomicWrite(REVIEWS_FILE, store.reviews);
+  return review;
+}
+
+/** Has this Telegram user purchased this product (in any of their orders)? */
+export function userPurchasedProduct(userId: string, productId: string): boolean {
+  load();
+  const uid = String(userId);
+  return store.orders.some((o) => {
+    if (String(o.userId ?? '') !== uid) return false;
+    const items = (o.payload as { items?: { productId?: string }[] } | null)?.items;
+    return Array.isArray(items) && items.some((it) => String(it?.productId) === productId);
+  });
 }

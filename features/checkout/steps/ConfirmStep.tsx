@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { formatPrice } from '@/lib/format';
 import { useCartStore } from '@/lib/stores/cart';
 import { useOrdersStore } from '@/lib/stores/orders';
+import { useTelegram } from '@/components/providers/TelegramProvider';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useCheckoutState } from '../useCheckoutState';
 import { applyPromo } from '@/lib/promo';
@@ -26,6 +27,7 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
   const clearCart = useCartStore((s) => s.clear);
   const addOrder = useOrdersStore((s) => s.add);
   const resetCheckout = useCheckoutState((s) => s.reset);
+  const { user } = useTelegram();
   const { notify } = useHaptic();
   const [submitting, setSubmitting] = useState(false);
   const [paymentReq, setPaymentReq] = useState<PaymentRequest | null>(null);
@@ -96,6 +98,7 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
         status: order.status,
         customerName: order.contact.name,
         phone: order.contact.phone,
+        userId: user?.id != null ? String(user.id) : undefined,
         total: order.total,
         payload: order,
       }),

@@ -16,6 +16,7 @@ import { useCartStore } from '@/lib/stores/cart';
 import { useWishlistStore } from '@/lib/stores/wishlist';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useMounted } from '@/hooks/useMounted';
+import { useProductReviews } from '@/hooks/useProductReviews';
 import { useToast } from '@/components/ui/Toaster';
 import { ProductGallery } from './ProductGallery';
 import { VariantSelector } from './VariantSelector';
@@ -40,6 +41,8 @@ export function ProductPageClient({ product, similar }: Props) {
     (s) => mounted && s.ids.includes(product.id),
   );
   const { notify, impact } = useHaptic();
+  const reviews = useProductReviews(product.id);
+  const reviewSummary = reviews.data.summary;
 
   const [quantity, setQuantity] = useState(1);
   const [variantId, setVariantId] = useState<string | null>(
@@ -161,27 +164,31 @@ export function ProductPageClient({ product, similar }: Props) {
             </div>
           </div>
 
-          {/* Rating */}
-          {typeof product.rating === 'number' && (
-            <div className="flex items-center gap-2 text-sm">
-              <div className="flex items-center gap-1">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star
-                    key={i}
-                    className={
-                      i < Math.round(product.rating!)
-                        ? 'h-4 w-4 fill-brand-yellow text-brand-yellow'
-                        : 'h-4 w-4 text-white/20'
-                    }
-                  />
-                ))}
-              </div>
-              <span className="font-semibold">{product.rating}</span>
-              <span className="text-white/45">
-                {t('reviewsCount', { count: product.reviewCount ?? 0 })}
-              </span>
+          {/* Rating — live from user reviews */}
+          <a href="#reviews" className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-1">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star
+                  key={i}
+                  className={
+                    i < Math.round(reviewSummary.average)
+                      ? 'h-4 w-4 fill-brand-yellow text-brand-yellow'
+                      : 'h-4 w-4 text-white/20'
+                  }
+                />
+              ))}
             </div>
-          )}
+            {reviewSummary.count > 0 ? (
+              <>
+                <span className="font-semibold">{reviewSummary.average.toFixed(1)}</span>
+                <span className="text-white/45">
+                  {t('reviewsCount', { count: reviewSummary.count })}
+                </span>
+              </>
+            ) : (
+              <span className="text-white/45">{t('reviewNoneShort')}</span>
+            )}
+          </a>
 
           {/* Badges */}
           {product.badges && (
@@ -273,9 +280,11 @@ export function ProductPageClient({ product, similar }: Props) {
       </div>
 
       {/* Info tabs */}
-      <Reveal direction="up" className="mt-14">
-        <ProductInfo product={product} />
-      </Reveal>
+      <div id="reviews" className="scroll-mt-20">
+        <Reveal direction="up" className="mt-14">
+          <ProductInfo product={product} reviews={reviews} />
+        </Reveal>
+      </div>
 
       {/* Similar */}
       {similar.length > 0 && (

@@ -545,7 +545,19 @@
     "inStockCountLabel": "В наличии:",
     "decreaseAria": "Уменьшить",
     "increaseAria": "Увеличить",
-    "loadingLabel": "Загрузка товара"
+    "loadingLabel": "Загрузка товара",
+    "reviewFormTitle": "Ваш отзыв",
+    "reviewFormTitleUpdate": "Обновите ваш отзыв",
+    "reviewPlaceholder": "Напишите ваше мнение (необязательно)",
+    "reviewSubmit": "Отправить",
+    "reviewUpdate": "Обновить",
+    "reviewYourRating": "Ваша оценка",
+    "reviewGatePurchase": "Чтобы оставить отзыв, купите этот товар.",
+    "reviewGateTelegram": "Войдите через приложение Telegram, чтобы оставить отзыв.",
+    "reviewThanks": "Спасибо за ваш отзыв!",
+    "reviewEmpty": "Отзывов пока нет. Будьте первым!",
+    "reviewNoneShort": "Пока нет отзывов",
+    "reviewError": "Произошла ошибка. Попробуйте ещё раз."
   },
   "search": {
     "backAria": "Назад",

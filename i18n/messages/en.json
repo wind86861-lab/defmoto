@@ -545,7 +545,19 @@
     "inStockCountLabel": "In stock:",
     "decreaseAria": "Decrease",
     "increaseAria": "Increase",
-    "loadingLabel": "Loading product"
+    "loadingLabel": "Loading product",
+    "reviewFormTitle": "Your review",
+    "reviewFormTitleUpdate": "Update your review",
+    "reviewPlaceholder": "Write your thoughts (optional)",
+    "reviewSubmit": "Submit",
+    "reviewUpdate": "Update",
+    "reviewYourRating": "Your rating",
+    "reviewGatePurchase": "Purchase this product to leave a review.",
+    "reviewGateTelegram": "Open via the Telegram app to leave a review.",
+    "reviewThanks": "Thanks for your review!",
+    "reviewEmpty": "No reviews yet. Be the first to share!",
+    "reviewNoneShort": "No reviews yet",
+    "reviewError": "Something went wrong. Please try again."
   },
   "search": {
     "backAria": "Back",

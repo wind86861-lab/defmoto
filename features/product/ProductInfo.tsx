@@ -4,11 +4,19 @@ import { useTranslations } from 'next-intl';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
 import { ProductReviews } from './ProductReviews';
 import type { Product } from '@/types/product';
+import type { useProductReviews } from '@/hooks/useProductReviews';
 import { Truck, Package, RotateCcw, MapPin } from 'lucide-react';
 
-export function ProductInfo({ product }: { product: Product }) {
+export function ProductInfo({
+  product,
+  reviews,
+}: {
+  product: Product;
+  reviews: ReturnType<typeof useProductReviews>;
+}) {
   const t = useTranslations('product');
   const tCategories = useTranslations('categories');
+  const summary = reviews.data.summary;
 
   const items: TabItem[] = [
     {
@@ -29,8 +37,8 @@ export function ProductInfo({ product }: { product: Product }) {
             [t('specBrand'), product.brand ?? '—'],
             [t('specCategory'), tCategories(product.categorySlug)],
             [t('specAvailability'), product.inStock ? t('inStockLabel') : t('outOfStockLabel')],
-            [t('specRating'), `${product.rating ?? '—'} / 5`],
-            [t('tabReviews'), String(product.reviewCount ?? 0)],
+            [t('specRating'), summary.count ? `${summary.average.toFixed(1)} / 5` : '—'],
+            [t('tabReviews'), String(summary.count)],
           ].map(([k, v]) => (
             <div
               key={k}
@@ -73,8 +81,8 @@ export function ProductInfo({ product }: { product: Product }) {
     {
       key: 'reviews',
       label: t('tabReviews'),
-      count: product.reviewCount,
-      content: <ProductReviews rating={product.rating} count={product.reviewCount} />,
+      count: summary.count || undefined,
+      content: <ProductReviews reviews={reviews} />,
     },
   ];
 

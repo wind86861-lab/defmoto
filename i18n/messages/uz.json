@@ -545,7 +545,19 @@
     "inStockCountLabel": "Sotuvda:",
     "decreaseAria": "Kamaytirish",
     "increaseAria": "Ko'paytirish",
-    "loadingLabel": "Tovar yuklanmoqda"
+    "loadingLabel": "Tovar yuklanmoqda",
+    "reviewFormTitle": "Sharhingiz",
+    "reviewFormTitleUpdate": "Sharhingizni yangilang",
+    "reviewPlaceholder": "Fikringizni yozing (ixtiyoriy)",
+    "reviewSubmit": "Yuborish",
+    "reviewUpdate": "Yangilash",
+    "reviewYourRating": "Bahoyingiz",
+    "reviewGatePurchase": "Sharh qoldirish uchun bu mahsulotni sotib oling.",
+    "reviewGateTelegram": "Sharh qoldirish uchun Telegram ilovasi orqali kiring.",
+    "reviewThanks": "Sharhingiz uchun rahmat!",
+    "reviewEmpty": "Hali sharhlar yo'q. Birinchi bo'lib fikr bildiring!",
+    "reviewNoneShort": "Hali sharh yo'q",
+    "reviewError": "Xatolik yuz berdi. Qayta urinib ko'ring."
   },
   "search": {
     "backAria": "Orqaga",

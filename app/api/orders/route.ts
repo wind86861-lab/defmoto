@@ -20,6 +20,7 @@ export async function POST(req: Request) {
     status?: string;
     customerName?: string;
     phone?: string;
+    userId?: string;
     total?: number;
     payload?: unknown;
   };
