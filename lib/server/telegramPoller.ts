@@ -267,30 +267,35 @@ async function loop() {
     }
   }
 
+  console.log('[poller] entering getUpdates loop');
   let offset = 0;
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
       const r = await tg('getUpdates', { offset, timeout: 30 });
       if (r?.ok && Array.isArray(r.result)) {
+        if (r.result.length) console.log('[poller] got', r.result.length, 'update(s)');
         for (const update of r.result as TgUpdate[]) {
           offset = update.update_id + 1;
           try {
             await handleUpdate(update);
-          } catch {
-            /* keep polling even if one update fails */
+          } catch (e) {
+            console.log('[poller] handleUpdate error:', (e as Error)?.message);
           }
         }
       } else {
+        if (r && !r.ok) console.log('[poller] getUpdates not ok:', r.error_code, r.description);
         await sleep(2000);
       }
-    } catch {
+    } catch (e) {
+      console.log('[poller] getUpdates threw:', (e as Error)?.message);
       await sleep(3000);
     }
   }
 }
 
 export function startTelegramPoller(): void {
+  console.log('[poller] startTelegramPoller token?', Boolean(BOT_TOKEN), 'alreadyStarted?', Boolean(globalRef.__deftPollerStarted));
   if (!BOT_TOKEN) return;
   if (globalRef.__deftPollerStarted) return;
   globalRef.__deftPollerStarted = true;

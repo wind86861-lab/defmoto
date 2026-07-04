@@ -4,6 +4,7 @@
  * isn't configured, so the app runs fine without it.
  */
 export async function register() {
+  console.log('[instrumentation] register runtime=', process.env.NEXT_RUNTIME);
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     const { startTelegramPoller } = await import('./lib/server/telegramPoller');
     startTelegramPoller();
