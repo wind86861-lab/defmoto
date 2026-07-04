@@ -385,20 +385,38 @@ export async function handleCallback(cb: {
   await tg('answerCallbackQuery', { callback_query_id: cb.id });
 }
 
+interface InlineBtn {
+  text: string;
+  url?: string;
+  web_app?: { url: string };
+  callback_data?: string;
+}
+
+/**
+ * A button that opens the site. Over HTTPS it opens as a Telegram Mini App
+ * (inside Telegram); otherwise it falls back to a normal URL button.
+ */
+function openAppButton(text: string, path = ''): InlineBtn | null {
+  const site = process.env.NEXT_PUBLIC_APP_URL || '';
+  if (!site) return null;
+  const url = `${site}${path}`;
+  return site.startsWith('https') ? { text, web_app: { url } } : { text, url };
+}
+
 /** Inline keyboard for the operator welcome / start message. */
 export function startKeyboard() {
-  const site = process.env.NEXT_PUBLIC_APP_URL || '';
-  const rows: { text: string; url?: string; callback_data?: string }[][] = [];
-  if (site) rows.push([{ text: '🌐 Saytni ochish', url: site }]);
+  const rows: InlineBtn[][] = [];
+  const open = openAppButton('🛍 Doʻkonni ochish', '/catalog');
+  if (open) rows.push([open]);
   rows.push([{ text: 'ℹ️ Qanday ishlaydi', callback_data: 'help' }]);
   return { inline_keyboard: rows };
 }
 
-/** Inline keyboard shown to ordinary users — opens the shop. */
+/** Inline keyboard shown to ordinary users — opens the shop as a Mini App. */
 export function customerKeyboard() {
-  const site = process.env.NEXT_PUBLIC_APP_URL || '';
-  const rows: { text: string; url?: string }[][] = [];
-  if (site) rows.push([{ text: '🛍 Doʻkonni ochish', url: site }]);
+  const rows: InlineBtn[][] = [];
+  const open = openAppButton('🛍 Doʻkonni ochish', '/catalog');
+  if (open) rows.push([open]);
   return { inline_keyboard: rows };
 }
 
@@ -434,9 +452,10 @@ export function isOperatorChat(chatId: number): boolean {
  * matched a menu button (and a reply was sent), false otherwise.
  */
 export async function handleCustomerMenu(chatId: number, text: string): Promise<boolean> {
-  const site = process.env.NEXT_PUBLIC_APP_URL || '';
-  const link = (path: string, label: string) =>
-    site ? { inline_keyboard: [[{ text: label, url: `${site}${path}` }]] } : undefined;
+  const link = (path: string, label: string) => {
+    const btn = openAppButton(label, path);
+    return btn ? { inline_keyboard: [[btn]] } : undefined;
+  };
 
   switch (text) {
     case MENU.catalog:
