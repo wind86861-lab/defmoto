@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Phone, Lock, User, Send, ArrowLeft } from 'lucide-react';
+import { Phone, Lock, Send, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { Logo } from '@/components/ui/Logo';
 import { useHaptic } from '@/hooks/useHaptic';
 
-type Mode = 'login' | 'register' | 'forgot';
+type Mode = 'login' | 'forgot';
+
+const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'ajndspuntnjqpiuuerbot';
+const BOT_LINK = `https://t.me/${BOT_USERNAME}`;
 
 async function post(url: string, body: unknown) {
   const r = await fetch(url, {
@@ -22,7 +24,6 @@ async function post(url: string, body: unknown) {
 export function AuthScreen({ onDone }: { onDone: () => void }) {
   const { notify } = useHaptic();
   const [mode, setMode] = useState<Mode>('login');
-  const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -43,21 +44,7 @@ export function AuthScreen({ onDone }: { onDone: () => void }) {
       onDone();
     } else {
       notify('error');
-      setError('Telefon yoki parol notoʻgʻri.');
-    }
-  };
-
-  const submitRegister = async () => {
-    setBusy(true);
-    setError('');
-    const { ok, status } = await post('/api/auth/register', { name, phone, password });
-    setBusy(false);
-    if (ok) {
-      notify('success');
-      onDone();
-    } else {
-      notify('error');
-      setError(status === 409 ? 'Bu raqam allaqachon roʻyxatdan oʻtgan.' : 'Maʼlumotlar notoʻgʻri (parol kamida 6 belgi).');
+      setError('Telefon yoki parol notoʻgʻri. Botda roʻyxatdan oʻtganingizni tekshiring.');
     }
   };
 
@@ -70,7 +57,7 @@ export function AuthScreen({ onDone }: { onDone: () => void }) {
       setBotLink((data.botLink as string) || '');
       setForgotStep('code');
     } else {
-      setError(status === 404 ? 'Bu raqam boʻyicha hisob topilmadi.' : 'Xatolik. Qayta urinib koʻring.');
+      setError(status === 404 ? 'Bu raqam boʻyicha hisob topilmadi. Avval botda roʻyxatdan oʻting.' : 'Xatolik. Qayta urinib koʻring.');
     }
   };
 
@@ -94,11 +81,7 @@ export function AuthScreen({ onDone }: { onDone: () => void }) {
         <div className="mb-8 flex flex-col items-center text-center">
           <Logo size="lg" />
           <p className="mt-3 text-sm text-white/55">
-            {mode === 'register'
-              ? 'Yangi hisob yarating'
-              : mode === 'forgot'
-                ? 'Parolni tiklash'
-                : 'Hisobingizga kiring'}
+            {mode === 'forgot' ? 'Parolni tiklash' : 'Hisobingizga kiring'}
           </p>
         </div>
 
@@ -138,11 +121,6 @@ export function AuthScreen({ onDone }: { onDone: () => void }) {
             )
           ) : (
             <>
-              {mode === 'register' && (
-                <Field icon={User}>
-                  <input {...inp} placeholder="Ismingiz" value={name} onChange={(e) => setName(e.target.value)} />
-                </Field>
-              )}
               <Field icon={Phone}>
                 <input {...inp} type="tel" placeholder="+998 90 000 00 00" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </Field>
@@ -150,40 +128,43 @@ export function AuthScreen({ onDone }: { onDone: () => void }) {
                 <input {...inp} type="password" placeholder="Parol" value={password} onChange={(e) => setPassword(e.target.value)} />
               </Field>
               {error && <ErrorText>{error}</ErrorText>}
-              <Button glow fullWidth size="lg" loading={busy} onClick={mode === 'register' ? submitRegister : submitLogin}>
-                {mode === 'register' ? 'Roʻyxatdan oʻtish' : 'Kirish'}
+              <Button glow fullWidth size="lg" loading={busy} onClick={submitLogin}>
+                Kirish
               </Button>
-              {mode === 'login' && (
-                <button type="button" onClick={() => { setMode('forgot'); setForgotStep('phone'); setError(''); }} className="w-full text-center text-xs text-white/50 hover:text-brand-yellow">
-                  Parolni unutdingizmi?
-                </button>
-              )}
+              <button type="button" onClick={() => { setMode('forgot'); setForgotStep('phone'); setError(''); }} className="w-full text-center text-xs text-white/50 hover:text-brand-yellow">
+                Parolni unutdingizmi?
+              </button>
             </>
           )}
         </div>
 
-        {/* Mode switch */}
-        <div className="mt-5 text-center text-sm text-white/60">
-          {mode === 'forgot' ? (
+        {/* Register is bot-only */}
+        {mode === 'login' ? (
+          <div className="mt-5 space-y-3 text-center">
+            <div className="flex items-center gap-3 text-[11px] text-white/40">
+              <span className="h-px flex-1 bg-brand-surface-border" />
+              Hisobingiz yoʻqmi?
+              <span className="h-px flex-1 bg-brand-surface-border" />
+            </div>
+            <a
+              href={BOT_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 rounded-xl bg-[#229ED9] px-4 py-3 text-sm font-bold text-white transition-transform hover:brightness-110 active:scale-[0.98]"
+            >
+              <Send className="h-4 w-4" /> Telegram bot orqali roʻyxatdan oʻtish
+            </a>
+            <p className="text-[11px] text-white/40">
+              Botda roʻyxatdan oʻtib parol oʻrnating, soʻng shu yerda telefon + parol bilan kiring.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-5 text-center text-sm text-white/60">
             <button type="button" onClick={() => { setMode('login'); setError(''); }} className="inline-flex items-center gap-1 font-semibold text-brand-yellow">
               <ArrowLeft className="h-3.5 w-3.5" /> Kirishga qaytish
             </button>
-          ) : mode === 'login' ? (
-            <>
-              Hisobingiz yoʻqmi?{' '}
-              <button type="button" onClick={() => { setMode('register'); setError(''); }} className="font-semibold text-brand-yellow">
-                Roʻyxatdan oʻting
-              </button>
-            </>
-          ) : (
-            <>
-              Hisobingiz bormi?{' '}
-              <button type="button" onClick={() => { setMode('login'); setError(''); }} className="font-semibold text-brand-yellow">
-                Kiring
-              </button>
-            </>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
