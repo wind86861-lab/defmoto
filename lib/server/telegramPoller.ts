@@ -20,6 +20,7 @@ import {
   customerMenuKeyboard,
   handleCustomerMenu,
   isOperatorChat,
+  forwardBotCustomerMessage,
   ensureRelayLoaded,
 } from './chatRelay';
 import { getReset, markResetVerified, normalizePhone } from './userAuth';
@@ -52,7 +53,7 @@ interface TgUpdate {
   update_id: number;
   message?: {
     chat?: { id: number };
-    from?: { id: number };
+    from?: { id: number; first_name?: string; username?: string };
     text?: string;
     contact?: { phone_number?: string; user_id?: number };
     reply_to_message?: { message_id: number };
@@ -218,9 +219,20 @@ async function handleUpdate(update: TgUpdate) {
     return;
   }
 
-  // 4) Ordinary user tapped a persistent menu button.
+  // 4) Ordinary user: a persistent menu tap, otherwise a chat message that we
+  //    forward to the operator (reply comes back to this chat).
   if (text && !isOperatorChat(chatId)) {
-    await handleCustomerMenu(chatId, text);
+    const handled = await handleCustomerMenu(chatId, text);
+    if (!handled) {
+      const name = msg.from?.first_name || msg.from?.username || 'Mijoz';
+      const { relayed } = await forwardBotCustomerMessage(chatId, name, text);
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: relayed
+          ? '✅ Xabaringiz operatorga yuborildi. Tez orada javob beramiz.'
+          : 'ℹ️ Xabaringiz qabul qilindi. Operator ulanishi bilan javob beramiz.',
+      });
+    }
   }
 }
 

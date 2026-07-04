@@ -18,6 +18,7 @@ import {
   updateOrderStatus,
 } from '@/lib/db';
 import { notifyOperator } from '@/lib/server/chatRelay';
+import { notifyOrderStatus } from '@/lib/server/orderNotify';
 
 const SERVICE_ID = process.env.CLICK_SERVICE_ID || '';
 const SECRET = process.env.CLICK_SECRET_KEY || '';
@@ -137,6 +138,7 @@ export async function handleClick(req: Request): Promise<unknown> {
       tx.cancelTime = Date.now();
       savePayment(tx);
       updateOrderStatus(tx.orderId, 'cancelled');
+      void notifyOrderStatus(tx.orderId, 'cancelled');
       return base({ merchant_confirm_id: merchantPrepareId, error: ERR.CANCELLED, error_note: 'Cancelled' });
     }
     if (tx.state === 2) {
@@ -146,6 +148,7 @@ export async function handleClick(req: Request): Promise<unknown> {
     tx.performTime = Date.now();
     savePayment(tx);
     updateOrderStatus(tx.orderId, 'paid');
+    void notifyOrderStatus(tx.orderId, 'paid');
     void notifyOperator(
       `💳 *Toʻlov qabul qilindi (Click)*\nBuyurtma: ${tx.orderId}\nSumma: ${tx.amount.toLocaleString('ru-RU')} soʻm`,
     );

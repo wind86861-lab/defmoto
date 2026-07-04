@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { ChevronRight, Package } from 'lucide-react';
@@ -9,10 +10,39 @@ import { Button } from '@/components/ui/Button';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { formatDateTime } from '@/lib/format';
 import { OrderStatusBadge } from './OrderStatus';
+import type { OrderStatus } from '@/types/order';
+
+interface OrderView {
+  id: string;
+  number: string;
+  status: OrderStatus;
+  total: number;
+  createdAt: string;
+  items: { productId?: string; image?: string }[];
+}
 
 export function OrdersListClient() {
   const t = useTranslations('orders');
-  const orders = useOrdersStore((s) => s.orders);
+  const localOrders = useOrdersStore((s) => s.orders) as unknown as OrderView[];
+  const [serverOrders, setServerOrders] = useState<OrderView[] | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/orders/mine', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((j) => {
+        if (active) setServerOrders(Array.isArray(j.orders) ? j.orders : []);
+      })
+      .catch(() => active && setServerOrders([]));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Prefer the server history (real, cross-device, live status); fall back to
+  // this device's local orders (e.g. guest checkouts) when there are none.
+  const orders =
+    serverOrders && serverOrders.length ? serverOrders : localOrders;
 
   if (orders.length === 0) {
     return (
@@ -66,10 +96,10 @@ export function OrdersListClient() {
             </div>
 
             <div className="mt-3 flex items-center gap-2 overflow-hidden">
-              {order.items.slice(0, 4).map((item) => (
+              {order.items.slice(0, 4).map((item, i) => (
                 <ProductImage
-                  key={item.productId}
-                  src={item.image}
+                  key={item.productId ?? i}
+                  src={item.image ?? ''}
                   alt=""
                   className="h-12 w-12 rounded-lg border border-brand-surface-border object-cover"
                   fallbackClassName="h-12 w-12 rounded-lg border border-brand-surface-border"

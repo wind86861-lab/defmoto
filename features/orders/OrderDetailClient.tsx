@@ -23,11 +23,38 @@ import { PaymentProcessor } from '@/features/payment/PaymentProcessor';
 import { RoadDashLoader } from '@/components/ui/MotoLoader';
 import { formatDateTime } from '@/lib/format';
 import type { PaymentRequest } from '@/types/payment';
+import type { Order } from '@/types/order';
 
 export function OrderDetailClient({ id }: { id: string }) {
   const t = useTranslations('orders');
   const router = useRouter();
-  const order = useOrdersStore((s) => s.orders.find((o) => o.id === id));
+  const localOrder = useOrdersStore((s) => s.orders.find((o) => o.id === id));
+  // Cross-device: if not on this device, load it from the server (owner-only).
+  const [fetched, setFetched] = useState<Order | null | undefined>(undefined);
+  useEffect(() => {
+    if (localOrder) return;
+    let active = true;
+    fetch(`/api/orders/${id}`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!active) return;
+        if (j?.ok && j.order) {
+          const p = (j.order.payload || {}) as Order;
+          setFetched({
+            ...p,
+            id: j.order.id,
+            number: j.order.number,
+            status: j.order.status,
+            total: j.order.total,
+          });
+        } else setFetched(null);
+      })
+      .catch(() => active && setFetched(null));
+    return () => {
+      active = false;
+    };
+  }, [id, localOrder]);
+  const order = localOrder ?? fetched ?? undefined;
   const [paymentOpen, setPaymentOpen] = useState(false);
 
   const deliveryLabels: Record<string, string> = {
@@ -44,11 +71,12 @@ export function OrderDetailClient({ id }: { id: string }) {
   };
 
   useEffect(() => {
-    if (!order) {
+    // Only give up once the server has also confirmed it isn't ours.
+    if (!localOrder && fetched === null) {
       const timer = setTimeout(() => router.replace('/orders'), 100);
       return () => clearTimeout(timer);
     }
-  }, [order, router]);
+  }, [localOrder, fetched, router]);
 
   const isOnline = order && order.payment.method !== 'cash';
   const isUnpaid = order && !order.payment.paid && order.status !== 'cancelled';

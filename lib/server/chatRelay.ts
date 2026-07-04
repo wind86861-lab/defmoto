@@ -554,7 +554,23 @@ export function ingestOperatorReply(replyToMessageId: number, text: string): boo
   });
   session.lastActivity = Date.now();
   persistSessions();
+  // Chat started from inside the bot → deliver the reply straight to that chat.
+  if (sessionId.startsWith('tg:')) {
+    void sendBotMessage(sessionId.slice(3), `💬 *Operator:* ${text}`);
+  }
   return true;
+}
+
+/**
+ * A customer wrote to the bot directly → forward to the operator and route
+ * replies back to their Telegram chat (session id `tg:<chatId>`).
+ */
+export async function forwardBotCustomerMessage(
+  chatId: number,
+  name: string,
+  text: string,
+): Promise<{ relayed: boolean }> {
+  return forwardToOperator(`tg:${chatId}`, text, name);
 }
 
 /** Operator messages newer than `since` (epoch ms) — for the customer poll. */

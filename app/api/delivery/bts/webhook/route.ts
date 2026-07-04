@@ -7,6 +7,7 @@ import {
 } from '@/lib/db';
 import { btsStatusToOrderStatus } from '@/lib/bts/client';
 import { notifyOperator } from '@/lib/server/chatRelay';
+import { notifyOrderStatus } from '@/lib/server/orderNotify';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -57,6 +58,7 @@ export async function POST(req: Request) {
 
   if (code) {
     updateOrderStatus(order.id, btsStatusToOrderStatus(code));
+    void notifyOrderStatus(order.id, btsStatusToOrderStatus(code));
     void notifyOperator(
       `📦 *Yetkazish holati* ${order.number}\n${name || `status ${code}`}`,
     );

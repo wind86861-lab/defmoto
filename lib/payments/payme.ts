@@ -12,6 +12,7 @@
 
 import { getOrder, getPaymentById, savePayment, updateOrderStatus } from '@/lib/db';
 import { notifyOperator } from '@/lib/server/chatRelay';
+import { notifyOrderStatus } from '@/lib/server/orderNotify';
 
 const KEY = process.env.PAYME_KEY || '';
 
@@ -142,6 +143,7 @@ export async function handlePayme(req: Request): Promise<{ status: number; body:
       tx.performTime = Date.now();
       savePayment(tx);
       updateOrderStatus(tx.orderId, 'paid');
+      void notifyOrderStatus(tx.orderId, 'paid');
       void notifyOperator(`💳 *Toʻlov qabul qilindi (Payme)*\nBuyurtma: ${tx.orderId}\nSumma: ${tx.amount.toLocaleString('ru-RU')} soʻm`);
       return { status: 200, body: rpcResult(id, { perform_time: tx.performTime, transaction: tx.id, state: tx.state }) };
     }
@@ -158,6 +160,7 @@ export async function handlePayme(req: Request): Promise<{ status: number; body:
       tx.reason = Number(params.reason) || tx.reason;
       savePayment(tx);
       updateOrderStatus(tx.orderId, 'cancelled');
+      void notifyOrderStatus(tx.orderId, 'cancelled');
       return {
         status: 200,
         body: rpcResult(id, { cancel_time: tx.cancelTime, transaction: tx.id, state: tx.state }),
