@@ -370,6 +370,12 @@ export function getUserById(id: string): UserAccount | null {
   return store.users.find((u) => u.id === id) ?? null;
 }
 
+export function getUserByTelegramId(telegramId: string | number): UserAccount | null {
+  load();
+  const tid = String(telegramId);
+  return store.users.find((u) => u.telegramId === tid) ?? null;
+}
+
 export function createUserAccount(input: {
   name: string;
   phone: string;

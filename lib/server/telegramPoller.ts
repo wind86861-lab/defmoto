@@ -23,15 +23,29 @@ import {
   forwardBotCustomerMessage,
   ensureRelayLoaded,
 } from './chatRelay';
-import { getReset, markResetVerified, normalizePhone } from './userAuth';
+import { getReset, markResetVerified, normalizePhone, hashPassword } from './userAuth';
+import {
+  getUserByTelegramId,
+  getUserByPhone,
+  createUserAccount,
+  updateUser,
+} from '@/lib/db';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 
-// chatId → password-reset token, remembered between /start and contact share.
-const pendingReset = new Map<number, string>();
+// Per-chat conversation state, remembered between messages.
+const pendingReset = new Map<number, string>(); // chatId → reset token
+const pendingOperator = new Set<number>(); // chats verifying as operator
+const pendingPassword = new Set<number>(); // chats setting a new password
 
 const CONTACT_KB = {
   keyboard: [[{ text: '📱 Kontaktni yuborish', request_contact: true }]],
+  resize_keyboard: true,
+  one_time_keyboard: true,
+};
+
+const REGISTER_KB = {
+  keyboard: [[{ text: '📱 Roʻyxatdan oʻtish (kontakt)', request_contact: true }]],
   resize_keyboard: true,
   one_time_keyboard: true,
 };
@@ -77,13 +91,12 @@ async function handleUpdate(update: TgUpdate) {
   const chatId = msg.chat?.id;
   if (chatId == null) return;
   const text = (msg.text || '').trim();
+  const lower = text.toLowerCase();
+  const fromId = msg.from?.id;
+  const fromName = msg.from?.first_name || msg.from?.username || 'Mijoz';
 
-  // 1) /start
-  //    - the bound operator          → operator dashboard
-  //    - everyone else               → ordinary-user welcome + shop button
-  //    - operator configured, unbound→ also offer the operator to verify
-  //      (only the admin-configured phone can ever become operator)
-  if (text.startsWith('/start')) {
+  /* -------------------- commands (case-insensitive, never forwarded) ------- */
+  if (lower.startsWith('/start')) {
     // Password-reset deep link: /start rp-<token>
     const param = text.slice('/start'.length).trim();
     if (param.startsWith('rp-')) {
@@ -106,9 +119,8 @@ async function handleUpdate(update: TgUpdate) {
       return;
     }
 
-    const outcome = await tryBindOperator(chatId);
-
-    if (outcome === 'already') {
+    // The bound operator gets their dashboard.
+    if (isOperatorChat(chatId)) {
       await tg('sendMessage', {
         chat_id: chatId,
         text:
@@ -120,7 +132,7 @@ async function handleUpdate(update: TgUpdate) {
       return;
     }
 
-    // Ordinary user — always welcomed with the persistent bottom menu.
+    // Ordinary customer welcome.
     await tg('sendMessage', {
       chat_id: chatId,
       text:
@@ -131,36 +143,77 @@ async function handleUpdate(update: TgUpdate) {
       reply_markup: customerMenuKeyboard(),
     });
 
-    // If the admin has configured an operator but nobody is bound yet, let
-    // that operator verify by sharing their contact.
-    if (outcome === 'need-contact') {
+    // Not registered yet → invite them to register by sharing their contact.
+    const account = fromId != null ? getUserByTelegramId(fromId) : null;
+    if (!account) {
       await tg('sendMessage', {
         chat_id: chatId,
         text:
-          'ℹ️ Agar siz DEFT MOTO operatori boʻlsangiz, tasdiqlash uchun ' +
-          'pastdagi tugma orqali kontaktingizni yuboring. Faqat admin ' +
-          'belgilagan raqam operator sifatida ulanadi.',
-        reply_markup: {
-          keyboard: [
-            [{ text: '📱 Operator sifatida ulanish', request_contact: true }],
-          ],
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
+          '📝 Roʻyxatdan oʻtish uchun kontaktingizni yuboring — buyurtma va ' +
+          'yetkazib berish uchun kerak boʻladi.',
+        reply_markup: REGISTER_KB,
       });
     }
     return;
   }
 
-  // 2) Shared contact.
+  // /register — same as the /start invite.
+  if (lower === '/register' || lower === '/royxat') {
+    await tg('sendMessage', {
+      chat_id: chatId,
+      text: 'Kontaktingizni yuboring 👇',
+      reply_markup: REGISTER_KB,
+    });
+    return;
+  }
+
+  // /parol or /setpassword or /forgot — set (or reset) the website password.
+  if (lower === '/parol' || lower === '/setpassword' || lower === '/forgot') {
+    const account = fromId != null ? getUserByTelegramId(fromId) : null;
+    if (!account) {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: 'Avval /start bosib, kontaktingiz bilan roʻyxatdan oʻting.',
+        reply_markup: REGISTER_KB,
+      });
+      return;
+    }
+    pendingPassword.add(chatId);
+    await tg('sendMessage', {
+      chat_id: chatId,
+      text: '🔑 Yangi parolingizni yuboring (kamida 6 belgi):',
+      reply_markup: { remove_keyboard: true },
+    });
+    return;
+  }
+
+  // /operator — staff-only verification (kept off /start so customers aren't asked).
+  if (lower === '/operator') {
+    pendingOperator.add(chatId);
+    await tg('sendMessage', {
+      chat_id: chatId,
+      text: 'Operator sifatida ulanish uchun kontaktingizni yuboring. Faqat admin belgilagan raqam ulanadi.',
+      reply_markup: CONTACT_KB,
+    });
+    return;
+  }
+
+  // Any other slash-command → ignore (never forward to the operator).
+  if (text.startsWith('/')) {
+    await tg('sendMessage', { chat_id: chatId, text: 'Menyudan foydalaning 👇', reply_markup: customerMenuKeyboard() });
+    return;
+  }
+
+  /* ------------------------------- contact -------------------------------- */
   if (msg.contact?.phone_number) {
-    // 2a) Password reset in progress for this chat.
+    const phone = msg.contact.phone_number;
+
+    // a) Password reset in progress.
     const resetToken = pendingReset.get(chatId);
     if (resetToken) {
       pendingReset.delete(chatId);
       const entry = getReset(resetToken);
-      const shared = normalizePhone(msg.contact.phone_number);
-      if (entry && shared.endsWith(entry.phone.slice(-9))) {
+      if (entry && normalizePhone(phone).endsWith(entry.phone.slice(-9))) {
         markResetVerified(resetToken);
         await tg('sendMessage', {
           chat_id: chatId,
@@ -173,59 +226,86 @@ async function handleUpdate(update: TgUpdate) {
       } else {
         await tg('sendMessage', {
           chat_id: chatId,
-          text: '⛔️ Raqamingiz hisobga mos kelmadi. Saytda kiritgan raqamingiz bilan urinib koʻring.',
+          text: '⛔️ Raqamingiz hisobga mos kelmadi.',
           reply_markup: { remove_keyboard: true },
         });
       }
       return;
     }
 
-    // 2b) Operator verification.
-    const outcome = await tryBindOperator(chatId, msg.contact.phone_number);
-    if (outcome === 'bound' || outcome === 'already') {
+    // b) Operator verification (only when explicitly started via /operator).
+    if (pendingOperator.has(chatId)) {
+      pendingOperator.delete(chatId);
+      const outcome = await tryBindOperator(chatId, phone);
       await tg('sendMessage', {
         chat_id: chatId,
         text:
-          '✅ Tasdiqlandi! Siz endi DEFT MOTO operatorisiz. Mijoz xabarlari ' +
-          'shu yerga keladi — reply qilib javob bering.',
-        reply_markup: { remove_keyboard: true },
+          outcome === 'bound' || outcome === 'already'
+            ? '✅ Tasdiqlandi! Siz endi operatorsiz. Mijoz xabarlari shu yerga keladi.'
+            : outcome === 'not-configured'
+              ? 'ℹ️ Operator hali admin panelida sozlanmagan.'
+              : '⛔️ Bu raqam operator sifatida belgilanmagan.',
+        reply_markup:
+          outcome === 'bound' || outcome === 'already'
+            ? startKeyboard()
+            : { remove_keyboard: true },
       });
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text: 'Foydali havolalar:',
-        reply_markup: startKeyboard(),
-      });
-    } else if (outcome === 'not-configured') {
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text: 'Rahmat! Quyidagi menyudan foydalaning 👇',
-        reply_markup: customerMenuKeyboard(),
-      });
-    } else {
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text:
-          '⛔️ Bu raqam admin tomonidan operator sifatida belgilanmagan. ' +
-          'Admin paneldagi raqam bilan bir xil akkauntdan urinib ko‘ring.',
-        reply_markup: { remove_keyboard: true },
-      });
+      return;
     }
+
+    // c) Customer registration / account linking.
+    const norm = normalizePhone(phone);
+    const existing = getUserByPhone(norm);
+    if (existing) {
+      if (fromId != null && existing.telegramId !== String(fromId)) {
+        updateUser(existing.id, { telegramId: String(fromId) });
+      }
+    } else {
+      createUserAccount({ name: fromName, phone: norm, passwordHash: '', telegramId: fromId != null ? String(fromId) : undefined });
+    }
+    await tg('sendMessage', {
+      chat_id: chatId,
+      text:
+        '✅ Roʻyxatdan oʻtdingiz! Endi buyurtma berishingiz mumkin.\n\n' +
+        'Saytga (brauzerda) telefon + parol bilan kirish uchun parol oʻrnating: /parol',
+      reply_markup: customerMenuKeyboard(),
+    });
     return;
   }
 
-  // 3) Operator answered a forwarded question (reply-to).
+  /* ------------------------- operator reply-to ---------------------------- */
   if (msg.reply_to_message?.message_id && text) {
     ingestOperatorReply(msg.reply_to_message.message_id, text);
     return;
   }
 
-  // 4) Ordinary user: a persistent menu tap, otherwise a chat message that we
-  //    forward to the operator (reply comes back to this chat).
+  /* --------------------- password being set (customer) -------------------- */
+  if (pendingPassword.has(chatId) && text) {
+    if (text.length < 6) {
+      await tg('sendMessage', { chat_id: chatId, text: 'Parol kamida 6 belgi boʻlsin. Qaytadan yuboring:' });
+      return;
+    }
+    pendingPassword.delete(chatId);
+    const account = fromId != null ? getUserByTelegramId(fromId) : null;
+    if (account) {
+      updateUser(account.id, { passwordHash: hashPassword(text) });
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: `✅ Parol oʻrnatildi. Saytga *${account.phone}* + shu parol bilan kirishingiz mumkin.`,
+        parse_mode: 'Markdown',
+        reply_markup: customerMenuKeyboard(),
+      });
+    } else {
+      await tg('sendMessage', { chat_id: chatId, text: 'Avval /start bosib roʻyxatdan oʻting.', reply_markup: REGISTER_KB });
+    }
+    return;
+  }
+
+  /* --------------------- menu tap, else forward to operator --------------- */
   if (text && !isOperatorChat(chatId)) {
     const handled = await handleCustomerMenu(chatId, text);
     if (!handled) {
-      const name = msg.from?.first_name || msg.from?.username || 'Mijoz';
-      const { relayed } = await forwardBotCustomerMessage(chatId, name, text);
+      const { relayed } = await forwardBotCustomerMessage(chatId, fromName, text);
       await tg('sendMessage', {
         chat_id: chatId,
         text: relayed
