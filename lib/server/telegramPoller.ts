@@ -22,6 +22,8 @@ import {
   isOperatorChat,
   forwardBotCustomerMessage,
   ensureRelayLoaded,
+  takePendingReply,
+  operatorReplyToSession,
   MENU,
 } from './chatRelay';
 import { getReset, markResetVerified, normalizePhone, hashPassword } from './userAuth';
@@ -76,7 +78,8 @@ interface TgUpdate {
   callback_query?: {
     id: string;
     data?: string;
-    message?: { message_id?: number };
+    from?: { id: number };
+    message?: { message_id?: number; chat?: { id: number } };
   };
 }
 
@@ -312,6 +315,20 @@ async function handleUpdate(update: TgUpdate) {
   if (msg.reply_to_message?.message_id && text) {
     ingestOperatorReply(msg.reply_to_message.message_id, text);
     return;
+  }
+
+  // Operator answering from the inbox (they tapped "✍️ Javob berish").
+  if (isOperatorChat(chatId) && text) {
+    const target = takePendingReply(chatId);
+    if (target) {
+      operatorReplyToSession(target, text);
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: '✅ Javob yuborildi.',
+        reply_markup: startKeyboard(),
+      });
+      return;
+    }
   }
 
   /* --------------------- password being set (customer) -------------------- */

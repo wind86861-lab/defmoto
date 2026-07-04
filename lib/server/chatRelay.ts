@@ -337,29 +337,117 @@ function quickReplyKeyboard() {
   return { inline_keyboard: rows };
 }
 
+/* ---------------------------- operator inbox ---------------------------- */
+
+type CbBtn = { text: string; callback_data: string };
+
+// Operator chat → the session they tapped "reply" on. Their next message goes
+// to that session.
+const pendingReplyTarget = new Map<number, string>();
+export function takePendingReply(chatId: number): string | undefined {
+  const s = pendingReplyTarget.get(chatId);
+  if (s) pendingReplyTarget.delete(chatId);
+  return s;
+}
+
+function sessionIsNew(s: Session): boolean {
+  const last = s.messages[s.messages.length - 1];
+  return last?.author === 'customer'; // last word is the customer's → unanswered
+}
+
+/** Inbox list — unanswered first, each session a button. */
+function inboxView(): { text: string; keyboard: { inline_keyboard: CbBtn[][] } } {
+  const entries = Array.from(state.sessions.entries())
+    .filter(([, s]) => s.messages.length)
+    .sort((a, b) => {
+      const an = sessionIsNew(a[1]) ? 0 : 1;
+      const bn = sessionIsNew(b[1]) ? 0 : 1;
+      if (an !== bn) return an - bn;
+      return b[1].lastActivity - a[1].lastActivity;
+    });
+  const rows: CbBtn[][] = entries.slice(0, 20).map(([id, s]) => {
+    const st = sessionIsNew(s) ? '🔴' : '✅';
+    const name = (s.customerName || `#${id.slice(-6)}`).slice(0, 24);
+    const c = s.messages.filter((m) => m.author === 'customer').length;
+    return [{ text: `${st} ${name} · ${c}`, callback_data: `sess:${id}` }];
+  });
+  const newCount = entries.filter(([, s]) => sessionIsNew(s)).length;
+  return {
+    text: rows.length
+      ? `📨 *Xabarlar* — javob berilmagan: *${newCount}*\n🔴 javobsiz · ✅ javob berilgan\nBirini tanlang:`
+      : '📭 Hozircha xabarlar yoʻq.',
+    keyboard: { inline_keyboard: rows.length ? rows : [[{ text: '🔄 Yangilash', callback_data: 'inbox' }]] },
+  };
+}
+
+/** Full conversation view for one session + a reply button. */
+export function sessionView(sessionId: string): { text: string; keyboard: { inline_keyboard: CbBtn[][] } } {
+  const s = state.sessions.get(sessionId);
+  if (!s) {
+    return { text: 'Suhbat topilmadi.', keyboard: { inline_keyboard: [[{ text: '⬅️ Orqaga', callback_data: 'inbox' }]] } };
+  }
+  const lines = s.messages.slice(-20).map((m) => (m.author === 'customer' ? '👤 ' : '💬 ') + m.text);
+  const text = `*${s.customerName || 'Mijoz'}*\n\n${lines.join('\n\n')}`.slice(0, 3800);
+  return {
+    text,
+    keyboard: {
+      inline_keyboard: [
+        [{ text: '✍️ Javob berish', callback_data: `reply:${sessionId}` }],
+        [{ text: '⬅️ Orqaga', callback_data: 'inbox' }],
+      ],
+    },
+  };
+}
+
+/** Operator reply addressed to a specific session (from the inbox flow). */
+export function operatorReplyToSession(sessionId: string, text: string): boolean {
+  const session = getSession(sessionId);
+  session.messages.push({
+    id: `op_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    author: 'operator',
+    text,
+    createdAt: new Date().toISOString(),
+  });
+  session.lastActivity = Date.now();
+  persistSessions();
+  if (sessionId.startsWith('tg:')) void sendBotMessage(sessionId.slice(3), `💬 *Operator:* ${text}`);
+  return true;
+}
+
 /**
- * Handle an operator tapping an inline button. Quick-reply buttons send a
- * canned answer to the originating website session; always acknowledges the
- * callback so Telegram stops the button spinner.
+ * Handle an operator tapping an inline button: quick replies, the inbox list,
+ * opening a conversation, and starting a reply. Always answers the callback.
  */
 export async function handleCallback(cb: {
   id: string;
   data?: string;
-  message?: { message_id?: number };
+  from?: { id: number };
+  message?: { message_id?: number; chat?: { id: number } };
 }): Promise<void> {
   await ensureLoaded();
   const data = cb.data || '';
   const msgId = cb.message?.message_id;
+  const chatId = cb.message?.chat?.id ?? cb.from?.id;
 
+  const edit = async (text: string, keyboard: { inline_keyboard: CbBtn[][] }) => {
+    if (chatId != null && msgId != null) {
+      await tg('editMessageText', {
+        chat_id: chatId,
+        message_id: msgId,
+        text,
+        parse_mode: 'Markdown',
+        reply_markup: keyboard,
+      });
+    }
+  };
+
+  // Quick reply on a forwarded message.
   if (data.startsWith('qr:') && msgId != null) {
     const qr = QUICK_REPLIES.find((q) => q.code === data.slice(3));
     const sessionId = state.forwarded.get(msgId);
     if (qr && sessionId) {
       ingestOperatorReply(msgId, qr.text);
-      await tg('answerCallbackQuery', {
-        callback_query_id: cb.id,
-        text: `✅ Yuborildi: ${qr.label}`,
-      });
+      await tg('answerCallbackQuery', { callback_query_id: cb.id, text: `✅ Yuborildi: ${qr.label}` });
       return;
     }
     await tg('answerCallbackQuery', {
@@ -370,14 +458,40 @@ export async function handleCallback(cb: {
     return;
   }
 
+  // Inbox list.
+  if (data === 'inbox') {
+    const v = inboxView();
+    await edit(v.text, v.keyboard);
+    await tg('answerCallbackQuery', { callback_query_id: cb.id });
+    return;
+  }
+
+  // Open a conversation.
+  if (data.startsWith('sess:')) {
+    const v = sessionView(data.slice(5));
+    await edit(v.text, v.keyboard);
+    await tg('answerCallbackQuery', { callback_query_id: cb.id });
+    return;
+  }
+
+  // Start a reply to a session.
+  if (data.startsWith('reply:')) {
+    const sid = data.slice(6);
+    if (chatId != null) pendingReplyTarget.set(chatId, sid);
+    await tg('answerCallbackQuery', { callback_query_id: cb.id, text: '✍️ Javobingizni yozing' });
+    if (chatId != null) {
+      await tg('sendMessage', { chat_id: chatId, text: '✍️ Javobingizni matn koʻrinishida yuboring:' });
+    }
+    return;
+  }
+
   if (data === 'help') {
     await tg('answerCallbackQuery', {
       callback_query_id: cb.id,
       text:
         'Mijoz savoli shu yerga keladi. Javob berish uchun:\n' +
-        '• xabarga reply qilib yozing, yoki\n' +
-        '• tez javob tugmalaridan birini bosing.\n' +
-        'Javobingiz saytdagi chatga darhol yetib boradi.',
+        '• "📨 Xabarlar" tugmasidan suhbatni oching va "Javob berish"ni bosing, yoki\n' +
+        '• xabarga reply qilib yozing, yoki tez javob tugmasini bosing.',
       show_alert: true,
     });
     return;
@@ -407,6 +521,7 @@ function openAppButton(text: string, path = ''): InlineBtn | null {
 /** Inline keyboard for the operator welcome / start message. */
 export function startKeyboard() {
   const rows: InlineBtn[][] = [];
+  rows.push([{ text: '📨 Xabarlar', callback_data: 'inbox' }]);
   const open = openAppButton('🛍 Doʻkonni ochish', '/catalog');
   if (open) rows.push([open]);
   rows.push([{ text: 'ℹ️ Qanday ishlaydi', callback_data: 'help' }]);
