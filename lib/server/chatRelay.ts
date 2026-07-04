@@ -16,6 +16,7 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
+import { listOrders, getUserByTelegramId } from '@/lib/db';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const ENV_OPERATOR = process.env.TELEGRAM_OPERATOR_CHAT_ID || '';
@@ -423,11 +424,12 @@ export function customerKeyboard() {
 /* --------------------------- customer bottom menu ------------------------- */
 
 const CONTACT_PHONE = '+998 (99) 810-70-90';
-const MENU = {
+export const MENU = {
   catalog: '🛍 Katalog',
   contact: '📞 Aloqa',
+  orders: '📦 Buyurtmalarim',
+  password: '🔑 Parol',
   about: 'ℹ️ Biz haqimizda',
-  site: '🌐 Saytni ochish',
 } as const;
 
 /** Persistent bottom keyboard for ordinary users — always visible. */
@@ -435,12 +437,24 @@ export function customerMenuKeyboard() {
   return {
     keyboard: [
       [{ text: MENU.catalog }, { text: MENU.contact }],
-      [{ text: MENU.about }, { text: MENU.site }],
+      [{ text: MENU.orders }, { text: MENU.password }],
+      [{ text: MENU.about }],
     ],
     resize_keyboard: true,
     is_persistent: true,
   };
 }
+
+const ORDER_STATUS: Record<string, string> = {
+  received: 'Qabul qilindi',
+  pending: 'Kutilmoqda',
+  paid: "Toʻlandi ✅",
+  confirmed: 'Tasdiqlandi',
+  shipping: 'Yetkazilmoqda 🚚',
+  delivered: 'Yetkazildi ✅',
+  cancelled: 'Bekor qilindi ❌',
+  expired: 'Muddati oʻtdi',
+};
 
 /** True if this chat is the bound operator. */
 export function isOperatorChat(chatId: number): boolean {
@@ -484,13 +498,34 @@ export async function handleCustomerMenu(chatId: number, text: string): Promise<
         reply_markup: link('/about', 'ℹ️ Batafsil'),
       });
       return true;
-    case MENU.site:
+    case MENU.orders: {
+      // chatId is the customer's Telegram id in a private chat.
+      const account = getUserByTelegramId(chatId);
+      const ids = new Set<string>([String(chatId)]);
+      if (account) ids.add(account.id);
+      const orders = listOrders()
+        .filter((o) => ids.has(String(o.userId ?? '')))
+        .slice(0, 10);
+      if (!orders.length) {
+        await tg('sendMessage', {
+          chat_id: chatId,
+          text: 'Sizda hali buyurtmalar yoʻq. Katalogdan tanlang 👇',
+          reply_markup: link('/catalog', '🛍 Katalog'),
+        });
+        return true;
+      }
+      const lines = orders.map((o) => {
+        const st = ORDER_STATUS[o.status] || o.status;
+        return `🧾 *${o.number}* — ${o.total.toLocaleString('ru-RU')} soʻm\n   ${st}`;
+      });
       await tg('sendMessage', {
         chat_id: chatId,
-        text: 'Saytni ochish 👇',
-        reply_markup: customerKeyboard(),
+        text: `📦 *Buyurtmalaringiz:*\n\n${lines.join('\n\n')}`,
+        parse_mode: 'Markdown',
+        reply_markup: link('/orders', 'Batafsil koʻrish'),
       });
       return true;
+    }
     default:
       return false;
   }

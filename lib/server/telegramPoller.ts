@@ -22,6 +22,7 @@ import {
   isOperatorChat,
   forwardBotCustomerMessage,
   ensureRelayLoaded,
+  MENU,
 } from './chatRelay';
 import { getReset, markResetVerified, normalizePhone, hashPassword } from './userAuth';
 import {
@@ -132,28 +133,42 @@ async function handleUpdate(update: TgUpdate) {
       return;
     }
 
-    // Ordinary customer welcome.
-    await tg('sendMessage', {
-      chat_id: chatId,
-      text:
-        'Assalomu alaykum! 👋\n\n' +
-        '*DEFT MOTO* — mototsikllar, ehtiyot qismlar va aksessuarlar. ' +
-        'Quyidagi menyudan foydalaning 👇',
-      parse_mode: 'Markdown',
-      reply_markup: customerMenuKeyboard(),
-    });
-
-    // Not registered yet → invite them to register by sharing their contact.
     const account = fromId != null ? getUserByTelegramId(fromId) : null;
-    if (!account) {
+
+    // Fully registered (account + password) → welcome + menu.
+    if (account && account.passwordHash) {
       await tg('sendMessage', {
         chat_id: chatId,
         text:
-          '📝 Roʻyxatdan oʻtish uchun kontaktingizni yuboring — buyurtma va ' +
-          'yetkazib berish uchun kerak boʻladi.',
-        reply_markup: REGISTER_KB,
+          'Assalomu alaykum! 👋\n\n' +
+          '*DEFT MOTO* — mototsikllar, ehtiyot qismlar va aksessuarlar. ' +
+          'Quyidagi menyudan foydalaning 👇',
+        parse_mode: 'Markdown',
+        reply_markup: customerMenuKeyboard(),
       });
+      return;
     }
+
+    // Registered contact but no password yet → must finish by setting one.
+    if (account && !account.passwordHash) {
+      pendingPassword.add(chatId);
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: '🔑 Roʻyxatni yakunlash uchun parol oʻrnating (kamida 6 belgi). Yangi parolingizni yuboring:',
+        reply_markup: { remove_keyboard: true },
+      });
+      return;
+    }
+
+    // Not registered → ask for contact (no menu until registration is done).
+    await tg('sendMessage', {
+      chat_id: chatId,
+      text:
+        'Assalomu alaykum! 👋 *DEFT MOTO*ga xush kelibsiz.\n\n' +
+        '📝 Davom etish uchun roʻyxatdan oʻting — kontaktingizni yuboring 👇',
+      parse_mode: 'Markdown',
+      reply_markup: REGISTER_KB,
+    });
     return;
   }
 
@@ -256,20 +271,38 @@ async function handleUpdate(update: TgUpdate) {
     // c) Customer registration / account linking.
     const norm = normalizePhone(phone);
     const existing = getUserByPhone(norm);
+    let account = existing;
     if (existing) {
       if (fromId != null && existing.telegramId !== String(fromId)) {
         updateUser(existing.id, { telegramId: String(fromId) });
       }
     } else {
-      createUserAccount({ name: fromName, phone: norm, passwordHash: '', telegramId: fromId != null ? String(fromId) : undefined });
+      account = createUserAccount({
+        name: fromName,
+        phone: norm,
+        passwordHash: '',
+        telegramId: fromId != null ? String(fromId) : undefined,
+      });
     }
-    await tg('sendMessage', {
-      chat_id: chatId,
-      text:
-        '✅ Roʻyxatdan oʻtdingiz! Endi buyurtma berishingiz mumkin.\n\n' +
-        'Saytga (brauzerda) telefon + parol bilan kirish uchun parol oʻrnating: /parol',
-      reply_markup: customerMenuKeyboard(),
-    });
+
+    // Registration is only complete once a password is set.
+    if (account && account.passwordHash) {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: '✅ Hisobingiz ulandi! Quyidagi menyudan foydalaning 👇',
+        reply_markup: customerMenuKeyboard(),
+      });
+    } else {
+      pendingPassword.add(chatId);
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text:
+          '📱 Raqamingiz qabul qilindi.\n\n' +
+          '🔑 Roʻyxatni yakunlash uchun parol oʻrnating (kamida 6 belgi). ' +
+          'Yangi parolingizni yuboring:',
+        reply_markup: { remove_keyboard: true },
+      });
+    }
     return;
   }
 
@@ -288,10 +321,13 @@ async function handleUpdate(update: TgUpdate) {
     pendingPassword.delete(chatId);
     const account = fromId != null ? getUserByTelegramId(fromId) : null;
     if (account) {
+      const first = !account.passwordHash; // completing registration
       updateUser(account.id, { passwordHash: hashPassword(text) });
       await tg('sendMessage', {
         chat_id: chatId,
-        text: `✅ Parol oʻrnatildi. Saytga *${account.phone}* + shu parol bilan kirishingiz mumkin.`,
+        text: first
+          ? `✅ Roʻyxatdan oʻtdingiz! Endi buyurtma berishingiz mumkin.\n\nSaytga *${account.phone}* + shu parol bilan ham kirishingiz mumkin.`
+          : `✅ Parol yangilandi. Saytga *${account.phone}* + shu parol bilan kiring.`,
         parse_mode: 'Markdown',
         reply_markup: customerMenuKeyboard(),
       });
@@ -301,8 +337,41 @@ async function handleUpdate(update: TgUpdate) {
     return;
   }
 
-  /* --------------------- menu tap, else forward to operator --------------- */
+  /* --------------------- menu / chat (registered only) -------------------- */
   if (text && !isOperatorChat(chatId)) {
+    const account = fromId != null ? getUserByTelegramId(fromId) : null;
+
+    // Not fully registered → guide them to finish, never show the menu/chat.
+    if (!account) {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: '📝 Avval roʻyxatdan oʻting — kontaktingizni yuboring 👇',
+        reply_markup: REGISTER_KB,
+      });
+      return;
+    }
+    if (!account.passwordHash) {
+      pendingPassword.add(chatId);
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: '🔑 Roʻyxatni yakunlash uchun parol oʻrnating (kamida 6 belgi):',
+        reply_markup: { remove_keyboard: true },
+      });
+      return;
+    }
+
+    // "🔑 Parol" menu button → change password.
+    if (text === MENU.password) {
+      pendingPassword.add(chatId);
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: '🔑 Yangi parolingizni yuboring (kamida 6 belgi):',
+        reply_markup: { remove_keyboard: true },
+      });
+      return;
+    }
+
+    // Katalog / Aloqa / Biz haqimizda / Buyurtmalarim.
     const handled = await handleCustomerMenu(chatId, text);
     if (!handled) {
       const { relayed } = await forwardBotCustomerMessage(chatId, fromName, text);
