@@ -358,8 +358,11 @@ function normPhone(raw: string): string {
 
 export function getUserByPhone(phone: string): UserAccount | null {
   load();
-  const p = normPhone(phone);
-  return store.users.find((u) => u.phone === p) ?? null;
+  // Match on the last 9 digits so "+998 90 111 22 33" and "901112233" are the
+  // same account regardless of how the country code is typed.
+  const key = normPhone(phone).slice(-9);
+  if (key.length < 9) return null;
+  return store.users.find((u) => u.phone.slice(-9) === key) ?? null;
 }
 
 export function getUserById(id: string): UserAccount | null {
