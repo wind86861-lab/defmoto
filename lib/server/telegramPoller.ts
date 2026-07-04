@@ -237,8 +237,14 @@ async function handleUpdate(update: TgUpdate) {
 }
 
 async function loop() {
-  // Warm the persisted operator binding into memory on startup.
-  await ensureRelayLoaded();
+  // Startup steps must never prevent the polling loop from running — a throw
+  // here previously killed the whole poller (bot went silent while the web
+  // server stayed up).
+  try {
+    await ensureRelayLoaded();
+  } catch {
+    /* ignore */
+  }
   try {
     await tg('deleteWebhook', { drop_pending_updates: false });
   } catch {
@@ -288,5 +294,10 @@ export function startTelegramPoller(): void {
   if (!BOT_TOKEN) return;
   if (globalRef.__deftPollerStarted) return;
   globalRef.__deftPollerStarted = true;
-  void loop();
+  // The loop is meant to run forever; if it ever rejects, restart it so the
+  // bot self-heals instead of going silent until the next deploy.
+  const run = () => {
+    loop().catch(() => setTimeout(run, 5000));
+  };
+  run();
 }
