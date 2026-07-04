@@ -57,7 +57,7 @@ export function Hero() {
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
         >
-          <div className="relative aspect-[4/3] sm:aspect-[16/7] lg:aspect-[2.6/1]">
+          <div className="relative aspect-[16/10] sm:aspect-[16/7] lg:aspect-[2.6/1]">
             {/* Hover glow ring — ties the banner into the brand without overpowering admin imagery */}
             <div className="pointer-events-none absolute inset-0 z-20 rounded-2xl ring-1 ring-inset ring-white/8 transition-all duration-500 group-hover:ring-brand-yellow/30 sm:rounded-3xl" />
 
