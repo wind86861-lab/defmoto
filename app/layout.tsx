@@ -3,6 +3,7 @@ import { Inter, Sora } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import { TelegramProvider } from '@/components/providers/TelegramProvider';
+import { AuthGate } from '@/components/auth/AuthGate';
 import { Toaster } from '@/components/ui/Toaster';
 import { CursorSmoke } from '@/components/ui/CursorSmoke';
 import './globals.css';
@@ -58,7 +59,9 @@ export default async function RootLayout({
       </head>
       <body className="font-sans">
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <TelegramProvider>{children}</TelegramProvider>
+          <TelegramProvider>
+            <AuthGate>{children}</AuthGate>
+          </TelegramProvider>
           <Toaster />
           <CursorSmoke />
         </NextIntlClientProvider>

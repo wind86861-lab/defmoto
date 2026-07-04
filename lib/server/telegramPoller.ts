@@ -22,8 +22,18 @@ import {
   isOperatorChat,
   ensureRelayLoaded,
 } from './chatRelay';
+import { getReset, markResetVerified, normalizePhone } from './userAuth';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+
+// chatId → password-reset token, remembered between /start and contact share.
+const pendingReset = new Map<number, string>();
+
+const CONTACT_KB = {
+  keyboard: [[{ text: '📱 Kontaktni yuborish', request_contact: true }]],
+  resize_keyboard: true,
+  one_time_keyboard: true,
+};
 
 const globalRef = globalThis as unknown as { __deftPollerStarted?: boolean };
 
@@ -73,6 +83,28 @@ async function handleUpdate(update: TgUpdate) {
   //    - operator configured, unbound→ also offer the operator to verify
   //      (only the admin-configured phone can ever become operator)
   if (text.startsWith('/start')) {
+    // Password-reset deep link: /start rp-<token>
+    const param = text.slice('/start'.length).trim();
+    if (param.startsWith('rp-')) {
+      const token = param.slice(3);
+      if (getReset(token)) {
+        pendingReset.set(chatId, token);
+        await tg('sendMessage', {
+          chat_id: chatId,
+          text:
+            '🔐 Parolni tiklash.\n\nTasdiqlash uchun pastdagi tugma orqali ' +
+            'kontaktingizni yuboring — raqamingiz hisobga mos kelsa, kod yuboriladi.',
+          reply_markup: CONTACT_KB,
+        });
+      } else {
+        await tg('sendMessage', {
+          chat_id: chatId,
+          text: '⚠️ Tiklash havolasi eskirgan. Saytdan qaytadan urinib koʻring.',
+        });
+      }
+      return;
+    }
+
     const outcome = await tryBindOperator(chatId);
 
     if (outcome === 'already') {
@@ -119,8 +151,35 @@ async function handleUpdate(update: TgUpdate) {
     return;
   }
 
-  // 2) Shared contact → verify phone and bind.
+  // 2) Shared contact.
   if (msg.contact?.phone_number) {
+    // 2a) Password reset in progress for this chat.
+    const resetToken = pendingReset.get(chatId);
+    if (resetToken) {
+      pendingReset.delete(chatId);
+      const entry = getReset(resetToken);
+      const shared = normalizePhone(msg.contact.phone_number);
+      if (entry && shared.endsWith(entry.phone.slice(-9))) {
+        markResetVerified(resetToken);
+        await tg('sendMessage', {
+          chat_id: chatId,
+          text:
+            `✅ Tasdiqlandi. Tiklash kodingiz: *${entry.code}*\n\n` +
+            'Shu kodni saytdagi oynaga kiriting va yangi parol oʻrnating.',
+          parse_mode: 'Markdown',
+          reply_markup: { remove_keyboard: true },
+        });
+      } else {
+        await tg('sendMessage', {
+          chat_id: chatId,
+          text: '⛔️ Raqamingiz hisobga mos kelmadi. Saytda kiritgan raqamingiz bilan urinib koʻring.',
+          reply_markup: { remove_keyboard: true },
+        });
+      }
+      return;
+    }
+
+    // 2b) Operator verification.
     const outcome = await tryBindOperator(chatId, msg.contact.phone_number);
     if (outcome === 'bound' || outcome === 'already') {
       await tg('sendMessage', {

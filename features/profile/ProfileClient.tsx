@@ -15,6 +15,7 @@ import {
   Mail,
 } from 'lucide-react';
 import { useTelegram } from '@/components/providers/TelegramProvider';
+import { useAuth } from '@/hooks/useAuth';
 import { useOrdersStore } from '@/lib/stores/orders';
 import { useWishlistStore } from '@/lib/stores/wishlist';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
@@ -22,6 +23,7 @@ import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 export function ProfileClient() {
   const t = useTranslations('profile');
   const { user, isInTelegram, webApp } = useTelegram();
+  const { user: account, logout } = useAuth();
   const orderCount = useOrdersStore((s) => s.orders.length);
   const wishlistCount = useWishlistStore((s) => s.ids.length);
 
@@ -44,7 +46,9 @@ export function ProfileClient() {
           )}
           <div className="min-w-0 flex-1">
             <h1 className="font-display text-display-sm font-extrabold">
-              {user ? `${user.first_name} ${user.last_name ?? ''}` : t('guestName')}
+              {user
+                ? `${user.first_name} ${user.last_name ?? ''}`
+                : account?.name || account?.phone || t('guestName')}
             </h1>
             {user?.username && (
               <p className="text-sm text-white/65">@{user.username}</p>
@@ -115,10 +119,13 @@ export function ProfileClient() {
         />
       </section>
 
-      {isInTelegram && (
+      {(isInTelegram || account?.source === 'account') && (
         <button
           type="button"
-          onClick={() => webApp?.close()}
+          onClick={() => {
+            if (account?.source === 'account') void logout();
+            else webApp?.close();
+          }}
           className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl border border-brand-surface-border bg-brand-surface p-4 text-sm font-semibold text-white/65 transition-colors hover:border-danger/40 hover:text-danger touch-feedback"
         >
           <LogOut className="h-4 w-4" />

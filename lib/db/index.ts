@@ -21,12 +21,14 @@ const CONTENT_FILE = path.join(DATA_DIR, 'content.json');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const PAYMENTS_FILE = path.join(DATA_DIR, 'payments.json');
 const REVIEWS_FILE = path.join(DATA_DIR, 'reviews.json');
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
 
 interface Store {
   content: Record<string, unknown>;
   orders: OrderRecord[];
   payments: PaymentRecord[];
   reviews: ReviewRecord[];
+  users: UserAccount[];
   loaded: boolean;
 }
 
@@ -38,6 +40,7 @@ const store: Store =
     orders: [],
     payments: [],
     reviews: [],
+    users: [],
     loaded: false,
   });
 
@@ -63,6 +66,11 @@ function load() {
     store.reviews = JSON.parse(fs.readFileSync(REVIEWS_FILE, 'utf8'));
   } catch {
     store.reviews = [];
+  }
+  try {
+    store.users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+  } catch {
+    store.users = [];
   }
 }
 
@@ -331,4 +339,60 @@ export function userPurchasedProduct(userId: string, productId: string): boolean
     const items = (o.payload as { items?: { productId?: string }[] } | null)?.items;
     return Array.isArray(items) && items.some((it) => String(it?.productId) === productId);
   });
+}
+
+/* ---------------------------- user accounts ----------------------------- */
+
+export interface UserAccount {
+  id: string;
+  phone: string; // normalized digits
+  name: string;
+  passwordHash: string;
+  telegramId?: string;
+  createdAt: number;
+}
+
+function normPhone(raw: string): string {
+  return (raw || '').replace(/\D/g, '');
+}
+
+export function getUserByPhone(phone: string): UserAccount | null {
+  load();
+  const p = normPhone(phone);
+  return store.users.find((u) => u.phone === p) ?? null;
+}
+
+export function getUserById(id: string): UserAccount | null {
+  load();
+  return store.users.find((u) => u.id === id) ?? null;
+}
+
+export function createUserAccount(input: {
+  name: string;
+  phone: string;
+  passwordHash: string;
+  telegramId?: string;
+}): UserAccount {
+  load();
+  const user: UserAccount = {
+    id: `u_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    phone: normPhone(input.phone),
+    name: input.name,
+    passwordHash: input.passwordHash,
+    telegramId: input.telegramId,
+    createdAt: Date.now(),
+  };
+  store.users.push(user);
+  atomicWrite(USERS_FILE, store.users);
+  return user;
+}
+
+export function updateUser(id: string, patch: Partial<UserAccount>): UserAccount | null {
+  load();
+  const u = store.users.find((x) => x.id === id);
+  if (!u) return null;
+  Object.assign(u, patch);
+  if (patch.phone) u.phone = normPhone(patch.phone);
+  atomicWrite(USERS_FILE, store.users);
+  return u;
 }

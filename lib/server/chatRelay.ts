@@ -496,6 +496,35 @@ export async function handleCustomerMenu(chatId: number, text: string): Promise<
   }
 }
 
+/** Bot @username (cached via getMe) — for building deep links. */
+let cachedBotUsername = '';
+export async function getBotUsername(): Promise<string> {
+  if (cachedBotUsername) return cachedBotUsername;
+  const envName = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || '';
+  if (!BOT_TOKEN) return envName;
+  try {
+    const r = await tg('getMe', {});
+    if (r?.ok && r.result?.username) {
+      cachedBotUsername = r.result.username;
+      return cachedBotUsername;
+    }
+  } catch {
+    /* ignore */
+  }
+  return envName;
+}
+
+/** Send a plain message to a specific chat (e.g. a password-reset code). */
+export async function sendBotMessage(chatId: number | string, text: string): Promise<boolean> {
+  if (!BOT_TOKEN) return false;
+  try {
+    const r = await tg('sendMessage', { chat_id: chatId, text, parse_mode: 'Markdown' });
+    return Boolean(r?.ok);
+  } catch {
+    return false;
+  }
+}
+
 /** Send a one-way notification (lead / new order) to the operator's Telegram. */
 export async function notifyOperator(text: string): Promise<boolean> {
   await ensureLoaded();

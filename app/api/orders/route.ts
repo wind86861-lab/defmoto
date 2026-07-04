@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { listOrders, createOrder } from '@/lib/db';
 import { isAdminRequest } from '@/lib/server/adminAuth';
+import { currentUserId } from '@/lib/server/userAuth';
 import { notifyOperator } from '@/lib/server/chatRelay';
 
 export const runtime = 'nodejs';
@@ -29,7 +30,9 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
-  const order = createOrder(body);
+  // Trust the server session for identity when present (browser account or
+  // Telegram), falling back to the client-provided id.
+  const order = createOrder({ ...body, userId: currentUserId(req) || body.userId });
 
   // Notify the operator on Telegram (fire-and-forget).
   const sum = order.total ? `${order.total.toLocaleString('ru-RU')} so'm` : '';
