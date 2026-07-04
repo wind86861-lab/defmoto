@@ -174,6 +174,22 @@ async function loop() {
     /* ignore */
   }
 
+  // Show the "Open" Mini App button next to the input in every chat (HTTPS only).
+  const site = process.env.NEXT_PUBLIC_APP_URL || '';
+  if (site.startsWith('https')) {
+    try {
+      await tg('setChatMenuButton', {
+        menu_button: {
+          type: 'web_app',
+          text: 'Ochish',
+          web_app: { url: `${site}/catalog` },
+        },
+      });
+    } catch {
+      /* ignore */
+    }
+  }
+
   let offset = 0;
   // eslint-disable-next-line no-constant-condition
   while (true) {

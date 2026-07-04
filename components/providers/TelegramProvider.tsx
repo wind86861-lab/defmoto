@@ -72,6 +72,16 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
 
       setWebApp(tg);
       setIsReady(true);
+
+      // Auto-login: hand the signed initData to the server so it can verify the
+      // user and set a session cookie (used to gate reviews securely).
+      if (tg.initData) {
+        void fetch('/api/auth/telegram', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData: tg.initData }),
+        }).catch(() => {});
+      }
     };
 
     init();

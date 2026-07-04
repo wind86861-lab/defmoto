@@ -7,6 +7,7 @@ import {
   userPurchasedProduct,
   type ReviewRecord,
 } from '@/lib/db';
+import { verifiedTelegramUserId } from '@/lib/server/telegramAuth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -26,7 +27,8 @@ function publicReview(r: ReviewRecord) {
 export function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const productId = searchParams.get('productId') || '';
-  const userId = searchParams.get('userId') || '';
+  // Prefer the verified Telegram session over any client-supplied id.
+  const userId = verifiedTelegramUserId(req) || searchParams.get('userId') || '';
   if (!productId) {
     return NextResponse.json({ ok: false, error: 'missing-productId' }, { status: 400 });
   }
@@ -56,13 +58,18 @@ export async function POST(req: Request) {
   }
 
   const productId = String(body?.productId || '');
-  const userId = String(body?.userId || '');
+  // Identity comes from the verified Telegram session cookie — never trust a
+  // client-supplied user id for who is posting.
+  const userId = verifiedTelegramUserId(req);
   const userName = String(body?.userName || '').slice(0, 60).trim();
   const rating = Number(body?.rating);
   const text = String(body?.text || '').slice(0, 1000).trim();
   const photoUrl = body?.photoUrl ? String(body.photoUrl) : undefined;
 
-  if (!productId || !userId) {
+  if (!userId) {
+    return NextResponse.json({ ok: false, error: 'login-required' }, { status: 401 });
+  }
+  if (!productId) {
     return NextResponse.json({ ok: false, error: 'missing-fields' }, { status: 400 });
   }
   if (!(rating >= 1 && rating <= 5)) {
