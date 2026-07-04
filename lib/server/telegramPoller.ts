@@ -120,7 +120,33 @@ async function handleUpdate(update: TgUpdate) {
       return;
     }
 
-    // The bound operator gets their dashboard.
+    const account = fromId != null ? getUserByTelegramId(fromId) : null;
+
+    // Registration is required for EVERYONE — the operator too, even if already
+    // designated. No account → ask for contact.
+    if (!account) {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text:
+          'Assalomu alaykum! 👋 *DEFT MOTO*ga xush kelibsiz.\n\n' +
+          '📝 Davom etish uchun roʻyxatdan oʻting — kontaktingizni yuboring 👇',
+        parse_mode: 'Markdown',
+        reply_markup: REGISTER_KB,
+      });
+      return;
+    }
+    // Contact but no password yet → must finish by setting one.
+    if (!account.passwordHash) {
+      pendingPassword.add(chatId);
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: '🔑 Roʻyxatni yakunlash uchun parol oʻrnating (kamida 6 belgi). Yangi parolingizni yuboring:',
+        reply_markup: { remove_keyboard: true },
+      });
+      return;
+    }
+
+    // Fully registered → role-specific welcome.
     if (isOperatorChat(chatId)) {
       await tg('sendMessage', {
         chat_id: chatId,
@@ -132,42 +158,14 @@ async function handleUpdate(update: TgUpdate) {
       });
       return;
     }
-
-    const account = fromId != null ? getUserByTelegramId(fromId) : null;
-
-    // Fully registered (account + password) → welcome + menu.
-    if (account && account.passwordHash) {
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text:
-          'Assalomu alaykum! 👋\n\n' +
-          '*DEFT MOTO* — mototsikllar, ehtiyot qismlar va aksessuarlar. ' +
-          'Quyidagi menyudan foydalaning 👇',
-        parse_mode: 'Markdown',
-        reply_markup: customerMenuKeyboard(),
-      });
-      return;
-    }
-
-    // Registered contact but no password yet → must finish by setting one.
-    if (account && !account.passwordHash) {
-      pendingPassword.add(chatId);
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text: '🔑 Roʻyxatni yakunlash uchun parol oʻrnating (kamida 6 belgi). Yangi parolingizni yuboring:',
-        reply_markup: { remove_keyboard: true },
-      });
-      return;
-    }
-
-    // Not registered → ask for contact (no menu until registration is done).
     await tg('sendMessage', {
       chat_id: chatId,
       text:
-        'Assalomu alaykum! 👋 *DEFT MOTO*ga xush kelibsiz.\n\n' +
-        '📝 Davom etish uchun roʻyxatdan oʻting — kontaktingizni yuboring 👇',
+        'Assalomu alaykum! 👋\n\n' +
+        '*DEFT MOTO* — mototsikllar, ehtiyot qismlar va aksessuarlar. ' +
+        'Quyidagi menyudan foydalaning 👇',
       parse_mode: 'Markdown',
-      reply_markup: REGISTER_KB,
+      reply_markup: customerMenuKeyboard(),
     });
     return;
   }
@@ -248,7 +246,8 @@ async function handleUpdate(update: TgUpdate) {
       return;
     }
 
-    // b) Operator verification (only when explicitly started via /operator).
+    // b) Operator binding if explicitly requested via /operator — the operator
+    //    still goes through the same registration below.
     if (pendingOperator.has(chatId)) {
       pendingOperator.delete(chatId);
       const outcome = await tryBindOperator(chatId, phone);
@@ -256,19 +255,16 @@ async function handleUpdate(update: TgUpdate) {
         chat_id: chatId,
         text:
           outcome === 'bound' || outcome === 'already'
-            ? '✅ Tasdiqlandi! Siz endi operatorsiz. Mijoz xabarlari shu yerga keladi.'
+            ? '✅ Operator sifatida ulandingiz.'
             : outcome === 'not-configured'
               ? 'ℹ️ Operator hali admin panelida sozlanmagan.'
               : '⛔️ Bu raqam operator sifatida belgilanmagan.',
-        reply_markup:
-          outcome === 'bound' || outcome === 'already'
-            ? startKeyboard()
-            : { remove_keyboard: true },
+        reply_markup: { remove_keyboard: true },
       });
-      return;
+      // fall through to registration.
     }
 
-    // c) Customer registration / account linking.
+    // c) Register / link the account (everyone, operator included).
     const norm = normalizePhone(phone);
     const existing = getUserByPhone(norm);
     let account = existing;
@@ -285,14 +281,8 @@ async function handleUpdate(update: TgUpdate) {
       });
     }
 
-    // Registration is only complete once a password is set.
-    if (account && account.passwordHash) {
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text: '✅ Hisobingiz ulandi! Quyidagi menyudan foydalaning 👇',
-        reply_markup: customerMenuKeyboard(),
-      });
-    } else {
+    // d) Registration is only complete once a password is set.
+    if (account && !account.passwordHash) {
       pendingPassword.add(chatId);
       await tg('sendMessage', {
         chat_id: chatId,
@@ -301,6 +291,18 @@ async function handleUpdate(update: TgUpdate) {
           '🔑 Roʻyxatni yakunlash uchun parol oʻrnating (kamida 6 belgi). ' +
           'Yangi parolingizni yuboring:',
         reply_markup: { remove_keyboard: true },
+      });
+    } else if (isOperatorChat(chatId)) {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: '✅ Tayyor! Mijoz xabarlari shu yerga keladi — reply qilib javob bering.',
+        reply_markup: startKeyboard(),
+      });
+    } else {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: '✅ Hisobingiz ulandi! Quyidagi menyudan foydalaning 👇',
+        reply_markup: customerMenuKeyboard(),
       });
     }
     return;
@@ -323,13 +325,14 @@ async function handleUpdate(update: TgUpdate) {
     if (account) {
       const first = !account.passwordHash; // completing registration
       updateUser(account.id, { passwordHash: hashPassword(text) });
+      const body = first
+        ? `✅ Roʻyxatdan oʻtdingiz! Endi buyurtma berishingiz mumkin.\n\nSaytga *${account.phone}* + shu parol bilan ham kirishingiz mumkin.`
+        : `✅ Parol yangilandi. Saytga *${account.phone}* + shu parol bilan kiring.`;
       await tg('sendMessage', {
         chat_id: chatId,
-        text: first
-          ? `✅ Roʻyxatdan oʻtdingiz! Endi buyurtma berishingiz mumkin.\n\nSaytga *${account.phone}* + shu parol bilan ham kirishingiz mumkin.`
-          : `✅ Parol yangilandi. Saytga *${account.phone}* + shu parol bilan kiring.`,
+        text: body,
         parse_mode: 'Markdown',
-        reply_markup: customerMenuKeyboard(),
+        reply_markup: isOperatorChat(chatId) ? startKeyboard() : customerMenuKeyboard(),
       });
     } else {
       await tg('sendMessage', { chat_id: chatId, text: 'Avval /start bosib roʻyxatdan oʻting.', reply_markup: REGISTER_KB });
