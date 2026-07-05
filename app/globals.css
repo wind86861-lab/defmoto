@@ -22,6 +22,14 @@
     touch-action: pan-x pan-y;
   }
 
+  html,
+  body {
+    /* Never let content push the page wider than the viewport (fixes text
+       being clipped on the right inside the narrow Telegram Mini App panel). */
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
   body {
     @apply bg-brand-dark text-white antialiased;
     font-feature-settings: 'cv11', 'ss01', 'ss03';

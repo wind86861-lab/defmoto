@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { useCheckoutState } from '../useCheckoutState';
 import { useContentStore } from '@/lib/stores/content';
 import { useMounted } from '@/hooks/useMounted';
-import { mapsHref } from '@/lib/contactLinks';
+import { mapsHref, branchLatLng, osmEmbed } from '@/lib/contactLinks';
 import type { DeliveryMethod } from '@/types/order';
 
 function distanceKm(
@@ -70,17 +70,18 @@ export function DeliveryStep({ onNext, onBack }: { onNext: () => void; onBack: (
     },
   ];
 
-  // Branches with computed distance, nearest first.
+  // Branches with resolved coordinates + computed distance, nearest first.
   const branchList = useMemo(() => {
     return branches
       .map((b) => {
-        const hasLoc = b.lat != null && b.lng != null;
-        const dist =
-          me && hasLoc ? distanceKm(me, { lat: b.lat as number, lng: b.lng as number }) : null;
-        return { b, dist };
+        const loc = branchLatLng(b);
+        const dist = me && loc ? distanceKm(me, loc) : null;
+        return { b, loc, dist };
       })
       .sort((x, y) => (x.dist ?? 1e9) - (y.dist ?? 1e9));
   }, [branches, me]);
+
+  const selected = branchList.find((x) => x.b.id === delivery.branchId);
 
   const canContinue = delivery.method !== 'pickup' || Boolean(delivery.branchId);
 
@@ -194,6 +195,19 @@ export function DeliveryStep({ onNext, onBack }: { onNext: () => void; onBack: (
               </div>
             );
           })}
+
+          {/* OpenStreetMap preview of the chosen branch (no API key needed). */}
+          {selected?.loc && (
+            <div className="overflow-hidden rounded-xl border border-brand-surface-border">
+              <iframe
+                key={selected.b.id}
+                title={selected.b.name}
+                src={osmEmbed(selected.loc.lat, selected.loc.lng)}
+                className="h-52 w-full border-0"
+                loading="lazy"
+              />
+            </div>
+          )}
         </div>
       )}
 

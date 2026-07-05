@@ -112,13 +112,15 @@ export function CartClient() {
               {!promo?.ok && (
                 <>
                   <div className="flex gap-2">
-                    <Input
-                      placeholder={t('promoPlaceholder')}
-                      value={promoInput}
-                      onChange={(e) => setPromoInput(e.target.value)}
-                      leftIcon={<Tag className="h-4 w-4" />}
-                    />
-                    <Button variant="outline" size="lg" onClick={handleApplyPromo}>
+                    <div className="min-w-0 flex-1">
+                      <Input
+                        placeholder={t('promoPlaceholder')}
+                        value={promoInput}
+                        onChange={(e) => setPromoInput(e.target.value)}
+                        leftIcon={<Tag className="h-4 w-4" />}
+                      />
+                    </div>
+                    <Button variant="outline" size="lg" onClick={handleApplyPromo} className="shrink-0">
                       {t('promoApply')}
                     </Button>
                   </div>
