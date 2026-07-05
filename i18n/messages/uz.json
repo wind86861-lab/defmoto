@@ -354,8 +354,8 @@
     "pickupDesc": "3+ filial Toshkent va viloyatlarda",
     "pickupPrice": "Bepul",
     "pickupDuration": "Hozir",
-    "postTitle": "Pochta orqali",
-    "postDesc": "Uzbekiston pochtasi orqali",
+    "postTitle": "BTS pochta orqali",
+    "postDesc": "BTS kuryeri manzilingizga yetkazadi",
     "postPrice": "15 000 so'm",
     "postDuration": "3-5 ish kuni",
     "chooseBranch": "Filialni tanlang",
@@ -404,7 +404,12 @@
     "payButton": "{amount} - to'lash",
     "termsPrefix": "Tasdiqlash orqali siz",
     "termsLink": "foydalanish shartlariga",
-    "termsSuffix": "rozilik bildirasiz"
+    "termsSuffix": "rozilik bildirasiz",
+    "contactConfirmSubtitle": "Maʼlumotlaringiz hisobingizdan olindi",
+    "contactNeedRegister": "Buyurtma berish uchun Telegram bot orqali roʻyxatdan oʻting.",
+    "loadingLabel": "Yuklanmoqda...",
+    "noBranches": "Filiallar hozircha yoʻq.",
+    "onMap": "Xaritada ochish"
   },
   "orders": {
     "backAria": "Orqaga",

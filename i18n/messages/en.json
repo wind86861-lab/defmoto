@@ -354,8 +354,8 @@
     "pickupDesc": "3+ branches in Tashkent and regions",
     "pickupPrice": "Free",
     "pickupDuration": "Now",
-    "postTitle": "By post",
-    "postDesc": "Via Uzbekistan Post",
+    "postTitle": "BTS post",
+    "postDesc": "BTS courier delivers to your address",
     "postPrice": "15,000 UZS",
     "postDuration": "3-5 business days",
     "chooseBranch": "Choose a branch",
@@ -404,7 +404,12 @@
     "payButton": "Pay {amount}",
     "termsPrefix": "By confirming, you agree to the",
     "termsLink": "terms of use",
-    "termsSuffix": ""
+    "termsSuffix": "",
+    "contactConfirmSubtitle": "Taken from your account",
+    "contactNeedRegister": "Register via the Telegram bot to place an order.",
+    "loadingLabel": "Loading...",
+    "noBranches": "No branches yet.",
+    "onMap": "Open on map"
   },
   "orders": {
     "backAria": "Back",

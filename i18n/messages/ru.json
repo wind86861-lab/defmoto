@@ -354,8 +354,8 @@
     "pickupDesc": "3+ филиала в Ташкенте и областях",
     "pickupPrice": "Бесплатно",
     "pickupDuration": "Сейчас",
-    "postTitle": "Почтой",
-    "postDesc": "Через почту Узбекистана",
+    "postTitle": "Почтой BTS",
+    "postDesc": "Курьер BTS доставит по вашему адресу",
     "postPrice": "15 000 сум",
     "postDuration": "3-5 рабочих дней",
     "chooseBranch": "Выберите филиал",
@@ -404,7 +404,12 @@
     "payButton": "Оплатить {amount}",
     "termsPrefix": "Подтверждая заказ, вы соглашаетесь с",
     "termsLink": "условиями использования",
-    "termsSuffix": ""
+    "termsSuffix": "",
+    "contactConfirmSubtitle": "Данные взяты из вашего аккаунта",
+    "contactNeedRegister": "Зарегистрируйтесь через Telegram-бота, чтобы оформить заказ.",
+    "loadingLabel": "Загрузка...",
+    "noBranches": "Филиалов пока нет.",
+    "onMap": "Открыть на карте"
   },
   "orders": {
     "backAria": "Назад",

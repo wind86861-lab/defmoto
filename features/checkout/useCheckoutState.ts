@@ -31,7 +31,7 @@ export interface CheckoutState {
 const initial = {
   step: 0,
   contact: { name: '', phone: '' },
-  delivery: { method: 'courier' as DeliveryMethod, branchId: undefined },
+  delivery: { method: 'pickup' as DeliveryMethod, branchId: undefined },
   address: { city: 'Toshkent', street: '', apartment: '', note: '' },
   payment: { method: 'click' as PaymentMethod },
 };

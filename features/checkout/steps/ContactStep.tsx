@@ -1,103 +1,78 @@
 'use client';
 
+import { useEffect } from 'react';
 import { User, Phone, Send } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { useTelegram } from '@/components/providers/TelegramProvider';
+import { useAuth } from '@/hooks/useAuth';
 import { useCheckoutState } from '../useCheckoutState';
-import { useHaptic } from '@/hooks/useHaptic';
+
+const BOT = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'ajndspuntnjqpiuuerbot';
 
 export function ContactStep({ onNext }: { onNext: () => void }) {
   const t = useTranslations('checkout');
   const { contact, setContact } = useCheckoutState();
-  const { webApp, user } = useTelegram();
-  const { notify } = useHaptic();
+  const { user, loading } = useAuth();
 
-  const requestContact = () => {
-    if (!webApp?.requestContact) {
-      // Fallback for non-Telegram browsers
-      notify('warning');
-      return;
+  // We already know the customer (bot-registered) — pre-fill and don't ask.
+  useEffect(() => {
+    if (user?.name || user?.phone) {
+      setContact({ name: user.name || contact.name, phone: user.phone || contact.phone });
     }
-    webApp.requestContact((shared) => {
-      if (shared) {
-        const tgUser = webApp.initDataUnsafe.user;
-        if (tgUser) {
-          setContact({
-            name: [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' '),
-          });
-        }
-        notify('success');
-      }
-    });
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.name, user?.phone]);
 
-  const canContinue =
-    contact.name.trim().length >= 2 && /\+?\d{9,}/.test(contact.phone);
+  const name = user?.name || contact.name;
+  const phone = user?.phone || contact.phone;
+  const ready = Boolean(name && phone);
 
   return (
     <div className="space-y-6">
       <header>
-        <h2 className="font-display text-display-sm font-extrabold">
-          {t('contactTitle')}
-        </h2>
-        <p className="mt-1 text-sm text-white/55">
-          {t('contactSubtitle')}
-        </p>
+        <h2 className="font-display text-display-sm font-extrabold">{t('contactTitle')}</h2>
+        <p className="mt-1 text-sm text-white/55">{t('contactConfirmSubtitle')}</p>
       </header>
 
-      {user && (
-        <div className="flex items-center gap-3 rounded-2xl border border-brand-yellow/30 bg-brand-yellow/8 p-3">
-          {user.photo_url ? (
-            <img
-              src={user.photo_url}
-              alt={user.first_name}
-              className="h-10 w-10 rounded-full"
-            />
-          ) : (
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-yellow font-bold text-brand-dark">
-              {user.first_name[0]}
+      {ready ? (
+        <div className="space-y-2.5 rounded-2xl border border-brand-yellow/30 bg-brand-yellow/8 p-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-yellow text-brand-dark">
+              <User className="h-4 w-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-white/45">{t('contactLabel')}</p>
+              <p className="truncate text-sm font-bold">{name}</p>
             </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold">{user.first_name} {user.last_name}</p>
-            {user.username && (
-              <p className="text-xs text-white/55">@{user.username}</p>
-            )}
           </div>
-          <span className="rounded-full bg-brand-yellow/15 px-2 py-1 text-[10px] font-bold uppercase text-brand-yellow">
-            {t('telegramBadge')}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-dark/60 text-brand-yellow">
+              <Phone className="h-4 w-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-white/45">Tel</p>
+              <p className="truncate text-sm font-bold">{phone}</p>
+            </div>
+          </div>
+        </div>
+      ) : loading ? (
+        <div className="rounded-2xl border border-brand-surface-border bg-brand-surface p-4 text-sm text-white/55">
+          {t('loadingLabel')}
+        </div>
+      ) : (
+        <div className="space-y-3 rounded-2xl border border-brand-surface-border bg-brand-surface p-4">
+          <p className="text-sm text-white/70">{t('contactNeedRegister')}</p>
+          <a
+            href={`https://t.me/${BOT}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 rounded-xl bg-[#229ED9] px-4 py-3 text-sm font-bold text-white"
+          >
+            <Send className="h-4 w-4" /> Telegram bot orqali roʻyxatdan oʻtish
+          </a>
         </div>
       )}
 
-      <div className="space-y-3">
-        <Input
-          placeholder={t('namePlaceholder')}
-          leftIcon={<User className="h-4 w-4" />}
-          value={contact.name}
-          onChange={(e) => setContact({ name: e.target.value })}
-        />
-        <Input
-          placeholder={t('phonePlaceholder')}
-          type="tel"
-          leftIcon={<Phone className="h-4 w-4" />}
-          value={contact.phone}
-          onChange={(e) => setContact({ phone: e.target.value })}
-        />
-
-        <Button
-          variant="outline"
-          fullWidth
-          leftIcon={<Send className="h-4 w-4" />}
-          onClick={requestContact}
-        >
-          {t('shareContactButton')}
-        </Button>
-      </div>
-
-      <Button size="xl" glow fullWidth onClick={onNext} disabled={!canContinue}>
+      <Button size="xl" glow fullWidth onClick={onNext} disabled={!ready}>
         {t('continue')}
       </Button>
     </div>

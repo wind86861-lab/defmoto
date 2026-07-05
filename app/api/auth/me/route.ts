@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getUserById } from '@/lib/db';
+import { getUserById, getUserByTelegramId } from '@/lib/db';
 import { verifiedUserAccountId } from '@/lib/server/userAuth';
 import { verifiedTelegramUserId } from '@/lib/server/telegramAuth';
 
@@ -19,7 +19,11 @@ export function GET(req: Request) {
   }
   const tgId = verifiedTelegramUserId(req);
   if (tgId) {
-    return NextResponse.json({ user: { id: tgId, source: 'telegram' } });
+    // A Mini App user is registered in the bot → return their linked name+phone.
+    const u = getUserByTelegramId(tgId);
+    return NextResponse.json({
+      user: { id: tgId, name: u?.name, phone: u?.phone, source: 'telegram' },
+    });
   }
   return NextResponse.json({ user: null });
 }

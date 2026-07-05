@@ -1,6 +1,6 @@
 'use client';
 
-import { CreditCard, Wallet, Building2, Banknote } from 'lucide-react';
+import { CreditCard, Wallet, Banknote } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
@@ -37,12 +37,6 @@ export function PaymentStep({
       desc: t('paymeDesc'),
       icon: Wallet,
       badge: t('paymeBadge'),
-    },
-    {
-      method: 'bts',
-      title: t('brandBts'),
-      desc: t('btsDesc'),
-      icon: Building2,
     },
     {
       method: 'cash',
