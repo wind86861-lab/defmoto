@@ -110,7 +110,7 @@ export function ProfileClient() {
           external
         />
         <MenuLink
-          href="https://t.me/DeftMotoBot"
+          href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'ajndspuntnjqpiuuerbot'}`}
           icon={Send}
           label={t('telegramBotLabel')}
           external
