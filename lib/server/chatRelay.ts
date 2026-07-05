@@ -29,6 +29,7 @@ export interface RelayMessage {
   id: string;
   author: 'operator' | 'customer';
   text: string;
+  image?: string; // /uploads/... when an image was sent
   createdAt: string;
 }
 
@@ -275,7 +276,7 @@ export async function forwardToOperator(
       chat_id: state.operatorChatId,
       text: payload,
       parse_mode: 'Markdown',
-      reply_markup: quickReplyKeyboard(),
+      reply_markup: quickReplyKeyboard(sessionId),
     });
     if (r?.ok && r.result?.message_id) {
       state.forwarded.set(r.result.message_id, sessionId);
@@ -324,7 +325,7 @@ const QUICK_REPLIES: QuickReply[] = [
   },
 ];
 
-function quickReplyKeyboard() {
+function quickReplyKeyboard(sessionId?: string) {
   const rows: { text: string; callback_data: string }[][] = [];
   for (let i = 0; i < QUICK_REPLIES.length; i += 2) {
     rows.push(
@@ -333,6 +334,10 @@ function quickReplyKeyboard() {
         callback_data: `qr:${q.code}`,
       })),
     );
+  }
+  // A dedicated reply button — tap it, then send text OR a photo.
+  if (sessionId && `reply:${sessionId}`.length <= 64) {
+    rows.push([{ text: '✍️ Javob berish', callback_data: `reply:${sessionId}` }]);
   }
   return { inline_keyboard: rows };
 }
@@ -412,6 +417,62 @@ export function operatorReplyToSession(sessionId: string, text: string): boolean
   persistSessions();
   if (sessionId.startsWith('tg:')) void sendBotMessage(sessionId.slice(3), `💬 *Operator:* ${text}`);
   return true;
+}
+
+/** Download a Telegram photo by file_id and save it under /uploads. */
+async function downloadTelegramPhoto(fileId: string): Promise<string | undefined> {
+  if (!BOT_TOKEN) return undefined;
+  try {
+    const r = await tg('getFile', { file_id: fileId });
+    const filePath: string | undefined = r?.result?.file_path;
+    if (!filePath) return undefined;
+    const res = await fetch(`https://api.telegram.org/file/bot${BOT_TOKEN}/${filePath}`);
+    const buf = Buffer.from(await res.arrayBuffer());
+    const ext = (filePath.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const name = `op_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}.${ext}`;
+    const dir = path.join(process.cwd(), 'public', 'uploads');
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, name), buf);
+    return `/uploads/${name}`;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Operator sends a photo reply to a session (bot chat resends it; website saves it). */
+export async function operatorReplyImageToSession(
+  sessionId: string,
+  fileId: string,
+  caption?: string,
+): Promise<boolean> {
+  const isTg = sessionId.startsWith('tg:');
+  // Website sessions need a displayable URL; bot sessions can resend the file id.
+  const imageUrl = isTg ? undefined : await downloadTelegramPhoto(fileId);
+  const session = getSession(sessionId);
+  session.messages.push({
+    id: `op_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    author: 'operator',
+    text: caption || '',
+    image: imageUrl,
+    createdAt: new Date().toISOString(),
+  });
+  session.lastActivity = Date.now();
+  persistSessions();
+  if (isTg) {
+    await tg('sendPhoto', { chat_id: sessionId.slice(3), photo: fileId, caption: caption || undefined });
+  }
+  return true;
+}
+
+/** Operator replied to a forwarded message with a photo (reply-to flow). */
+export async function ingestOperatorReplyPhoto(
+  replyToMessageId: number,
+  fileId: string,
+  caption?: string,
+): Promise<boolean> {
+  const sessionId = state.forwarded.get(replyToMessageId);
+  if (!sessionId) return false;
+  return operatorReplyImageToSession(sessionId, fileId, caption);
 }
 
 /**

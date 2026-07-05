@@ -95,6 +95,7 @@ export function ChatClient() {
               id: m.id,
               author: 'operator',
               text: m.text,
+              attachments: m.image ? [{ kind: 'image' as const, url: m.image }] : undefined,
               createdAt: m.createdAt,
               operatorName: operator.name,
               operatorRole: t('operatorRoleLabel'),

@@ -24,6 +24,8 @@ import {
   ensureRelayLoaded,
   takePendingReply,
   operatorReplyToSession,
+  operatorReplyImageToSession,
+  ingestOperatorReplyPhoto,
   MENU,
 } from './chatRelay';
 import { getReset, markResetVerified, normalizePhone, hashPassword } from './userAuth';
@@ -72,6 +74,8 @@ interface TgUpdate {
     chat?: { id: number };
     from?: { id: number; first_name?: string; username?: string };
     text?: string;
+    caption?: string;
+    photo?: { file_id: string }[];
     contact?: { phone_number?: string; user_id?: number };
     reply_to_message?: { message_id: number };
   };
@@ -98,6 +102,31 @@ async function handleUpdate(update: TgUpdate) {
   const lower = text.toLowerCase();
   const fromId = msg.from?.id;
   const fromName = msg.from?.first_name || msg.from?.username || 'Mijoz';
+
+  /* --------------------- operator photo reply ----------------------------- */
+  if (msg.photo?.length && isOperatorChat(chatId)) {
+    const fileId = msg.photo[msg.photo.length - 1].file_id; // largest size
+    const caption = msg.caption;
+    const target = takePendingReply(chatId);
+    if (target) {
+      await operatorReplyImageToSession(target, fileId, caption);
+      await tg('sendMessage', { chat_id: chatId, text: '✅ Rasm yuborildi.', reply_markup: startKeyboard() });
+      return;
+    }
+    if (msg.reply_to_message?.message_id) {
+      const ok = await ingestOperatorReplyPhoto(msg.reply_to_message.message_id, fileId, caption);
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: ok ? '✅ Rasm yuborildi.' : '⚠️ Suhbat topilmadi. "📨 Xabarlar" orqali javob bering.',
+      });
+      return;
+    }
+    await tg('sendMessage', {
+      chat_id: chatId,
+      text: 'Rasmni yuborish uchun: "📨 Xabarlar" → suhbat → "✍️ Javob berish", soʻng rasmni yuboring.',
+    });
+    return;
+  }
 
   /* -------------------- commands (case-insensitive, never forwarded) ------- */
   if (lower.startsWith('/start')) {
