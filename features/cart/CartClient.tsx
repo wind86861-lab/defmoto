@@ -86,9 +86,9 @@ export function CartClient() {
         </button>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         {/* Items list */}
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
           {items.map((item) => (
             <CartItemRow
               key={item.productId}
@@ -103,7 +103,7 @@ export function CartClient() {
         </div>
 
         {/* Summary */}
-        <aside className="lg:sticky lg:top-20 lg:self-start">
+        <aside className="min-w-0 lg:sticky lg:top-20 lg:self-start">
           <div className="space-y-4 rounded-3xl border border-brand-surface-border bg-brand-surface p-5">
             <h3 className="font-display text-lg font-bold">{t('summaryTitle')}</h3>
 
@@ -255,13 +255,13 @@ function CartItemRow({
   const { impact } = useHaptic();
 
   return (
-    <div className="group flex gap-3 rounded-2xl border border-brand-surface-border bg-brand-surface p-3 transition-colors sm:p-4">
+    <div className="group flex gap-2.5 rounded-2xl border border-brand-surface-border bg-brand-surface p-2.5 transition-colors sm:gap-3 sm:p-4">
       <Link href={`/product/${item.productId}`} className="shrink-0">
         <ProductImage
           src={item.image}
           alt={item.name}
-          className="h-20 w-20 rounded-xl object-cover sm:h-24 sm:w-24"
-          fallbackClassName="h-20 w-20 rounded-xl sm:h-24 sm:w-24"
+          className="h-16 w-16 rounded-xl object-cover sm:h-24 sm:w-24"
+          fallbackClassName="h-16 w-16 rounded-xl sm:h-24 sm:w-24"
         />
       </Link>
 
@@ -279,8 +279,8 @@ function CartItemRow({
           </p>
         )}
 
-        <div className="mt-auto flex items-end justify-between gap-2 pt-2">
-          <div className="inline-flex items-center gap-0 overflow-hidden rounded-lg border border-brand-surface-border">
+        <div className="mt-auto flex flex-wrap items-end justify-between gap-x-2 gap-y-1.5 pt-2">
+          <div className="inline-flex shrink-0 items-center gap-0 overflow-hidden rounded-lg border border-brand-surface-border">
             <button
               type="button"
               onClick={() => {
@@ -288,11 +288,11 @@ function CartItemRow({
                 onQuantityChange(item.quantity - 1);
               }}
               aria-label={t('decreaseQty')}
-              className="flex h-9 w-9 items-center justify-center text-white/85 hover:bg-white/8"
+              className="flex h-8 w-8 items-center justify-center text-white/85 hover:bg-white/8 sm:h-9 sm:w-9"
             >
               <Minus className="h-3.5 w-3.5" />
             </button>
-            <div className="flex h-9 min-w-[40px] items-center justify-center border-x border-brand-surface-border px-2 text-sm font-bold">
+            <div className="flex h-8 min-w-[34px] items-center justify-center border-x border-brand-surface-border px-1.5 text-sm font-bold sm:h-9 sm:min-w-[40px] sm:px-2">
               {item.quantity}
             </div>
             <button
@@ -302,19 +302,19 @@ function CartItemRow({
                 onQuantityChange(item.quantity + 1);
               }}
               aria-label={t('increaseQty')}
-              className="flex h-9 w-9 items-center justify-center text-white/85 hover:bg-white/8"
+              className="flex h-8 w-8 items-center justify-center text-white/85 hover:bg-white/8 sm:h-9 sm:w-9"
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
           </div>
 
-          <div className="text-right">
+          <div className="ml-auto text-right">
             {item.oldPrice && item.oldPrice > item.price && (
               <div className="text-[11px] text-white/40 line-through">
                 {formatPrice(item.oldPrice * item.quantity)}
               </div>
             )}
-            <div className="font-display text-base font-extrabold text-brand-yellow">
+            <div className="whitespace-nowrap font-display text-sm font-extrabold text-brand-yellow sm:text-base">
               {formatPrice(item.price * item.quantity)}
             </div>
           </div>
@@ -328,7 +328,7 @@ function CartItemRow({
           onRemove();
         }}
         aria-label={t('removeItem')}
-        className="self-start text-white/40 transition-colors hover:text-danger touch-feedback"
+        className="shrink-0 self-start text-white/40 transition-colors hover:text-danger touch-feedback"
       >
         <Trash2 className="h-4 w-4" />
       </button>
