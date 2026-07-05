@@ -15,6 +15,7 @@ import {
 import { cn } from '@/lib/cn';
 import { Logo } from '@/components/ui/Logo';
 import { IconButton } from '@/components/ui/IconButton';
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { MarketplaceLinks } from '@/components/features/MarketplaceLinks';
 import { useCartStore } from '@/lib/stores/cart';
 import { useWishlistStore } from '@/lib/stores/wishlist';
@@ -83,6 +84,7 @@ export function Header() {
 
         {/* Mobile actions */}
         <div className="flex items-center gap-1 xl:hidden">
+          <LanguageSwitcher variant="icon" />
           <Link href="/wishlist" aria-label={tNav('wishlist')}>
             <IconButton
               icon={<Heart className="h-5 w-5" />}
@@ -103,6 +105,7 @@ export function Header() {
 
         {/* Desktop actions — labeled */}
         <nav className="hidden items-center gap-1 xl:flex">
+          <LanguageSwitcher variant="icon" />
           <ActionLink
             href="/wishlist"
             icon={<Heart className="h-5 w-5" />}

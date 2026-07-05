@@ -10,7 +10,7 @@ import { locales, localeNames, localeFlags, type Locale } from '@/i18n/config';
 
 const COOKIE_NAME = 'NEXT_LOCALE';
 
-export function LanguageSwitcher() {
+export function LanguageSwitcher({ variant = 'row' }: { variant?: 'row' | 'icon' }) {
   const t = useTranslations('common');
   const locale = useLocale() as Locale;
   const router = useRouter();
@@ -33,21 +33,36 @@ export function LanguageSwitcher() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => {
-          selection();
-          setOpen(true);
-        }}
-        className="group flex w-full items-center gap-3 rounded-xl border border-brand-surface-border bg-brand-surface px-4 py-3 text-left transition-colors hover:border-brand-yellow/40 touch-feedback"
-      >
-        <Globe className="h-4 w-4 text-white/55 transition-colors group-hover:text-brand-yellow" />
-        <span className="flex-1 text-sm font-semibold">{t('languageLabel')}</span>
-        <span className="text-xs text-white/45">
-          {localeFlags[locale]} {localeNames[locale]}
-        </span>
-        <ChevronRight className="h-4 w-4 text-white/30 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-yellow" />
-      </button>
+      {variant === 'icon' ? (
+        <button
+          type="button"
+          aria-label={t('languageLabel')}
+          onClick={() => {
+            selection();
+            setOpen(true);
+          }}
+          className="group flex h-10 items-center gap-1.5 rounded-xl border border-brand-surface-border bg-brand-surface px-2.5 text-white/80 transition-colors hover:border-brand-yellow/40 hover:text-brand-yellow touch-feedback xl:h-11 xl:px-3"
+        >
+          <Globe className="h-4 w-4 text-white/55 transition-colors group-hover:text-brand-yellow" />
+          <span className="text-xs font-bold uppercase">{locale}</span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            selection();
+            setOpen(true);
+          }}
+          className="group flex w-full items-center gap-3 rounded-xl border border-brand-surface-border bg-brand-surface px-4 py-3 text-left transition-colors hover:border-brand-yellow/40 touch-feedback"
+        >
+          <Globe className="h-4 w-4 text-white/55 transition-colors group-hover:text-brand-yellow" />
+          <span className="flex-1 text-sm font-semibold">{t('languageLabel')}</span>
+          <span className="text-xs text-white/45">
+            {localeFlags[locale]} {localeNames[locale]}
+          </span>
+          <ChevronRight className="h-4 w-4 text-white/30 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-yellow" />
+        </button>
+      )}
 
       <Sheet open={open} onClose={() => setOpen(false)} title={t('languageSheetTitle')}>
         <div className="space-y-1.5 p-4">
