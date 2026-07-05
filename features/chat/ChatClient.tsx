@@ -2,13 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import {
-  ArrowLeft,
-  MoreVertical,
-  Phone,
-  Send,
-  Trash2,
-} from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/cn';
@@ -25,6 +19,8 @@ function id() {
   return `m_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+const SUPPORT_NAME = 'DEFT MOTO Support';
+
 export function ChatClient() {
   const t = useTranslations('chat');
   const locale = useLocale();
@@ -37,8 +33,7 @@ export function ChatClient() {
   const addMessage = useChatStore((s) => s.addMessage);
   const updateMessage = useChatStore((s) => s.updateMessage);
   const setOperatorTyping = useChatStore((s) => s.setOperatorTyping);
-  const reset = useChatStore((s) => s.reset);
-  const { impact, notify } = useHaptic();
+  const { notify } = useHaptic();
   const { user } = useTelegram();
 
   const listRef = useRef<HTMLDivElement>(null);
@@ -97,7 +92,7 @@ export function ChatClient() {
               text: m.text,
               attachments: m.image ? [{ kind: 'image' as const, url: m.image }] : undefined,
               createdAt: m.createdAt,
-              operatorName: operator.name,
+              operatorName: SUPPORT_NAME,
               operatorRole: t('operatorRoleLabel'),
             });
           }
@@ -176,11 +171,6 @@ export function ChatClient() {
     );
   };
 
-  const handleReset = () => {
-    impact('medium');
-    reset();
-  };
-
   // Group consecutive messages from same author for avatar logic
   const withAvatarFlag = useMemo(() => {
     return messagesToRender.map((m, i, arr) => {
@@ -210,19 +200,16 @@ export function ChatClient() {
           <ArrowLeft className="h-5 w-5" />
         </Link>
 
-        {/* Operator info */}
+        {/* Support info */}
         <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-yellow font-display text-base font-extrabold text-brand-dark shadow-glow-sm">
-          {operator.avatarInitial}
+          D
           {operator.isOnline && (
             <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-brand-dark bg-success" />
           )}
         </div>
 
         <div className="min-w-0 flex-1">
-          <h1 className="text-sm font-bold leading-tight">
-            {operator.name} ·{' '}
-            <span className="text-white/65">{t('operatorRoleLabel')}</span>
-          </h1>
+          <h1 className="text-sm font-bold leading-tight">{SUPPORT_NAME}</h1>
           <p className="mt-0.5 flex items-center gap-1.5 text-[11px]">
             <span
               className={cn(
@@ -235,22 +222,6 @@ export function ChatClient() {
             </span>
           </p>
         </div>
-
-        <a
-          href="tel:+998998107090"
-          aria-label={t('callAria')}
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-brand-surface-border bg-brand-surface text-success transition-colors hover:border-success/40"
-        >
-          <Phone className="h-4 w-4" fill="currentColor" />
-        </a>
-        <button
-          type="button"
-          onClick={handleReset}
-          aria-label={t('clearAria')}
-          className="flex h-9 w-9 items-center justify-center rounded-xl text-white/55 transition-colors hover:bg-white/8 hover:text-danger"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
       </header>
 
       {/* Messages list */}
@@ -269,7 +240,7 @@ export function ChatClient() {
             <ChatBubble key={msg.id} message={msg} showAvatar={showAvatar} />
           ))}
 
-          {isTyping && <TypingIndicator operatorName={operator.name} />}
+          {isTyping && <TypingIndicator operatorName={SUPPORT_NAME} />}
         </div>
       </div>
 

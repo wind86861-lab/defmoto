@@ -8,7 +8,6 @@ import {
   MapPin,
   MessageCircle,
   Send,
-  FileText,
   LogOut,
   ChevronRight,
   Phone,
@@ -110,7 +109,6 @@ export function ProfileClient() {
           label={t('contactEmail')}
           external
         />
-        <MenuLink href="/about" icon={FileText} label={t('termsLabel')} />
         <MenuLink
           href="https://t.me/DeftMotoBot"
           icon={Send}
