@@ -606,6 +606,7 @@ export const MENU = {
   orders: '📦 Buyurtmalarim',
   password: '🔑 Parol',
   about: 'ℹ️ Biz haqimizda',
+  operator: '🆘 Operator',
 } as const;
 
 /** Persistent bottom keyboard for ordinary users — always visible. */
@@ -614,7 +615,7 @@ export function customerMenuKeyboard() {
     keyboard: [
       [{ text: MENU.catalog }, { text: MENU.contact }],
       [{ text: MENU.orders }, { text: MENU.password }],
-      [{ text: MENU.about }],
+      [{ text: MENU.about }, { text: MENU.operator }],
     ],
     resize_keyboard: true,
     is_persistent: true,

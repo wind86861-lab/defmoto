@@ -28,7 +28,13 @@ import {
   ingestOperatorReplyPhoto,
   MENU,
 } from './chatRelay';
-import { getReset, markResetVerified, normalizePhone, hashPassword } from './userAuth';
+import {
+  getReset,
+  markResetVerified,
+  normalizePhone,
+  hashPassword,
+  verifyPassword,
+} from './userAuth';
 import {
   getUserByTelegramId,
   getUserByPhone,
@@ -39,9 +45,46 @@ import {
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 
 // Per-chat conversation state, remembered between messages.
+type PwStep = 'reg1' | 'reg2' | 'cur' | 'new1' | 'new2';
+interface PwFlow {
+  step: PwStep;
+  pass1?: string;
+}
+const pwFlows = new Map<number, PwFlow>(); // multi-step password (register / change)
 const pendingReset = new Map<number, string>(); // chatId → reset token
-const pendingOperator = new Set<number>(); // chats verifying as operator
-const pendingPassword = new Set<number>(); // chats setting a new password
+const pendingOperatorVerify = new Set<number>(); // staff verifying as operator
+const operatorChat = new Set<number>(); // customers connected to the operator
+const pwFails = new Map<number, { n: number; until: number }>(); // brute-force guard
+
+const PW_MIN = 6;
+
+function clearState(chatId: number) {
+  pwFlows.delete(chatId);
+  pendingReset.delete(chatId);
+  pendingOperatorVerify.delete(chatId);
+  operatorChat.delete(chatId);
+}
+
+/** Simple per-chat rate limit for wrong current-password attempts. */
+function tooManyPwFails(chatId: number): boolean {
+  const r = pwFails.get(chatId);
+  return Boolean(r && r.until > Date.now() && r.n >= 5);
+}
+function notePwFail(chatId: number) {
+  const now = Date.now();
+  const r = pwFails.get(chatId);
+  if (!r || r.until < now) pwFails.set(chatId, { n: 1, until: now + 15 * 60 * 1000 });
+  else r.n += 1;
+}
+
+async function deleteMsg(chatId: number, messageId?: number) {
+  if (messageId == null) return;
+  try {
+    await tg('deleteMessage', { chat_id: chatId, message_id: messageId });
+  } catch {
+    /* message already gone / too old */
+  }
+}
 
 const CONTACT_KB = {
   keyboard: [[{ text: '📱 Kontaktni yuborish', request_contact: true }]],
@@ -54,6 +97,20 @@ const REGISTER_KB = {
   resize_keyboard: true,
   one_time_keyboard: true,
 };
+
+const HELP_TEXT =
+  'ℹ️ *DEFT MOTO — yordam*\n\n' +
+  '🛍 *Katalog* — mahsulotlarni koʻrish va buyurtma berish (ilova ochiladi).\n' +
+  '📦 *Buyurtmalarim* — buyurtmalaringiz holati.\n' +
+  '🔑 *Parol* — saytga kirish parolini oʻrnatish/oʻzgartirish.\n' +
+  '🆘 *Operator* — jonli yordamga ulanish.\n\n' +
+  'Buyruqlar:\n' +
+  '/start — bosh menyu\n' +
+  '/register — roʻyxatdan oʻtish\n' +
+  '/parol — parolni oʻzgartirish\n' +
+  '/cancel — joriy amalni bekor qilish\n' +
+  '/help — shu yordam\n\n' +
+  '⚠️ Parolingizni hech kimga bermang. DEFT MOTO xodimlari parolni soʻramaydi.';
 
 const globalRef = globalThis as unknown as { __deftPollerStarted?: boolean };
 
@@ -71,6 +128,7 @@ async function tg(method: string, params: Record<string, unknown> = {}) {
 interface TgUpdate {
   update_id: number;
   message?: {
+    message_id?: number;
     chat?: { id: number };
     from?: { id: number; first_name?: string; username?: string };
     text?: string;
@@ -90,7 +148,24 @@ interface TgUpdate {
 async function handleUpdate(update: TgUpdate) {
   // Inline button taps.
   if (update.callback_query) {
-    await handleCallback(update.callback_query);
+    const cb = update.callback_query;
+    const data = cb.data || '';
+    const cbChat = cb.message?.chat?.id ?? cb.from?.id;
+    // Customer confirmed connecting to the operator.
+    if (data === 'op-connect' && cbChat != null) {
+      operatorChat.add(cbChat);
+      await tg('answerCallbackQuery', { callback_query_id: cb.id });
+      await tg('sendMessage', {
+        chat_id: cbChat,
+        text: '✅ Operatorga ulandingiz. Savolingizni yozing — operatorimiz javob beradi.\nChiqish: /cancel',
+      });
+      return;
+    }
+    if (data === 'op-cancel' && cbChat != null) {
+      await tg('answerCallbackQuery', { callback_query_id: cb.id, text: 'Bekor qilindi' });
+      return;
+    }
+    await handleCallback(cb);
     return;
   }
 
@@ -98,10 +173,27 @@ async function handleUpdate(update: TgUpdate) {
   if (!msg) return;
   const chatId = msg.chat?.id;
   if (chatId == null) return;
+  const msgId = msg.message_id;
   const text = (msg.text || '').trim();
   const lower = text.toLowerCase();
   const fromId = msg.from?.id;
   const fromName = msg.from?.first_name || msg.from?.username || 'Mijoz';
+  const account = () => (fromId != null ? getUserByTelegramId(fromId) : null);
+
+  const startPasswordChange = async () => {
+    const acc = account();
+    if (!acc) {
+      await tg('sendMessage', { chat_id: chatId, text: 'Avval roʻyxatdan oʻting — kontaktingizni yuboring 👇', reply_markup: REGISTER_KB });
+      return;
+    }
+    if (acc.passwordHash) {
+      pwFlows.set(chatId, { step: 'cur' });
+      await tg('sendMessage', { chat_id: chatId, text: '🔑 Joriy parolingizni kiriting:', reply_markup: { remove_keyboard: true } });
+    } else {
+      pwFlows.set(chatId, { step: 'new1' });
+      await tg('sendMessage', { chat_id: chatId, text: `🔑 Yangi parol oʻylab toping (kamida ${PW_MIN} belgi):`, reply_markup: { remove_keyboard: true } });
+    }
+  };
 
   /* --------------------- operator photo reply ----------------------------- */
   if (msg.photo?.length && isOperatorChat(chatId)) {
@@ -128,113 +220,87 @@ async function handleUpdate(update: TgUpdate) {
     return;
   }
 
-  /* -------------------- commands (case-insensitive, never forwarded) ------- */
+  /* ------------------------------ commands ------------------------------- */
+  // /cancel — leave any in-progress flow.
+  if (lower === '/cancel') {
+    const had = pwFlows.has(chatId) || pendingReset.has(chatId) || pendingOperatorVerify.has(chatId) || operatorChat.has(chatId);
+    clearState(chatId);
+    await tg('sendMessage', { chat_id: chatId, text: had ? '✅ Bekor qilindi.' : 'Bosh menyu 👇', reply_markup: customerMenuKeyboard() });
+    return;
+  }
+  // /help — real help text.
+  if (lower === '/help') {
+    await tg('sendMessage', { chat_id: chatId, text: HELP_TEXT, parse_mode: 'Markdown', reply_markup: customerMenuKeyboard() });
+    return;
+  }
+
   if (lower.startsWith('/start')) {
-    // Password-reset deep link: /start rp-<token>
     const param = text.slice('/start'.length).trim();
+    // Password-reset deep link: /start rp-<token>
     if (param.startsWith('rp-')) {
       const token = param.slice(3);
       if (getReset(token)) {
         pendingReset.set(chatId, token);
         await tg('sendMessage', {
           chat_id: chatId,
-          text:
-            '🔐 Parolni tiklash.\n\nTasdiqlash uchun pastdagi tugma orqali ' +
-            'kontaktingizni yuboring — raqamingiz hisobga mos kelsa, kod yuboriladi.',
+          text: '🔐 Parolni tiklash.\n\nTasdiqlash uchun pastdagi tugma orqali kontaktingizni yuboring — raqamingiz hisobga mos kelsa, kod yuboriladi.',
           reply_markup: CONTACT_KB,
         });
       } else {
-        await tg('sendMessage', {
-          chat_id: chatId,
-          text: '⚠️ Tiklash havolasi eskirgan. Saytdan qaytadan urinib koʻring.',
-        });
+        await tg('sendMessage', { chat_id: chatId, text: '⚠️ Tiklash havolasi eskirgan. Saytdan qaytadan urinib koʻring.' });
       }
       return;
     }
-
-    const account = fromId != null ? getUserByTelegramId(fromId) : null;
-
-    // Registration is required for EVERYONE — the operator too, even if already
-    // designated. No account → ask for contact.
-    if (!account) {
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text:
-          'Assalomu alaykum! 👋 *DEFT MOTO*ga xush kelibsiz.\n\n' +
-          '📝 Davom etish uchun roʻyxatdan oʻting — kontaktingizni yuboring 👇',
-        parse_mode: 'Markdown',
-        reply_markup: REGISTER_KB,
-      });
+    // Registration deep link (from checkout).
+    if (param === 'register') {
+      const acc = account();
+      if (acc?.passwordHash) {
+        await tg('sendMessage', { chat_id: chatId, text: '✅ Siz allaqachon roʻyxatdan oʻtgansiz.', reply_markup: customerMenuKeyboard() });
+      } else {
+        await tg('sendMessage', { chat_id: chatId, text: '📝 Roʻyxatdan oʻtish uchun kontaktingizni yuboring 👇', reply_markup: REGISTER_KB });
+      }
       return;
     }
-    // Contact but no password yet → must finish by setting one.
-    if (!account.passwordHash) {
-      pendingPassword.add(chatId);
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text: '🔑 Roʻyxatni yakunlash uchun parol oʻrnating (kamida 6 belgi). Yangi parolingizni yuboring:',
-        reply_markup: { remove_keyboard: true },
-      });
-      return;
-    }
-
-    // Fully registered → role-specific welcome.
+    // Plain /start → open the app immediately (browsing is free; registration
+    // is only needed at checkout).
+    clearState(chatId);
     if (isOperatorChat(chatId)) {
       await tg('sendMessage', {
         chat_id: chatId,
-        text:
-          '✅ Siz DEFT MOTO operatorisiz.\n\n' +
-          'Mijoz savollari shu yerga keladi — javob berish uchun xabarga ' +
-          'reply qiling yoki tez javob tugmalaridan foydalaning.',
+        text: '✅ Siz DEFT MOTO operatorisiz.\n\nMijoz savollari shu yerga keladi — "📨 Xabarlar" orqali yoki xabarga reply qilib javob bering.',
         reply_markup: startKeyboard(),
       });
       return;
     }
     await tg('sendMessage', {
       chat_id: chatId,
-      text:
-        'Assalomu alaykum! 👋\n\n' +
-        '*DEFT MOTO* — mototsikllar, ehtiyot qismlar va aksessuarlar. ' +
-        'Quyidagi menyudan foydalaning 👇',
+      text: 'Assalomu alaykum! 👋\n\n*DEFT MOTO* — mototsikllar, ehtiyot qismlar va aksessuarlar. Katalogni ochish uchun 🛍 tugmasini bosing 👇',
       parse_mode: 'Markdown',
       reply_markup: customerMenuKeyboard(),
     });
     return;
   }
 
-  // /register — same as the /start invite.
+  // /register — collect contact.
   if (lower === '/register' || lower === '/royxat') {
-    await tg('sendMessage', {
-      chat_id: chatId,
-      text: 'Kontaktingizni yuboring 👇',
-      reply_markup: REGISTER_KB,
-    });
-    return;
-  }
-
-  // /parol or /setpassword or /forgot — set (or reset) the website password.
-  if (lower === '/parol' || lower === '/setpassword' || lower === '/forgot') {
-    const account = fromId != null ? getUserByTelegramId(fromId) : null;
-    if (!account) {
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text: 'Avval /start bosib, kontaktingiz bilan roʻyxatdan oʻting.',
-        reply_markup: REGISTER_KB,
-      });
-      return;
+    const acc = account();
+    if (acc?.passwordHash) {
+      await tg('sendMessage', { chat_id: chatId, text: '✅ Siz allaqachon roʻyxatdan oʻtgansiz.', reply_markup: customerMenuKeyboard() });
+    } else {
+      await tg('sendMessage', { chat_id: chatId, text: 'Kontaktingizni yuboring 👇', reply_markup: REGISTER_KB });
     }
-    pendingPassword.add(chatId);
-    await tg('sendMessage', {
-      chat_id: chatId,
-      text: '🔑 Yangi parolingizni yuboring (kamida 6 belgi):',
-      reply_markup: { remove_keyboard: true },
-    });
     return;
   }
 
-  // /operator — staff-only verification (kept off /start so customers aren't asked).
+  // /parol, /setpassword, /forgot — change/set the website password.
+  if (lower === '/parol' || lower === '/setpassword' || lower === '/forgot') {
+    await startPasswordChange();
+    return;
+  }
+
+  // /operator — staff-only verification.
   if (lower === '/operator') {
-    pendingOperator.add(chatId);
+    pendingOperatorVerify.add(chatId);
     await tg('sendMessage', {
       chat_id: chatId,
       text: 'Operator sifatida ulanish uchun kontaktingizni yuboring. Faqat admin belgilagan raqam ulanadi.',
@@ -243,9 +309,9 @@ async function handleUpdate(update: TgUpdate) {
     return;
   }
 
-  // Any other slash-command → ignore (never forward to the operator).
+  // Any other slash-command → help hint (never forwarded).
   if (text.startsWith('/')) {
-    await tg('sendMessage', { chat_id: chatId, text: 'Menyudan foydalaning 👇', reply_markup: customerMenuKeyboard() });
+    await tg('sendMessage', { chat_id: chatId, text: 'Notoʻgʻri buyruq. Yordam uchun /help', reply_markup: customerMenuKeyboard() });
     return;
   }
 
@@ -278,10 +344,9 @@ async function handleUpdate(update: TgUpdate) {
       return;
     }
 
-    // b) Operator binding if explicitly requested via /operator — the operator
-    //    still goes through the same registration below.
-    if (pendingOperator.has(chatId)) {
-      pendingOperator.delete(chatId);
+    // b) Operator binding if explicitly requested via /operator.
+    if (pendingOperatorVerify.has(chatId)) {
+      pendingOperatorVerify.delete(chatId);
       const outcome = await tryBindOperator(chatId, phone);
       await tg('sendMessage', {
         chat_id: chatId,
@@ -296,16 +361,16 @@ async function handleUpdate(update: TgUpdate) {
       // fall through to registration.
     }
 
-    // c) Register / link the account (everyone, operator included).
+    // c) Register / link the account.
     const norm = normalizePhone(phone);
     const existing = getUserByPhone(norm);
-    let account = existing;
+    let acc = existing;
     if (existing) {
       if (fromId != null && existing.telegramId !== String(fromId)) {
         updateUser(existing.id, { telegramId: String(fromId) });
       }
     } else {
-      account = createUserAccount({
+      acc = createUserAccount({
         name: fromName,
         phone: norm,
         passwordHash: '',
@@ -313,29 +378,18 @@ async function handleUpdate(update: TgUpdate) {
       });
     }
 
-    // d) Registration is only complete once a password is set.
-    if (account && !account.passwordHash) {
-      pendingPassword.add(chatId);
+    // d) Registration completes only after the password is set (entered twice).
+    if (acc && !acc.passwordHash) {
+      pwFlows.set(chatId, { step: 'reg1' });
       await tg('sendMessage', {
         chat_id: chatId,
-        text:
-          '📱 Raqamingiz qabul qilindi.\n\n' +
-          '🔑 Roʻyxatni yakunlash uchun parol oʻrnating (kamida 6 belgi). ' +
-          'Yangi parolingizni yuboring:',
+        text: `📱 Raqamingiz qabul qilindi.\n\n🔑 Roʻyxatni yakunlash uchun parol oʻylab toping (kamida ${PW_MIN} belgi):`,
         reply_markup: { remove_keyboard: true },
       });
     } else if (isOperatorChat(chatId)) {
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text: '✅ Tayyor! Mijoz xabarlari shu yerga keladi — reply qilib javob bering.',
-        reply_markup: startKeyboard(),
-      });
+      await tg('sendMessage', { chat_id: chatId, text: '✅ Tayyor! Mijoz xabarlari shu yerga keladi.', reply_markup: startKeyboard() });
     } else {
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text: '✅ Hisobingiz ulandi! Quyidagi menyudan foydalaning 👇',
-        reply_markup: customerMenuKeyboard(),
-      });
+      await tg('sendMessage', { chat_id: chatId, text: '✅ Hisobingiz ulandi! Quyidagi menyudan foydalaning 👇', reply_markup: customerMenuKeyboard() });
     }
     return;
   }
@@ -360,77 +414,103 @@ async function handleUpdate(update: TgUpdate) {
     }
   }
 
-  /* --------------------- password being set (customer) -------------------- */
-  if (pendingPassword.has(chatId) && text) {
-    if (text.length < 6) {
-      await tg('sendMessage', { chat_id: chatId, text: 'Parol kamida 6 belgi boʻlsin. Qaytadan yuboring:' });
+  /* -------------------- password flow (register / change) ----------------- */
+  const flow = pwFlows.get(chatId);
+  if (flow && text) {
+    await deleteMsg(chatId, msgId); // never leave the password in chat history
+    const acc = account();
+    if (!acc) {
+      pwFlows.delete(chatId);
+      await tg('sendMessage', { chat_id: chatId, text: 'Avval roʻyxatdan oʻting 👇', reply_markup: REGISTER_KB });
       return;
     }
-    pendingPassword.delete(chatId);
-    const account = fromId != null ? getUserByTelegramId(fromId) : null;
-    if (account) {
-      const first = !account.passwordHash; // completing registration
-      updateUser(account.id, { passwordHash: hashPassword(text) });
-      const body = first
-        ? `✅ Roʻyxatdan oʻtdingiz! Endi buyurtma berishingiz mumkin.\n\nSaytga *${account.phone}* + shu parol bilan ham kirishingiz mumkin.`
-        : `✅ Parol yangilandi. Saytga *${account.phone}* + shu parol bilan kiring.`;
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text: body,
-        parse_mode: 'Markdown',
-        reply_markup: isOperatorChat(chatId) ? startKeyboard() : customerMenuKeyboard(),
-      });
-    } else {
-      await tg('sendMessage', { chat_id: chatId, text: 'Avval /start bosib roʻyxatdan oʻting.', reply_markup: REGISTER_KB });
+    // Verify the CURRENT password before allowing a change.
+    if (flow.step === 'cur') {
+      if (tooManyPwFails(chatId)) {
+        await tg('sendMessage', { chat_id: chatId, text: '⛔️ Juda koʻp notoʻgʻri urinish. 15 daqiqadan soʻng qayta urinib koʻring. (/cancel)' });
+        return;
+      }
+      if (!acc.passwordHash || !verifyPassword(text, acc.passwordHash)) {
+        notePwFail(chatId);
+        await tg('sendMessage', { chat_id: chatId, text: '❌ Joriy parol notoʻgʻri. Qaytadan kiriting yoki /cancel:' });
+        return;
+      }
+      pwFlows.set(chatId, { step: 'new1' });
+      await tg('sendMessage', { chat_id: chatId, text: `🔑 Yangi parol (kamida ${PW_MIN} belgi):` });
+      return;
+    }
+    // First entry of the new password.
+    if (flow.step === 'reg1' || flow.step === 'new1') {
+      if (text.length < PW_MIN) {
+        await tg('sendMessage', { chat_id: chatId, text: `Parol kamida ${PW_MIN} belgi boʻlsin. Qaytadan kiriting:` });
+        return;
+      }
+      pwFlows.set(chatId, { step: flow.step === 'reg1' ? 'reg2' : 'new2', pass1: text });
+      await tg('sendMessage', { chat_id: chatId, text: '🔁 Tasdiqlash uchun parolni qayta kiriting:' });
+      return;
+    }
+    // Confirmation (entered twice).
+    if (flow.step === 'reg2' || flow.step === 'new2') {
+      const isReg = flow.step === 'reg2';
+      if (text !== flow.pass1) {
+        pwFlows.set(chatId, { step: isReg ? 'reg1' : 'new1' });
+        await tg('sendMessage', { chat_id: chatId, text: '❌ Parollar mos kelmadi. Yangi parolni qaytadan kiriting:' });
+        return;
+      }
+      pwFlows.delete(chatId);
+      updateUser(acc.id, { passwordHash: hashPassword(text) });
+      const body = isReg
+        ? `✅ Roʻyxatdan oʻtdingiz! Endi buyurtma berishingiz mumkin.\n\nSaytga *${acc.phone}* + shu parol bilan ham kirishingiz mumkin.\n\n🔒 Xavfsizlik uchun parol xabarlaringiz oʻchirildi — parolni hech kimga aytmang.`
+        : `✅ Parol oʻzgartirildi.\n\n🔒 Agar bu siz boʻlmasangiz — darhol /parol orqali qayta oʻzgartiring.`;
+      await tg('sendMessage', { chat_id: chatId, text: body, parse_mode: 'Markdown', reply_markup: isOperatorChat(chatId) ? startKeyboard() : customerMenuKeyboard() });
+      return;
     }
     return;
   }
 
-  /* --------------------- menu / chat (registered only) -------------------- */
+  /* -------------------- menu buttons / free text -------------------------- */
   if (text && !isOperatorChat(chatId)) {
-    const account = fromId != null ? getUserByTelegramId(fromId) : null;
-
-    // Not fully registered → guide them to finish, never show the menu/chat.
-    if (!account) {
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text: '📝 Avval roʻyxatdan oʻting — kontaktingizni yuboring 👇',
-        reply_markup: REGISTER_KB,
-      });
-      return;
-    }
-    if (!account.passwordHash) {
-      pendingPassword.add(chatId);
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text: '🔑 Roʻyxatni yakunlash uchun parol oʻrnating (kamida 6 belgi):',
-        reply_markup: { remove_keyboard: true },
-      });
-      return;
-    }
-
-    // "🔑 Parol" menu button → change password.
+    // "🔑 Parol" → change/set password (asks the current password first if set).
     if (text === MENU.password) {
-      pendingPassword.add(chatId);
+      await startPasswordChange();
+      return;
+    }
+    // "🆘 Operator" → confirm before connecting.
+    if (text === MENU.operator) {
       await tg('sendMessage', {
         chat_id: chatId,
-        text: '🔑 Yangi parolingizni yuboring (kamida 6 belgi):',
-        reply_markup: { remove_keyboard: true },
+        text: 'Operator bilan bogʻlanmoqchimisiz? Tasdiqlasangiz, xabaringiz operatorga yuboriladi.',
+        reply_markup: {
+          inline_keyboard: [[
+            { text: '✅ Ha, ulanish', callback_data: 'op-connect' },
+            { text: 'Yoʻq', callback_data: 'op-cancel' },
+          ]],
+        },
       });
       return;
     }
 
     // Katalog / Aloqa / Biz haqimizda / Buyurtmalarim.
     const handled = await handleCustomerMenu(chatId, text);
-    if (!handled) {
+    if (handled) return;
+
+    // Free text: forwarded to the operator ONLY when the customer explicitly
+    // connected via 🆘 Operator — otherwise we guide them (no silent forwarding).
+    if (operatorChat.has(chatId)) {
       const { relayed } = await forwardBotCustomerMessage(chatId, fromName, text);
       await tg('sendMessage', {
         chat_id: chatId,
-        text: relayed
-          ? '✅ Xabaringiz operatorga yuborildi. Tez orada javob beramiz.'
-          : 'ℹ️ Xabaringiz qabul qilindi. Operator ulanishi bilan javob beramiz.',
+        text: relayed ? '✅ Operatorga yuborildi.' : 'ℹ️ Qabul qilindi. Operator ulanishi bilan javob beramiz.',
+      });
+    } else {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: 'Menyudan foydalaning. Jonli yordam uchun 🆘 *Operator* tugmasini bosing.',
+        parse_mode: 'Markdown',
+        reply_markup: customerMenuKeyboard(),
       });
     }
+    return;
   }
 }
 

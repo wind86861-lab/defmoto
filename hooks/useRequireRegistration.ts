@@ -27,7 +27,7 @@ export function useRequireRegistration() {
       return true;
     }
     if (webApp?.initData) {
-      const url = `https://t.me/${BOT}`;
+      const url = `https://t.me/${BOT}?start=register`;
       if (webApp.openTelegramLink) webApp.openTelegramLink(url);
       else window.open(url, '_blank');
     } else {

@@ -9,7 +9,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 type Mode = 'login' | 'forgot';
 
 const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'ajndspuntnjqpiuuerbot';
-const BOT_LINK = `https://t.me/${BOT_USERNAME}`;
+const BOT_LINK = `https://t.me/${BOT_USERNAME}?start=register`;
 
 async function post(url: string, body: unknown) {
   const r = await fetch(url, {
