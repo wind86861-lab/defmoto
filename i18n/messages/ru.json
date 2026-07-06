@@ -132,7 +132,8 @@
     "cheaperHeading": "ДЕШЕВЛЕ МАРКЕТПЛЕЙСОВ!",
     "cheaperSubtitle": "Дешевле цен {markets}",
     "cheaperHomeTagline": "Самые низкие цены на рынке — напрямую со склада, без переплат",
-    "cheaperCta": "Смотреть каталог"
+    "cheaperCta": "Смотреть каталог",
+    "goToStore": "в магазин"
   },
   "demo": {
     "badge": "ДЕМО РЕЖИМ",
@@ -867,7 +868,8 @@
     "fldProdMarketHint": "Добавьте цены маркетплейсов — клиенту покажется наибольшая разница.",
     "fldProdMarketDerive": "Как старая цена показывается самая высокая цена маркетплейса.",
     "fldTelegram": "Telegram",
-    "fldMapUrl": "Ссылка Google Maps"
+    "fldMapUrl": "Ссылка Google Maps",
+    "fldProdMarketLink": "Ссылка на товар в маркетплейсе (необяз.)"
   },
   "categories": {
     "motorcycles": "Мотоциклы",

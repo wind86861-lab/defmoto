@@ -132,7 +132,8 @@
     "cheaperHeading": "MARKETPLEYSLARDAN ARZON!",
     "cheaperSubtitle": "{markets} narxlaridan arzon",
     "cheaperHomeTagline": "Bozordagi eng arzon narxlar — toʻgʻridan-toʻgʻri ombordan, ortiqcha toʻlovsiz",
-    "cheaperCta": "Katalogni koʻrish"
+    "cheaperCta": "Katalogni koʻrish",
+    "goToStore": "do'konga"
   },
   "demo": {
     "badge": "DEMO REJIMI",
@@ -867,7 +868,8 @@
     "fldProdMarketHint": "Marketplace narxlarini qo'shing — eng katta farq mijozga ko'rsatiladi.",
     "fldProdMarketDerive": "Eski narx sifatida eng qimmat marketplace narxi ko'rsatiladi.",
     "fldTelegram": "Telegram",
-    "fldMapUrl": "Google Maps havolasi"
+    "fldMapUrl": "Google Maps havolasi",
+    "fldProdMarketLink": "Marketplace mahsulot linki (ixtiyoriy)"
   },
   "categories": {
     "motorcycles": "Mototsikllar",

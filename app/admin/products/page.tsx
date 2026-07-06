@@ -314,38 +314,45 @@ function ProductModal({
                 {t('fldProdMarketHint')}
               </p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {comp.map((c, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ background: (c.color || '#7B2CBF') + '22' }}>
-                      <Store className="h-4 w-4" style={{ color: c.color || '#7B2CBF' }} />
-                    </span>
-                    <select
-                      value={c.source}
-                      onChange={(e) => pickMarketplace(i, e.target.value)}
-                      className="h-11 w-40 shrink-0 rounded-xl border border-brand-surface-border bg-brand-surface px-3 text-sm font-semibold text-white outline-none focus:border-brand-yellow/60"
-                    >
-                      {!marketplaces.some((m) => m.id === c.source) && (
-                        <option value={c.source}>{c.label || '—'}</option>
-                      )}
-                      {marketplaces.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.label}
-                        </option>
-                      ))}
-                    </select>
+                  <div key={i} className="space-y-1.5 rounded-xl border border-brand-surface-border bg-brand-surface/40 p-2">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ background: (c.color || '#7B2CBF') + '22' }}>
+                        <Store className="h-4 w-4" style={{ color: c.color || '#7B2CBF' }} />
+                      </span>
+                      <select
+                        value={c.source}
+                        onChange={(e) => pickMarketplace(i, e.target.value)}
+                        className="h-11 w-36 shrink-0 rounded-xl border border-brand-surface-border bg-brand-surface px-3 text-sm font-semibold text-white outline-none focus:border-brand-yellow/60"
+                      >
+                        {!marketplaces.some((m) => m.id === c.source) && (
+                          <option value={c.source}>{c.label || '—'}</option>
+                        )}
+                        {marketplaces.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.label}
+                          </option>
+                        ))}
+                      </select>
+                      <Input
+                        value={c.price ? String(c.price) : ''}
+                        placeholder={t('fldProdPrice')}
+                        onChange={(e) => updateComp(i, { price: Number(e.target.value.replace(/\D/g, '')) || 0 })}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeComp(i)}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/55 hover:bg-danger/15 hover:text-danger"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                     <Input
-                      value={c.price ? String(c.price) : ''}
-                      placeholder={t('fldProdPrice')}
-                      onChange={(e) => updateComp(i, { price: Number(e.target.value.replace(/\D/g, '')) || 0 })}
+                      value={c.url ?? ''}
+                      placeholder={t('fldProdMarketLink')}
+                      onChange={(e) => updateComp(i, { url: e.target.value || undefined })}
                     />
-                    <button
-                      type="button"
-                      onClick={() => removeComp(i)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/55 hover:bg-danger/15 hover:text-danger"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
                   </div>
                 ))}
                 <p className="text-[11px] text-white/40">{t('fldProdMarketDerive')}</p>

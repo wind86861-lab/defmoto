@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { TrendingDown, Check } from 'lucide-react';
+import { TrendingDown, Check, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { formatPrice } from '@/lib/format';
 import { useSiteSettings, DEFAULT_MARKETPLACES } from '@/lib/stores/siteSettings';
@@ -74,6 +74,8 @@ export function PriceCompare({
               label={c.label || c.source}
               color={c.color || DEFAULT_CHIP_COLOR}
               icon={iconById[c.source]}
+              url={c.url}
+              storeLabel={t('goToStore')}
               price={c.price}
               locale={locale}
               isMax={c.price === maxCompetitor}
@@ -112,6 +114,8 @@ function CompetitorRow({
   label,
   color,
   icon,
+  url,
+  storeLabel,
   price,
   locale,
   isMax,
@@ -119,37 +123,51 @@ function CompetitorRow({
   label: string;
   color: string;
   icon?: string;
+  url?: string;
+  storeLabel: string;
   price: number;
   locale: Locale;
   isMax: boolean;
 }) {
-  return (
-    <div
-      className={cn(
-        'flex items-center justify-between gap-2 rounded-lg px-3 py-2 transition-colors',
-        isMax ? 'bg-white/3' : 'bg-transparent',
-      )}
+  const badge = icon ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={icon} alt={label} className="h-6 w-12 rounded-md bg-white/5 object-contain p-0.5" />
+  ) : (
+    <span
+      className="inline-flex h-6 min-w-12 items-center justify-center rounded-md px-1.5 text-[10px] font-bold text-white"
+      style={{ background: color }}
     >
-      <div className="flex items-center gap-2">
-        {icon ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={icon}
-            alt={label}
-            className="h-6 w-12 rounded-md bg-white/5 object-contain p-0.5"
-          />
-        ) : (
-          <span
-            className="inline-flex h-6 min-w-12 items-center justify-center rounded-md px-1.5 text-[10px] font-bold text-white"
-            style={{ background: color }}
-          >
-            {label}
+      {label}
+    </span>
+  );
+
+  const inner = (
+    <>
+      <div className="flex min-w-0 items-center gap-2">
+        {badge}
+        {url && (
+          <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-white/45 group-hover/row:text-brand-yellow">
+            {storeLabel}
+            <ExternalLink className="h-3 w-3" />
           </span>
         )}
       </div>
       <span className="font-display text-sm text-white/50 line-through decoration-2">
         {formatPrice(price, locale)}
       </span>
-    </div>
+    </>
+  );
+
+  const cls = cn(
+    'flex items-center justify-between gap-2 rounded-lg px-3 py-2 transition-colors',
+    isMax ? 'bg-white/3' : 'bg-transparent',
+  );
+
+  return url ? (
+    <a href={url} target="_blank" rel="noopener noreferrer" className={cn(cls, 'group/row hover:bg-white/5')}>
+      {inner}
+    </a>
+  ) : (
+    <div className={cls}>{inner}</div>
   );
 }

@@ -132,7 +132,8 @@
     "cheaperHeading": "CHEAPER THAN MARKETPLACES!",
     "cheaperSubtitle": "Cheaper than {markets} prices",
     "cheaperHomeTagline": "The lowest prices on the market — straight from our warehouse, no markups",
-    "cheaperCta": "Browse catalog"
+    "cheaperCta": "Browse catalog",
+    "goToStore": "to store"
   },
   "demo": {
     "badge": "DEMO MODE",
@@ -867,7 +868,8 @@
     "fldProdMarketHint": "Add marketplace prices — the biggest gap is shown to the customer.",
     "fldProdMarketDerive": "The highest marketplace price is shown as the old price.",
     "fldTelegram": "Telegram",
-    "fldMapUrl": "Google Maps link"
+    "fldMapUrl": "Google Maps link",
+    "fldProdMarketLink": "Marketplace product link (optional)"
   },
   "categories": {
     "motorcycles": "Motorcycles",
