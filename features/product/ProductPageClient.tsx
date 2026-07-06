@@ -17,6 +17,7 @@ import { useWishlistStore } from '@/lib/stores/wishlist';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useMounted } from '@/hooks/useMounted';
 import { useProductReviews } from '@/hooks/useProductReviews';
+import { useRequireRegistration } from '@/hooks/useRequireRegistration';
 import { useToast } from '@/components/ui/Toaster';
 import { ProductGallery } from './ProductGallery';
 import { VariantSelector } from './VariantSelector';
@@ -43,13 +44,14 @@ export function ProductPageClient({ product, similar }: Props) {
   const { notify, impact } = useHaptic();
   const reviews = useProductReviews(product.id);
   const reviewSummary = reviews.data.summary;
+  const requireReg = useRequireRegistration();
 
   const [quantity, setQuantity] = useState(1);
   const [variantId, setVariantId] = useState<string | null>(
     product.variants?.[0]?.id ?? null,
   );
 
-  const handleAddToCart = (qty = quantity, opts?: { silent?: boolean }) => {
+  const addCore = (qty = quantity, opts?: { silent?: boolean }) => {
     notify('success');
     addToCart(
       {
@@ -70,10 +72,17 @@ export function ProductPageClient({ product, similar }: Props) {
     }
   };
 
+  // Adding to cart / buying requires a registered account.
+  const handleAddToCart = (qty = quantity, opts?: { silent?: boolean }) => {
+    requireReg(() => addCore(qty, opts));
+  };
+
   // "Sotib olish" — 1 dona qo'shadi va savatga yo'naltiradi
   const handleBuyNow = () => {
-    handleAddToCart(1, { silent: true });
-    router.push('/cart');
+    requireReg(() => {
+      addCore(1, { silent: true });
+      router.push('/cart');
+    });
   };
 
   const handleToggleWishlist = () => {

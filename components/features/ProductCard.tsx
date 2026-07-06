@@ -9,6 +9,7 @@ import { useCartStore } from '@/lib/stores/cart';
 import { useWishlistStore } from '@/lib/stores/wishlist';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useMounted } from '@/hooks/useMounted';
+import { useRequireRegistration } from '@/hooks/useRequireRegistration';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/Badge';
 import { ProductImage } from '@/components/ui/ProductImage';
@@ -33,6 +34,7 @@ export function ProductCard({ product, variant = 'grid', className }: ProductCar
   const mounted = useMounted();
   const isWishlisted = useWishlistStore((s) => mounted && s.ids.includes(product.id));
   const { impact, notify } = useHaptic();
+  const requireReg = useRequireRegistration();
 
   const discountPct =
     product.oldPrice && product.oldPrice > product.price
@@ -41,17 +43,19 @@ export function ProductCard({ product, variant = 'grid', className }: ProductCar
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    notify('success');
-    addToCart({
-      productId: product.id,
-      name: product.name,
-      image: product.images[0],
-      price: product.price,
-      oldPrice: product.oldPrice,
-    });
-    toast.cart(tProduct('addedToCartTitle'), product.name, {
-      label: tProduct('goToCartAction'),
-      onClick: () => router.push('/cart'),
+    requireReg(() => {
+      notify('success');
+      addToCart({
+        productId: product.id,
+        name: product.name,
+        image: product.images[0],
+        price: product.price,
+        oldPrice: product.oldPrice,
+      });
+      toast.cart(tProduct('addedToCartTitle'), product.name, {
+        label: tProduct('goToCartAction'),
+        onClick: () => router.push('/cart'),
+      });
     });
   };
 

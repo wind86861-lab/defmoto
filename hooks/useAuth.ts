@@ -24,6 +24,10 @@ export function useAuth() {
 
   useEffect(() => {
     void refresh();
+    // Re-check when the Telegram auto-login finishes (or login/logout happens).
+    const onChange = () => void refresh();
+    window.addEventListener('dm-auth-changed', onChange);
+    return () => window.removeEventListener('dm-auth-changed', onChange);
   }, [refresh]);
 
   const logout = useCallback(async () => {

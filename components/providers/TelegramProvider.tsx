@@ -74,13 +74,20 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
       setIsReady(true);
 
       // Auto-login: hand the signed initData to the server so it can verify the
-      // user and set a session cookie (used to gate reviews securely).
+      // user and set a session cookie. Notify listeners (useAuth) when done so
+      // the session (and registration status) is picked up immediately.
       if (tg.initData) {
         void fetch('/api/auth/telegram', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ initData: tg.initData }),
-        }).catch(() => {});
+        })
+          .then(() => {
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new Event('dm-auth-changed'));
+            }
+          })
+          .catch(() => {});
       }
     };
 
