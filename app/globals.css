@@ -22,19 +22,14 @@
     touch-action: pan-x pan-y;
   }
 
-  html,
-  body {
-    /* Never let content push the page wider than the viewport (fixes text
-       being clipped on the right inside the narrow Telegram Mini App panel). */
-    overflow-x: hidden;
-    max-width: 100%;
-  }
-
   body {
     @apply bg-brand-dark text-white antialiased;
     font-feature-settings: 'cv11', 'ss01', 'ss03';
     overscroll-behavior-y: none;
     min-height: var(--tg-viewport-height);
+    /* No overflow-x here — any non-visible overflow-x forces overflow-y to a
+       scroll container, which breaks vertical scrolling in the Telegram
+       WebView. Horizontal overflow is contained by <main> (overflow-x-clip). */
   }
 
   * {
