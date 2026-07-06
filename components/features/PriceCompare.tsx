@@ -5,6 +5,8 @@ import { useLocale, useTranslations } from 'next-intl';
 import { TrendingDown, Check } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { formatPrice } from '@/lib/format';
+import { useSiteSettings, DEFAULT_MARKETPLACES } from '@/lib/stores/siteSettings';
+import { useMounted } from '@/hooks/useMounted';
 import type { Locale } from '@/i18n/config';
 import type { CompetitorPrice } from '@/types/product';
 
@@ -25,6 +27,15 @@ export function PriceCompare({
 }: PriceCompareProps) {
   const t = useTranslations('priceCompare');
   const locale = useLocale() as Locale;
+  const mounted = useMounted();
+  const stored = useSiteSettings((s) => s.marketplaces);
+  // Marketplace id → uploaded logo, so we can show a real icon instead of text.
+  const iconById = useMemo(() => {
+    const list = mounted && stored.length ? stored : DEFAULT_MARKETPLACES;
+    const map: Record<string, string | undefined> = {};
+    for (const m of list) map[m.id] = m.icon;
+    return map;
+  }, [mounted, stored]);
 
   const { maxCompetitor, savings, savingsPct } = useMemo(() => {
     const max = Math.max(...competitors.map((c) => c.price));
@@ -62,6 +73,7 @@ export function PriceCompare({
               key={`${c.source}-${i}`}
               label={c.label || c.source}
               color={c.color || DEFAULT_CHIP_COLOR}
+              icon={iconById[c.source]}
               price={c.price}
               locale={locale}
               isMax={c.price === maxCompetitor}
@@ -99,12 +111,14 @@ export function PriceCompare({
 function CompetitorRow({
   label,
   color,
+  icon,
   price,
   locale,
   isMax,
 }: {
   label: string;
   color: string;
+  icon?: string;
   price: number;
   locale: Locale;
   isMax: boolean;
@@ -117,12 +131,21 @@ function CompetitorRow({
       )}
     >
       <div className="flex items-center gap-2">
-        <span
-          className="inline-flex h-6 w-12 items-center justify-center rounded-md text-[10px] font-bold text-white"
-          style={{ background: color }}
-        >
-          {label}
-        </span>
+        {icon ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={icon}
+            alt={label}
+            className="h-6 w-12 rounded-md bg-white/5 object-contain p-0.5"
+          />
+        ) : (
+          <span
+            className="inline-flex h-6 min-w-12 items-center justify-center rounded-md px-1.5 text-[10px] font-bold text-white"
+            style={{ background: color }}
+          >
+            {label}
+          </span>
+        )}
       </div>
       <span className="font-display text-sm text-white/50 line-through decoration-2">
         {formatPrice(price, locale)}
