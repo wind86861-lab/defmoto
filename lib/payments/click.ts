@@ -14,6 +14,7 @@ import crypto from 'crypto';
 import {
   getOrder,
   getPaymentById,
+  getPaymentByOrder,
   savePayment,
   updateOrderStatus,
 } from '@/lib/db';
@@ -99,8 +100,18 @@ export async function handleClick(req: Request): Promise<unknown> {
 
   if (action === ACTION_PREPARE) {
     const existing = getPaymentById(clickTransId);
-    if (existing && existing.state < 0) {
-      return base({ error: ERR.CANCELLED, error_note: 'Transaction cancelled' });
+    if (existing) {
+      if (existing.state === 2) {
+        return base({ error: ERR.ALREADY_PAID, error_note: 'Already paid' });
+      }
+      if (existing.state < 0) {
+        return base({ error: ERR.CANCELLED, error_note: 'Transaction cancelled' });
+      }
+    }
+    // The order may already be paid by another Click transaction.
+    const byOrder = getPaymentByOrder('click', merchantTransId);
+    if (byOrder && byOrder.id !== clickTransId && byOrder.state === 2) {
+      return base({ error: ERR.ALREADY_PAID, error_note: 'Order already paid' });
     }
     const prepareId = existing?.extra?.prepareId
       ? String(existing.extra.prepareId)
