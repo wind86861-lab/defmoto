@@ -68,7 +68,7 @@ export function Hero() {
                   src={s.image}
                   alt=""
                   loading={i === 0 ? 'eager' : 'lazy'}
-                  className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.025]"
+                  className="h-full w-full object-contain transition-transform duration-700 ease-out group-hover:scale-[1.025] sm:object-cover"
                 />
               );
 
