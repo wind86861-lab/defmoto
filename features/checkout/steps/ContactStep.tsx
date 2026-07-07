@@ -30,8 +30,10 @@ export function ContactStep({ onNext }: { onNext: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.name, user?.phone, tgName]);
 
-  const name = contact.name || user?.name || tgName || '';
-  const phone = contact.phone || user?.phone || '';
+  // `contact` is the single source of truth (the effect above seeds it from the
+  // account / Telegram profile), so the fields stay editable and clearable.
+  const name = contact.name;
+  const phone = contact.phone;
   const ready = Boolean(name.trim() && phone.replace(/\D/g, '').length >= 9);
 
   // Telegram's requestContact shares the phone with the bot; poll /api/auth/me

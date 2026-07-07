@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Navigation, Loader2, MapPin } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useCheckoutState } from '../useCheckoutState';
+import { useSiteSettings } from '@/lib/stores/siteSettings';
 
 interface DirItem {
   code: string;
@@ -49,6 +50,7 @@ async function fetchItems(url: string): Promise<DirItem[]> {
 export function BtsBranchPicker({ me }: { me: { lat: number; lng: number } | null }) {
   const t = useTranslations('checkout');
   const { delivery, setDelivery } = useCheckoutState();
+  const dispatch = useSiteSettings((s) => s.bts?.dispatch);
   const [regions, setRegions] = useState<DirItem[]>([]);
   const [cities, setCities] = useState<DirItem[]>([]);
   const [branches, setBranches] = useState<DirItem[]>([]);
@@ -128,7 +130,10 @@ export function BtsBranchPicker({ me }: { me: { lat: number; lng: number } | nul
         body: JSON.stringify({ receiverCityCode: delivery.btsCityCode, dropoff_type: 'branch' }),
       });
       const j = await r.json();
-      const price = j?.data?.branch_to_branch?.price ?? j?.data?.courier_to_branch?.price;
+      // Match the shop's dispatch mode: courier pickup → courier_to_branch,
+      // otherwise the shop drops parcels at a branch → branch_to_branch.
+      const cell = dispatch === 'courier' ? j?.data?.courier_to_branch : j?.data?.branch_to_branch;
+      const price = cell?.price ?? j?.data?.branch_to_branch?.price ?? j?.data?.courier_to_branch?.price;
       if (typeof price === 'number') setDelivery({ btsPrice: price });
     } catch {
       /* estimate is best-effort */
