@@ -757,6 +757,7 @@
     "linkPlaceholder": "https://... yoki /catalog (ixtiyoriy link)",
     "tipText": "💡 <b>Tavsiya:</b> Banner to'liq kenglikda (object-cover) ko'rsatiladi — keng formatli surat (masalan 1600×900) eng yaxshi natija beradi. Link qo'shsangiz, foydalanuvchi bosganda shu manzilga yo'naltiriladi (ichki yo'l: <code>/catalog</code>, tashqi: <code>https://...</code>).",
     "navMarketplaces": "Marketpleyslar",
+    "navDelivery": "BTS yetkazish",
     "marketplacesSubtitle": "Navbardagi marketpleys havolalarini boshqaring",
     "marketplacesSectionTitle": "Marketpleyslar ({count})",
     "addMarketplaceButton": "Marketpleys",

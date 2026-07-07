@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { btsCalculate, btsConfigured } from '@/lib/bts/client';
+import { getBtsSender } from '@/lib/bts/settings';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,9 +15,10 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ ok: false, error: 'bad-json' }, { status: 400 });
   }
-  // Sender defaults to the shop's configured city; the client only needs to
-  // send the receiver city. Weight defaults to the configured parcel weight.
-  const senderCityCode = body?.senderCityCode || process.env.BTS_SENDER_CITY_CODE || '';
+  // Sender comes from the admin-managed BTS settings (env fallback); the client
+  // only sends the receiver city. Weight defaults to the configured parcel weight.
+  const sender = getBtsSender();
+  const senderCityCode = body?.senderCityCode || sender.senderCityCode || '';
   const { receiverCityCode } = body || {};
   const weight = Number(body?.weight || process.env.BTS_DEFAULT_WEIGHT || 1);
   if (!senderCityCode || !receiverCityCode) {
@@ -27,7 +29,7 @@ export async function POST(req: Request) {
       senderCityCode: String(senderCityCode),
       receiverCityCode: String(receiverCityCode),
       weight,
-      pickup_type: body.pickup_type,
+      pickup_type: body.pickup_type || sender.pickupType,
       dropoff_type: body.dropoff_type,
       volume: body.volume,
     });

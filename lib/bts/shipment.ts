@@ -7,6 +7,7 @@
 
 import { getOrder, setOrderBts, updateOrderStatus } from '@/lib/db';
 import { notifyOperator } from '@/lib/server/chatRelay';
+import { getBtsSender } from './settings';
 import {
   btsCreateOrder,
   type BtsCreateOrderInput,
@@ -45,10 +46,11 @@ export async function createShipmentForOrder(
     branchCode?: string;
   };
 
+  const sender = getBtsSender();
+
   const dropoff: BtsDropoffType =
     ov.dropoff_type || (delivery.method === 'bts' ? 'branch' : 'courier');
-  const pickup: BtsPickupType =
-    ov.pickup_type || (process.env.BTS_PICKUP_TYPE as BtsPickupType) || 'courier';
+  const pickup: BtsPickupType = ov.pickup_type || sender.pickupType;
 
   // Cash-on-delivery when not already paid online.
   const cod = paymentMethod === 'cash' || paymentMethod === 'bts';
@@ -62,10 +64,10 @@ export async function createShipmentForOrder(
     is_sender_location: false,
     is_receiver_location: false,
     sender: {
-      name: process.env.BTS_SENDER_NAME || 'DEFT MOTO',
-      phone: process.env.BTS_SENDER_PHONE || '',
-      address: process.env.BTS_SENDER_ADDRESS || '',
-      city_code: ov.senderCityCode || process.env.BTS_SENDER_CITY_CODE || undefined,
+      name: sender.senderName,
+      phone: sender.senderPhone,
+      address: sender.senderAddress,
+      city_code: ov.senderCityCode || sender.senderCityCode || undefined,
       branch_code: process.env.BTS_SENDER_BRANCH_CODE || undefined,
     },
     receiver: {

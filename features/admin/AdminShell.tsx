@@ -13,6 +13,7 @@ import {
   MessageCircle,
   Store,
   MapPin,
+  Truck,
   ExternalLink,
   LogOut,
 } from 'lucide-react';
@@ -62,6 +63,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     { href: '/admin/categories', label: t('navCategories'), icon: Tag },
     { href: '/admin/locations', label: t('navLocations'), icon: MapPin },
     { href: '/admin/marketplaces', label: t('navMarketplaces'), icon: Store },
+    { href: '/admin/delivery', label: t('navDelivery'), icon: Truck },
     { href: '/admin/chats', label: t('navChats'), icon: MessageCircle },
   ];
 

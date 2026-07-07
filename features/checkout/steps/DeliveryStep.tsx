@@ -7,6 +7,7 @@ import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
 import { useCheckoutState } from '../useCheckoutState';
 import { useContentStore } from '@/lib/stores/content';
+import { useSiteSettings } from '@/lib/stores/siteSettings';
 import { useMounted } from '@/hooks/useMounted';
 import { mapsHref, branchLatLng, osmEmbed } from '@/lib/contactLinks';
 import { BtsBranchPicker } from './BtsBranchPicker';
@@ -34,7 +35,9 @@ export function DeliveryStep({ onNext, onBack }: { onNext: () => void; onBack: (
   const storeBranches = useContentStore((s) => s.branches);
   const branches = mounted ? storeBranches : [];
   const [me, setMe] = useState<{ lat: number; lng: number } | null>(null);
-  const [btsAvailable, setBtsAvailable] = useState(false);
+  const [btsConfigured, setBtsConfigured] = useState(false);
+  const btsEnabled = useSiteSettings((s) => s.bts?.enabled !== false);
+  const btsAvailable = btsConfigured && btsEnabled;
 
   // Ask for the user's location once (to show distance to each branch).
   useEffect(() => {
@@ -51,7 +54,7 @@ export function DeliveryStep({ onNext, onBack }: { onNext: () => void; onBack: (
     let alive = true;
     fetch('/api/delivery/bts/directory?type=regions')
       .then((r) => {
-        if (alive && r.ok) setBtsAvailable(true);
+        if (alive && r.ok) setBtsConfigured(true);
       })
       .catch(() => {});
     return () => {

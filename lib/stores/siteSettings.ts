@@ -29,10 +29,29 @@ export interface Marketplace {
   enabled: boolean;
 }
 
+// BTS delivery — sender (shop origin) config, editable from the admin panel.
+// The server reads this (via the persisted site-settings blob) to calculate
+// delivery price and to build shipments. Falls back to env when unset.
+export interface BtsSettings {
+  enabled: boolean;
+  regionCode?: string;
+  regionName?: string;
+  cityCode?: string; // origin city → drives the BTS price (sender → receiver)
+  cityName?: string;
+  senderName?: string;
+  senderPhone?: string;
+  senderAddress?: string;
+  // How the shop hands parcels to BTS: drops them at a BTS branch ('self',
+  // cheaper) or a BTS courier collects from the shop ('courier').
+  dispatch?: 'self' | 'courier';
+}
+
 interface SiteSettingsState {
   hero: HeroOverride;
   banner: PromoBanner | null;
   marketplaces: Marketplace[];
+  bts: BtsSettings;
+  setBts: (patch: Partial<BtsSettings>) => void;
   setHero: (patch: Partial<HeroOverride>) => void;
   resetHero: () => void;
   addSlide: (slide: HeroSlide) => void;
@@ -92,12 +111,16 @@ export const DEFAULT_MARKETPLACES: Marketplace[] = [
   },
 ];
 
+export const DEFAULT_BTS_SETTINGS: BtsSettings = { enabled: true, dispatch: 'self' };
+
 export const useSiteSettings = create<SiteSettingsState>()(
   persist(
     (set) => ({
       hero: defaultHero,
       banner: null,
       marketplaces: DEFAULT_MARKETPLACES,
+      bts: DEFAULT_BTS_SETTINGS,
+      setBts: (patch) => set((state) => ({ bts: { ...state.bts, ...patch } })),
       setHero: (patch) =>
         set((state) => ({ hero: { ...state.hero, ...patch } })),
       resetHero: () => set({ hero: defaultHero }),
@@ -149,7 +172,7 @@ export const useSiteSettings = create<SiteSettingsState>()(
     }),
     {
       name: 'deftmoto-site-settings',
-      version: 2,
+      version: 3,
       // Persist to the server (global) instead of localStorage.
       storage: createServerPersist('site-settings'),
       // v0 persisted state had no seeded slides — backfill so existing
@@ -162,6 +185,10 @@ export const useSiteSettings = create<SiteSettingsState>()(
         }
         if (!state.marketplaces || state.marketplaces.length === 0) {
           state.marketplaces = DEFAULT_MARKETPLACES;
+        }
+        // v3 introduces BTS sender settings.
+        if (!state.bts) {
+          state.bts = DEFAULT_BTS_SETTINGS;
         }
         return state;
       },

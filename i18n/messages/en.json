@@ -757,6 +757,7 @@
     "linkPlaceholder": "https://... or /catalog (optional link)",
     "tipText": "💡 <b>Tip:</b> The banner is shown full-width (object-cover) — a wide image (e.g. 1600×900) gives the best result. If you add a link, users are redirected there on click (internal path: <code>/catalog</code>, external: <code>https://...</code>).",
     "navMarketplaces": "Marketplaces",
+    "navDelivery": "BTS delivery",
     "marketplacesSubtitle": "Manage the marketplace links shown in the navbar",
     "marketplacesSectionTitle": "Marketplaces ({count})",
     "addMarketplaceButton": "Marketplace",
