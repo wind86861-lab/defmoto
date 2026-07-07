@@ -4,13 +4,16 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from './useAuth';
 import { useTelegram } from '@/components/providers/TelegramProvider';
 
-const BOT = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'ajndspuntnjqpiuuerbot';
-
 /**
- * Browsing is open to everyone; actions that create an order (add to cart,
- * buy now, checkout) require a registered account. Returns a guard: it runs
- * the action when the user is registered, otherwise sends them to login
- * (browser) or the bot to register (inside Telegram).
+ * Browsing and filling the cart are open; the real registration gate is at
+ * checkout (ContactStep can't proceed without a name+phone). This guard runs
+ * the action for registered users and, in the browser, sends anonymous users
+ * to the login page.
+ *
+ * Inside the Telegram mini app we must NOT bounce to the bot on add-to-cart:
+ * `openTelegramLink` closes the mini app, which looks like a crash and drops
+ * the item. The user is already identified by Telegram, so we let them fill the
+ * cart and rely on checkout to require registration before an order is placed.
  */
 export function useRequireRegistration() {
   const { user, loading } = useAuth();
@@ -18,21 +21,17 @@ export function useRequireRegistration() {
   const router = useRouter();
 
   const registered = Boolean(user?.name && user?.phone);
+  const inTelegram = Boolean(webApp?.initData);
 
   return (action: () => void): boolean => {
-    // Allow while we're still resolving the session (avoids blocking a
-    // registered user on their first tap); block only when we know they aren't.
-    if (loading || registered) {
+    // Registered, still resolving the session, or inside the mini app → run it.
+    // (In the mini app the session may still be auto-logging-in; never bounce.)
+    if (loading || registered || inTelegram) {
       action();
       return true;
     }
-    if (webApp?.initData) {
-      const url = `https://t.me/${BOT}?start=register`;
-      if (webApp.openTelegramLink) webApp.openTelegramLink(url);
-      else window.open(url, '_blank');
-    } else {
-      router.push('/login');
-    }
+    // Browser + definitely anonymous → send to the login page.
+    router.push('/login');
     return false;
   };
 }
