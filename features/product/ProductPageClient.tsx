@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Star, ShoppingBag, Heart, Share2 } from 'lucide-react';
@@ -43,6 +43,14 @@ export function ProductPageClient({ product, similar }: Props) {
   );
   const { notify, impact } = useHaptic();
   const reviews = useProductReviews(product.id);
+
+  // Navigating between products stays on the same /product/[slug] route, so the
+  // page component doesn't remount and Next.js keeps the old scroll position
+  // (landing on the bottom "similar products" of the new page). Reset to top
+  // whenever the product changes.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [product.id]);
   const reviewSummary = reviews.data.summary;
   const requireReg = useRequireRegistration();
 
