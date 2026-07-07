@@ -5,6 +5,7 @@ import { getLocale, getMessages } from 'next-intl/server';
 import { TelegramProvider } from '@/components/providers/TelegramProvider';
 import { Toaster } from '@/components/ui/Toaster';
 import { CursorSmoke } from '@/components/ui/CursorSmoke';
+import { ScrollToTop } from '@/components/util/ScrollToTop';
 import './globals.css';
 
 const inter = Inter({
@@ -58,6 +59,7 @@ export default async function RootLayout({
       </head>
       <body className="font-sans">
         <NextIntlClientProvider locale={locale} messages={messages}>
+          <ScrollToTop />
           <TelegramProvider>{children}</TelegramProvider>
           <Toaster />
           <CursorSmoke />
