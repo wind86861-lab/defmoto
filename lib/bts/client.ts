@@ -160,11 +160,13 @@ export interface BtsCalculateData {
 }
 
 export function btsCalculate(input: BtsCalculateInput) {
+  // Defaults come AFTER the spread so an explicit `undefined` from the caller
+  // can't clobber a required field (BTS 422s without pickup_type/dropoff_type).
   return api<BtsCalculateData>('POST', '/v1/order-calculate/index', {
-    is_multiple_cost: 1,
-    pickup_type: 'courier',
-    dropoff_type: 'courier',
     ...input,
+    is_multiple_cost: input.is_multiple_cost ?? 1,
+    pickup_type: input.pickup_type ?? 'courier',
+    dropoff_type: input.dropoff_type ?? 'courier',
   });
 }
 
