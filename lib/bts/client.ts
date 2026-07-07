@@ -138,23 +138,32 @@ export type BtsDropoffType = 'courier' | 'branch';
 export interface BtsCalculateInput {
   senderCityCode: string;
   receiverCityCode: string;
-  pickup_type?: BtsPickupType | 'branch';
+  // Both are REQUIRED by BTS (422 otherwise). Default to courier→courier so a
+  // caller that only cares about the multi-cost matrix still gets all combos.
+  pickup_type?: BtsPickupType;
   dropoff_type?: BtsDropoffType;
   weight: number;
   volume?: { x: number; y: number; z: number };
   is_multiple_cost?: 0 | 1;
 }
 
+export interface BtsPriceCell {
+  available: boolean;
+  price: number;
+  reason?: string | null;
+}
 export interface BtsCalculateData {
-  branch_to_branch?: { available: boolean; price: number };
-  branch_to_courier?: { available: boolean; price: number };
-  courier_to_branch?: { available: boolean; price: number };
-  courier_to_courier?: { available: boolean; price: number };
+  branch_to_branch?: BtsPriceCell;
+  branch_to_courier?: BtsPriceCell;
+  courier_to_branch?: BtsPriceCell;
+  courier_to_courier?: BtsPriceCell;
 }
 
 export function btsCalculate(input: BtsCalculateInput) {
   return api<BtsCalculateData>('POST', '/v1/order-calculate/index', {
     is_multiple_cost: 1,
+    pickup_type: 'courier',
+    dropoff_type: 'courier',
     ...input,
   });
 }
@@ -209,6 +218,13 @@ export function btsCreateOrder(input: BtsCreateOrderInput) {
 export interface BtsDirectoryItem {
   code: string;
   name: string;
+  // Present on branch items (directory/branches) only.
+  regionCode?: string;
+  cityCode?: string;
+  address?: string;
+  lat_long?: string; // "latitude,longitude"
+  phone?: string;
+  working_hours?: Record<string, string | null>;
 }
 interface BtsDirectoryData {
   items: BtsDirectoryItem[];
@@ -220,8 +236,10 @@ export function btsRegions() {
 export function btsCities(regionCode: string) {
   return api<BtsDirectoryData>('GET', `/v1/directory/cities?regionCode=${encodeURIComponent(regionCode)}`);
 }
-export function btsBranches() {
-  return api<BtsDirectoryData>('GET', '/v1/directory/branches');
+// BTS requires BOTH regionCode and cityCode to list branches.
+export function btsBranches(regionCode: string, cityCode: string) {
+  const qs = new URLSearchParams({ regionCode, cityCode }).toString();
+  return api<BtsDirectoryData>('GET', `/v1/directory/branches?${qs}`);
 }
 
 /** Register (or update) the status webhook URL with BTS. */

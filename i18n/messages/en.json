@@ -410,7 +410,18 @@
     "contactNeedRegister": "Register via the Telegram bot to place an order.",
     "loadingLabel": "Loading...",
     "noBranches": "No branches yet.",
-    "onMap": "Open on map"
+    "onMap": "Open on map",
+    "btsBranchTitle": "Pickup from a BTS branch",
+    "btsBranchDesc": "Delivered to the BTS branch nearest you",
+    "btsBranchPrice": "Per tariff",
+    "btsBranchDuration": "2-4 business days",
+    "btsRegionLabel": "Region",
+    "btsRegionPlaceholder": "Select a region",
+    "btsCityLabel": "City / district",
+    "btsCityPlaceholder": "Select a city",
+    "btsChooseBranch": "Choose a branch",
+    "btsLoading": "Loading...",
+    "btsNoBranches": "No BTS branch found in this city."
   },
   "orders": {
     "backAria": "Back",

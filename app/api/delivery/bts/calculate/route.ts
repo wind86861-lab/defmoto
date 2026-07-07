@@ -14,15 +14,19 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ ok: false, error: 'bad-json' }, { status: 400 });
   }
-  const { senderCityCode, receiverCityCode, weight } = body || {};
-  if (!senderCityCode || !receiverCityCode || !weight) {
+  // Sender defaults to the shop's configured city; the client only needs to
+  // send the receiver city. Weight defaults to the configured parcel weight.
+  const senderCityCode = body?.senderCityCode || process.env.BTS_SENDER_CITY_CODE || '';
+  const { receiverCityCode } = body || {};
+  const weight = Number(body?.weight || process.env.BTS_DEFAULT_WEIGHT || 1);
+  if (!senderCityCode || !receiverCityCode) {
     return NextResponse.json({ ok: false, error: 'missing-fields' }, { status: 400 });
   }
   try {
     const r = await btsCalculate({
       senderCityCode: String(senderCityCode),
       receiverCityCode: String(receiverCityCode),
-      weight: Number(weight),
+      weight,
       pickup_type: body.pickup_type,
       dropoff_type: body.dropoff_type,
       volume: body.volume,

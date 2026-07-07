@@ -410,7 +410,18 @@
     "contactNeedRegister": "Buyurtma berish uchun Telegram bot orqali roʻyxatdan oʻting.",
     "loadingLabel": "Yuklanmoqda...",
     "noBranches": "Filiallar hozircha yoʻq.",
-    "onMap": "Xaritada ochish"
+    "onMap": "Xaritada ochish",
+    "btsBranchTitle": "BTS filialidan olib ketish",
+    "btsBranchDesc": "Sizga eng yaqin BTS filialiga yetkaziladi",
+    "btsBranchPrice": "Tarif boʻyicha",
+    "btsBranchDuration": "2-4 ish kuni",
+    "btsRegionLabel": "Viloyat",
+    "btsRegionPlaceholder": "Viloyatni tanlang",
+    "btsCityLabel": "Shahar / tuman",
+    "btsCityPlaceholder": "Shaharni tanlang",
+    "btsChooseBranch": "Filialni tanlang",
+    "btsLoading": "Yuklanmoqda...",
+    "btsNoBranches": "Bu shaharda BTS filiali topilmadi."
   },
   "orders": {
     "backAria": "Orqaga",

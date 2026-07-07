@@ -36,6 +36,7 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
     courier: t('courierTitle'),
     pickup: t('pickupTitle'),
     post: t('postTitle'),
+    bts: t('btsBranchTitle'),
   };
 
   const paymentLabels: Record<string, string> = {
@@ -52,9 +53,11 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
   const deliveryFee =
     state.delivery.method === 'pickup'
       ? 0
-      : afterDiscount >= DELIVERY_FREE_THRESHOLD
-        ? 0
-        : DELIVERY_FEE;
+      : state.delivery.method === 'bts'
+        ? state.delivery.btsPrice ?? 0 // live BTS estimate; settled by BTS at shipment
+        : afterDiscount >= DELIVERY_FREE_THRESHOLD
+          ? 0
+          : DELIVERY_FEE;
   const total = afterDiscount + deliveryFee;
 
   const handleSubmit = async () => {
@@ -78,7 +81,20 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
       delivery: {
         method: state.delivery.method,
         branchId: state.delivery.branchId,
-        address: state.delivery.method !== 'pickup' ? state.address : undefined,
+        address:
+          state.delivery.method === 'post' || state.delivery.method === 'courier'
+            ? state.address
+            : undefined,
+        bts:
+          state.delivery.method === 'bts' && state.delivery.btsBranchCode
+            ? {
+                regionCode: state.delivery.btsRegionCode || '',
+                cityCode: state.delivery.btsCityCode || '',
+                branchCode: state.delivery.btsBranchCode,
+                branchName: state.delivery.btsBranchName || '',
+                branchAddress: state.delivery.btsBranchAddress,
+              }
+            : undefined,
       },
       payment: {
         method: state.payment.method,
@@ -151,9 +167,11 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
           title={t('deliveryTitle')}
           lines={[
             deliveryLabels[state.delivery.method],
-            state.delivery.method !== 'pickup'
-              ? `${state.address.city}, ${state.address.street}${state.address.apartment ? `, ${state.address.apartment}` : ''}`
-              : t('branchNumber', { number: state.delivery.branchId?.slice(-1) ?? '?' }),
+            state.delivery.method === 'bts'
+              ? `${state.delivery.btsBranchName ?? ''}${state.delivery.btsCityName ? `, ${state.delivery.btsCityName}` : ''}`
+              : state.delivery.method === 'pickup'
+                ? t('branchNumber', { number: state.delivery.branchId?.slice(-1) ?? '?' })
+                : `${state.address.city}, ${state.address.street}${state.address.apartment ? `, ${state.address.apartment}` : ''}`,
           ]}
         />
         <SummaryRow

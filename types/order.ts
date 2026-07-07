@@ -8,7 +8,7 @@ export type OrderStatus =
   | 'delivered'
   | 'cancelled';
 
-export type DeliveryMethod = 'courier' | 'pickup' | 'post';
+export type DeliveryMethod = 'courier' | 'pickup' | 'post' | 'bts';
 export type PaymentMethod = 'click' | 'payme' | 'bts' | 'cash';
 
 export interface Order {
@@ -30,6 +30,14 @@ export interface Order {
       street: string;
       apartment?: string;
       note?: string;
+    };
+    // Selected BTS pickup branch (method === 'bts').
+    bts?: {
+      regionCode: string;
+      cityCode: string;
+      branchCode: string;
+      branchName: string;
+      branchAddress?: string;
     };
   };
   payment: {

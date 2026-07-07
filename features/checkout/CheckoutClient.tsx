@@ -36,15 +36,15 @@ export function CheckoutClient() {
 
   if (items.length === 0) return null;
 
-  // Visible steps depend on delivery method (skip address for pickup)
-  const visibleSteps =
-    delivery.method === 'pickup'
-      ? STEPS.filter((_, i) => i !== 2)
-      : STEPS;
+  // Branch-based methods (own-store pickup / BTS filial) need no address step.
+  const skipAddress = delivery.method === 'pickup' || delivery.method === 'bts';
+
+  // Visible steps depend on delivery method (skip address for branch pickup)
+  const visibleSteps = skipAddress ? STEPS.filter((_, i) => i !== 2) : STEPS;
 
   // Map step index to actual step component
   const next = () => {
-    if (delivery.method === 'pickup' && step === 1) {
+    if (skipAddress && step === 1) {
       setStep(3); // skip address
     } else {
       setStep(Math.min(step + 1, 4));
@@ -52,7 +52,7 @@ export function CheckoutClient() {
   };
 
   const back = () => {
-    if (delivery.method === 'pickup' && step === 3) {
+    if (skipAddress && step === 3) {
       setStep(1);
     } else {
       setStep(Math.max(0, step - 1));
@@ -60,8 +60,7 @@ export function CheckoutClient() {
   };
 
   // Index in visible steps for indicator
-  const visibleIndex =
-    delivery.method === 'pickup' && step >= 2 ? step - 1 : step;
+  const visibleIndex = skipAddress && step >= 2 ? step - 1 : step;
 
   return (
     <div className="mx-auto max-w-2xl px-4 pb-32 pt-6 sm:px-6 sm:py-10">
@@ -71,7 +70,7 @@ export function CheckoutClient() {
           current={visibleIndex}
           onStepClick={(i) => {
             // Map visible index back to actual step
-            if (delivery.method === 'pickup' && i >= 2) setStep(i + 1);
+            if (skipAddress && i >= 2) setStep(i + 1);
             else setStep(i);
           }}
         />

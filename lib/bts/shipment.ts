@@ -38,8 +38,15 @@ export async function createShipmentForOrder(
   const items: any[] = Array.isArray(payload.items) ? payload.items : [];
   const paymentMethod = payload.payment?.method;
 
+  // Customer-selected BTS branch (from checkout), if any.
+  const btsSel = (delivery.bts || {}) as {
+    regionCode?: string;
+    cityCode?: string;
+    branchCode?: string;
+  };
+
   const dropoff: BtsDropoffType =
-    ov.dropoff_type || (delivery.method === 'pickup' ? 'branch' : 'courier');
+    ov.dropoff_type || (delivery.method === 'bts' ? 'branch' : 'courier');
   const pickup: BtsPickupType =
     ov.pickup_type || (process.env.BTS_PICKUP_TYPE as BtsPickupType) || 'courier';
 
@@ -67,10 +74,13 @@ export async function createShipmentForOrder(
       address:
         [address.city, address.street, address.apartment].filter(Boolean).join(', ') ||
         (contact.name ?? ''),
-      city_code: dropoff === 'courier' ? ov.receiverCityCode || undefined : undefined,
+      city_code:
+        dropoff === 'courier'
+          ? ov.receiverCityCode || btsSel.cityCode || undefined
+          : undefined,
       branch_code:
         dropoff === 'branch'
-          ? ov.receiverBranchCode || delivery.branchId || undefined
+          ? ov.receiverBranchCode || btsSel.branchCode || undefined
           : undefined,
     },
     bringBackMoney: cod ? 1 : 0,

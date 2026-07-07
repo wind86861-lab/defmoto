@@ -410,7 +410,18 @@
     "contactNeedRegister": "Зарегистрируйтесь через Telegram-бота, чтобы оформить заказ.",
     "loadingLabel": "Загрузка...",
     "noBranches": "Филиалов пока нет.",
-    "onMap": "Открыть на карте"
+    "onMap": "Открыть на карте",
+    "btsBranchTitle": "Самовывоз из филиала BTS",
+    "btsBranchDesc": "Доставим в ближайший к вам филиал BTS",
+    "btsBranchPrice": "По тарифу",
+    "btsBranchDuration": "2-4 рабочих дня",
+    "btsRegionLabel": "Область",
+    "btsRegionPlaceholder": "Выберите область",
+    "btsCityLabel": "Город / район",
+    "btsCityPlaceholder": "Выберите город",
+    "btsChooseBranch": "Выберите филиал",
+    "btsLoading": "Загрузка...",
+    "btsNoBranches": "В этом городе филиал BTS не найден."
   },
   "orders": {
     "backAria": "Назад",

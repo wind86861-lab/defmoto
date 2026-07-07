@@ -20,7 +20,12 @@ export async function GET(req: Request) {
       return NextResponse.json(await btsCities(regionCode));
     }
     if (type === 'branches') {
-      return NextResponse.json(await btsBranches());
+      const regionCode = searchParams.get('regionCode') || '';
+      const cityCode = searchParams.get('cityCode') || '';
+      if (!regionCode || !cityCode) {
+        return NextResponse.json({ ok: false, error: 'missing-region-or-city' }, { status: 400 });
+      }
+      return NextResponse.json(await btsBranches(regionCode, cityCode));
     }
     return NextResponse.json(await btsRegions());
   } catch (e) {

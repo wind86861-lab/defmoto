@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Store, Package, MapPin, Navigation } from 'lucide-react';
+import { Store, Package, MapPin, Navigation, Building2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
@@ -9,6 +9,7 @@ import { useCheckoutState } from '../useCheckoutState';
 import { useContentStore } from '@/lib/stores/content';
 import { useMounted } from '@/hooks/useMounted';
 import { mapsHref, branchLatLng, osmEmbed } from '@/lib/contactLinks';
+import { BtsBranchPicker } from './BtsBranchPicker';
 import type { DeliveryMethod } from '@/types/order';
 
 function distanceKm(
@@ -33,6 +34,7 @@ export function DeliveryStep({ onNext, onBack }: { onNext: () => void; onBack: (
   const storeBranches = useContentStore((s) => s.branches);
   const branches = mounted ? storeBranches : [];
   const [me, setMe] = useState<{ lat: number; lng: number } | null>(null);
+  const [btsAvailable, setBtsAvailable] = useState(false);
 
   // Ask for the user's location once (to show distance to each branch).
   useEffect(() => {
@@ -42,6 +44,19 @@ export function DeliveryStep({ onNext, onBack }: { onNext: () => void; onBack: (
       () => {},
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 },
     );
+  }, []);
+
+  // Offer BTS branch pickup only when BTS is actually wired up (creds set).
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/delivery/bts/directory?type=regions')
+      .then((r) => {
+        if (alive && r.ok) setBtsAvailable(true);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const options: {
@@ -60,6 +75,18 @@ export function DeliveryStep({ onNext, onBack }: { onNext: () => void; onBack: (
       price: t('pickupPrice'),
       duration: t('pickupDuration'),
     },
+    ...(btsAvailable
+      ? [
+          {
+            method: 'bts' as DeliveryMethod,
+            title: t('btsBranchTitle'),
+            desc: t('btsBranchDesc'),
+            icon: Building2,
+            price: t('btsBranchPrice'),
+            duration: t('btsBranchDuration'),
+          },
+        ]
+      : []),
     {
       method: 'post',
       title: t('postTitle'),
@@ -83,7 +110,12 @@ export function DeliveryStep({ onNext, onBack }: { onNext: () => void; onBack: (
 
   const selected = branchList.find((x) => x.b.id === delivery.branchId);
 
-  const canContinue = delivery.method !== 'pickup' || Boolean(delivery.branchId);
+  const canContinue =
+    delivery.method === 'pickup'
+      ? Boolean(delivery.branchId)
+      : delivery.method === 'bts'
+        ? Boolean(delivery.btsBranchCode)
+        : true;
 
   return (
     <div className="space-y-6">
@@ -136,6 +168,8 @@ export function DeliveryStep({ onNext, onBack }: { onNext: () => void; onBack: (
           );
         })}
       </div>
+
+      {delivery.method === 'bts' && <BtsBranchPicker me={me} />}
 
       {delivery.method === 'pickup' && (
         <div className="space-y-2 animate-slide-up">

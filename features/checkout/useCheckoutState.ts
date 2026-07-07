@@ -10,6 +10,15 @@ export interface CheckoutState {
   delivery: {
     method: DeliveryMethod;
     branchId?: string;
+    // BTS pickup branch (method === 'bts').
+    btsRegionCode?: string;
+    btsRegionName?: string;
+    btsCityCode?: string;
+    btsCityName?: string;
+    btsBranchCode?: string;
+    btsBranchName?: string;
+    btsBranchAddress?: string;
+    btsPrice?: number;
   };
   address: {
     city: string;
