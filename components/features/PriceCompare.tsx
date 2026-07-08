@@ -5,8 +5,12 @@ import { useLocale, useTranslations } from 'next-intl';
 import { TrendingDown, Check, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { formatPrice } from '@/lib/format';
+import { useSiteSettings, DEFAULT_MARKETPLACES } from '@/lib/stores/siteSettings';
+import { useMounted } from '@/hooks/useMounted';
 import type { Locale } from '@/i18n/config';
 import type { CompetitorPrice } from '@/types/product';
+
+const norm = (s?: string) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 interface PriceCompareProps {
   ourPrice: number;
@@ -25,6 +29,25 @@ export function PriceCompare({
 }: PriceCompareProps) {
   const t = useTranslations('priceCompare');
   const locale = useLocale() as Locale;
+  const mounted = useMounted();
+  const stored = useSiteSettings((s) => s.marketplaces);
+
+  // Map a competitor to its marketplace's uploaded logo. Match tolerantly by
+  // id / label / name (and an "mp-" stripped form) so both admin-created
+  // (source = marketplace id) and seeded (source = "uzum") data resolve.
+  const iconFor = useMemo(() => {
+    const markets = mounted && stored.length ? stored : DEFAULT_MARKETPLACES;
+    const index: Record<string, string> = {};
+    for (const m of markets) {
+      if (!m.icon) continue;
+      for (const k of [m.id, m.id.replace(/^mp-?/, ''), m.label, m.name]) {
+        const nk = norm(k);
+        if (nk) index[nk] = m.icon;
+      }
+    }
+    return (c: CompetitorPrice): string | undefined =>
+      index[norm(c.source)] || index[norm(c.label)] || index[norm(c.source).replace(/^mp/, '')];
+  }, [mounted, stored]);
 
   const { maxCompetitor, savings, savingsPct } = useMemo(() => {
     const max = Math.max(...competitors.map((c) => c.price));
@@ -62,6 +85,7 @@ export function PriceCompare({
               key={`${c.source}-${i}`}
               label={c.label || c.source}
               color={c.color || DEFAULT_CHIP_COLOR}
+              icon={iconFor(c)}
               url={c.url}
               storeLabel={t('goToStore')}
               price={c.price}
@@ -101,6 +125,7 @@ export function PriceCompare({
 function CompetitorRow({
   label,
   color,
+  icon,
   url,
   storeLabel,
   price,
@@ -109,13 +134,21 @@ function CompetitorRow({
 }: {
   label: string;
   color: string;
+  icon?: string;
   url?: string;
   storeLabel: string;
   price: number;
   locale: Locale;
   isMax: boolean;
 }) {
-  const badge = (
+  const badge = icon ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={icon}
+      alt={label}
+      className="h-6 w-12 rounded-md bg-white/5 object-contain p-0.5"
+    />
+  ) : (
     <span
       className="inline-flex h-6 min-w-12 items-center justify-center rounded-md px-1.5 text-[10px] font-bold text-white"
       style={{ background: color }}
