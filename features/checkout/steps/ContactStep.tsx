@@ -15,23 +15,26 @@ export function ContactStep({ onNext }: { onNext: () => void }) {
   const { user, loading, refresh } = useAuth();
   const { user: tgUser, webApp } = useTelegram();
   const [sharing, setSharing] = useState(false);
+  const [edited, setEdited] = useState(false);
 
   const tgName = tgUser ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') : '';
 
-  // Auto-fill from the linked account (bot-registered) or the Telegram profile.
-  // Only fill blanks so we never clobber what the user typed.
+  // Mirror the best-known identity into the form until the user edits it. The
+  // REGISTERED account (name+phone from /api/auth/me) is authoritative but
+  // arrives only after the Telegram auto-login finishes — so we must re-sync
+  // when it loads instead of freezing on the Telegram profile name. Prefer the
+  // account; fall back to the Telegram profile only while the account is absent.
   useEffect(() => {
-    const name = user?.name || tgName;
+    if (edited) return;
+    const name = user?.name || tgName || '';
     const phone = user?.phone || '';
-    const p: { name?: string; phone?: string } = {};
-    if (name && !contact.name) p.name = name;
-    if (phone && !contact.phone) p.phone = phone;
-    if (p.name || p.phone) setContact(p);
+    if (name !== contact.name || phone !== contact.phone) {
+      setContact({ name, phone });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.name, user?.phone, tgName]);
+  }, [user?.name, user?.phone, tgName, edited]);
 
-  // `contact` is the single source of truth (the effect above seeds it from the
-  // account / Telegram profile), so the fields stay editable and clearable.
+  // `contact` is the single source of truth so the fields stay editable.
   const name = contact.name;
   const phone = contact.phone;
   const ready = Boolean(name.trim() && phone.replace(/\D/g, '').length >= 9);
@@ -56,6 +59,7 @@ export function ContactStep({ onNext }: { onNext: () => void }) {
           const j = await r.json();
           if (j?.user?.phone) {
             setContact({ name: j.user.name || name, phone: j.user.phone });
+            setEdited(true);
             setSharing(false);
             return;
           }
@@ -109,7 +113,10 @@ export function ContactStep({ onNext }: { onNext: () => void }) {
           </label>
           <Input
             value={name}
-            onChange={(e) => setContact({ name: e.target.value })}
+            onChange={(e) => {
+              setContact({ name: e.target.value });
+              setEdited(true);
+            }}
             placeholder={t('contactNamePlaceholder')}
             leftIcon={<User className="h-4 w-4" />}
             autoComplete="name"
@@ -120,7 +127,10 @@ export function ContactStep({ onNext }: { onNext: () => void }) {
           <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">Tel</label>
           <Input
             value={phone}
-            onChange={(e) => setContact({ phone: e.target.value })}
+            onChange={(e) => {
+              setContact({ phone: e.target.value });
+              setEdited(true);
+            }}
             placeholder={t('contactPhonePlaceholder')}
             leftIcon={<Phone className="h-4 w-4" />}
             inputMode="tel"
