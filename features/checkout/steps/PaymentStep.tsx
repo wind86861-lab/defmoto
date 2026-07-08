@@ -107,10 +107,6 @@ export function PaymentStep({
         })}
       </div>
 
-      <div className="rounded-xl border border-brand-yellow/30 bg-brand-yellow/8 p-3 text-xs text-white/75">
-        {t('demoNotice')}
-      </div>
-
       <div className="flex gap-3">
         <Button variant="secondary" size="xl" onClick={onBack} className="flex-1">
           {t('back')}

@@ -106,10 +106,6 @@ export default function AdminLoginPage() {
               {t('loginButton')}
             </Button>
           </form>
-
-          <div className="mt-5 rounded-xl border border-brand-yellow/20 bg-brand-yellow/8 px-3 py-2 text-[11px] text-white/65">
-            {t('demoPasswordHint')} <span className="font-mono font-bold text-brand-yellow">deftmoto2026</span>
-          </div>
         </div>
       </div>
     </div>
