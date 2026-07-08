@@ -117,10 +117,14 @@ const globalRef = globalThis as unknown as { __deftPollerStarted?: boolean };
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function tg(method: string, params: Record<string, unknown> = {}) {
+  // Abort a hung request instead of wedging the loop. Long-poll calls carry a
+  // `timeout` (seconds); give them that plus headroom, others a short ceiling.
+  const pollSecs = typeof params.timeout === 'number' ? params.timeout : 0;
   const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
+    signal: AbortSignal.timeout((pollSecs + 15) * 1000),
   });
   return res.json();
 }
@@ -566,7 +570,8 @@ async function loop() {
         await sleep(2000);
       }
     } catch (e) {
-      console.log('[poller] getUpdates threw:', (e as Error)?.message);
+      const err = e as Error & { cause?: { code?: string; message?: string } };
+      console.log('[poller] getUpdates threw:', err?.message, err.cause?.code || err.cause?.message || '');
       await sleep(3000);
     }
   }
