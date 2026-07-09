@@ -454,9 +454,27 @@ export function createLink(input: { label: string; target: string; code?: string
   let code = base;
   let n = 1;
   while (store.links.some((l) => l.code === code)) code = `${base}-${++n}`;
-  // Only allow internal targets (must start with "/").
+  // Target may be a full URL (paste a page link) or a site path. A full URL on
+  // our own host is reduced to its path; other full URLs are kept as-is;
+  // everything else is treated as a path with a leading slash.
   let target = (input.target || '/').trim();
-  if (!target.startsWith('/')) target = `/${target}`;
+  if (/^https?:\/\//i.test(target)) {
+    try {
+      const u = new URL(target);
+      const appHost = (() => {
+        try {
+          return new URL(process.env.NEXT_PUBLIC_APP_URL || '').host;
+        } catch {
+          return '';
+        }
+      })();
+      if (appHost && u.host === appHost) target = u.pathname + u.search + u.hash;
+    } catch {
+      /* leave as typed */
+    }
+  } else if (!target.startsWith('/')) {
+    target = `/${target}`;
+  }
   const link: CampaignLink = {
     id: `lnk_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     code,

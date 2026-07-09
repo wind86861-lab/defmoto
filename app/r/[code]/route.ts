@@ -29,7 +29,12 @@ export function GET(req: Request, { params }: { params: { code: string } }) {
 
   recordLinkClick(link.code, !seen);
 
-  const dest = link.target.startsWith('/') ? `${origin}${link.target}` : `${origin}/`;
+  // Path → prefix with the public origin; full URL (external campaign) → as-is.
+  const dest = /^https?:\/\//i.test(link.target)
+    ? link.target
+    : link.target.startsWith('/')
+      ? `${origin}${link.target}`
+      : `${origin}/`;
   const res = NextResponse.redirect(dest, 302);
   if (!seen) {
     res.cookies.set(cookieName, '1', {

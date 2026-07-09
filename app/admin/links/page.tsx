@@ -125,8 +125,9 @@ export default function AdminLinksPage() {
             <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Masalan: Instagram oktabr" />
           </div>
           <div>
-            <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">Qayerga olib boradi (yoʻl)</label>
-            <Input value={target} onChange={(e) => setTarget(e.target.value)} placeholder="/product/... yoki /" />
+            <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">Qayerga olib boradi</label>
+            <Input value={target} onChange={(e) => setTarget(e.target.value)} placeholder="Sahifa havolasini qoʻying yoki /product/..." />
+            <p className="mt-1 text-[11px] text-white/40">Toʻliq havola (brauzerdan nusxa) yoki sayt yoʻli (/) — ikkalasi ham boʻladi.</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
