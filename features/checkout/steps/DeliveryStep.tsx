@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Store, Package, MapPin, Navigation, Building2 } from 'lucide-react';
+import { Store, MapPin, Navigation, Building2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
@@ -90,14 +90,6 @@ export function DeliveryStep({ onNext, onBack }: { onNext: () => void; onBack: (
           },
         ]
       : []),
-    {
-      method: 'post',
-      title: t('postTitle'),
-      desc: t('postDesc'),
-      icon: Package,
-      price: t('postPrice'),
-      duration: t('postDuration'),
-    },
   ];
 
   // Branches with resolved coordinates + computed distance, nearest first.
