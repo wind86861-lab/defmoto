@@ -7,17 +7,34 @@
 
 import crypto from 'crypto';
 
+export const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'deftmoto2026';
 const SECRET = process.env.ADMIN_SECRET || 'deftmoto-insecure-dev-secret-change-me';
 
 export const ADMIN_COOKIE = 'dm_admin';
 export const ADMIN_COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
+/** Constant-time string equality that doesn't leak length via short-circuit. */
+function safeEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) {
+    crypto.timingSafeEqual(ab, ab); // keep timing uniform
+    return false;
+  }
+  return crypto.timingSafeEqual(ab, bb);
+}
+
 export function checkPassword(password: string): boolean {
   if (typeof password !== 'string' || password.length === 0) return false;
-  const a = Buffer.from(password);
-  const b = Buffer.from(ADMIN_PASSWORD);
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
+  return safeEqual(password, ADMIN_PASSWORD);
+}
+
+/** Verify the admin username (case-insensitive) AND password. */
+export function checkCredentials(username: string, password: string): boolean {
+  if (typeof username !== 'string' || typeof password !== 'string') return false;
+  const userOk = safeEqual(username.trim().toLowerCase(), ADMIN_USERNAME.trim().toLowerCase());
+  return userOk && checkPassword(password);
 }
 
 export function makeSessionToken(): string {

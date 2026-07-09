@@ -679,6 +679,7 @@
     "checkingAuthLabel": "Checking...",
     "loginTitle": "Admin panel",
     "loginSubtitle": "Enter your password to continue",
+    "usernamePlaceholder": "Login",
     "passwordPlaceholder": "Password",
     "hidePasswordAria": "Hide",
     "showPasswordAria": "Show",

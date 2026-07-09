@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import {
-  checkPassword,
+  checkCredentials,
   makeSessionToken,
   isAdminRequest,
   ADMIN_COOKIE,
   ADMIN_COOKIE_MAX_AGE,
 } from '@/lib/server/adminAuth';
+import { tooManyAttempts, noteAttempt, clearAttempts, requestIp } from '@/lib/server/rateLimit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -16,15 +17,22 @@ export function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  let body: { password?: string };
+  let body: { username?: string; password?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
-  if (!checkPassword(body.password ?? '')) {
+  // Throttle brute-force by IP.
+  const key = `admin-login:${requestIp(req)}`;
+  if (tooManyAttempts(key, 8, 15 * 60 * 1000)) {
+    return NextResponse.json({ ok: false, error: 'too-many-attempts' }, { status: 429 });
+  }
+  if (!checkCredentials(body.username ?? '', body.password ?? '')) {
+    noteAttempt(key, 15 * 60 * 1000);
     return NextResponse.json({ ok: false }, { status: 401 });
   }
+  clearAttempts(key);
   const res = NextResponse.json({ ok: true });
   res.cookies.set(ADMIN_COOKIE, makeSessionToken(), {
     httpOnly: true,

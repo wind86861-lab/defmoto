@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { Lock, Eye, EyeOff, ShieldCheck, User } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Logo } from '@/components/ui/Logo';
@@ -15,6 +15,7 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const markAuthed = useAdminAuth((s) => s.markAuthed);
   const { notify } = useHaptic();
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +30,7 @@ export default function AdminLoginPage() {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ username, password }),
       });
       ok = res.ok;
     } catch {
@@ -76,6 +77,15 @@ export default function AdminLoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-3">
             <Input
+              type="text"
+              placeholder={t('usernamePlaceholder')}
+              leftIcon={<User className="h-4 w-4" />}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
+              autoFocus
+            />
+            <Input
               type={showPwd ? 'text' : 'password'}
               placeholder={t('passwordPlaceholder')}
               leftIcon={<Lock className="h-4 w-4" />}
@@ -92,7 +102,7 @@ export default function AdminLoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               error={error ?? undefined}
-              autoFocus
+              autoComplete="current-password"
             />
 
             <Button
@@ -101,7 +111,7 @@ export default function AdminLoginPage() {
               glow
               fullWidth
               loading={loading}
-              disabled={password.length < 4}
+              disabled={username.length < 2 || password.length < 4}
             >
               {t('loginButton')}
             </Button>

@@ -679,6 +679,7 @@
     "checkingAuthLabel": "Tekshirilmoqda",
     "loginTitle": "Admin panel",
     "loginSubtitle": "Davom etish uchun parolni kiriting",
+    "usernamePlaceholder": "Login",
     "passwordPlaceholder": "Parol",
     "hidePasswordAria": "Yashirish",
     "showPasswordAria": "Ko'rsatish",

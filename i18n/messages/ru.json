@@ -679,6 +679,7 @@
     "checkingAuthLabel": "Проверка...",
     "loginTitle": "Админ-панель",
     "loginSubtitle": "Введите пароль, чтобы продолжить",
+    "usernamePlaceholder": "Логин",
     "passwordPlaceholder": "Пароль",
     "hidePasswordAria": "Скрыть",
     "showPasswordAria": "Показать",
