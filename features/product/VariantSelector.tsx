@@ -39,22 +39,10 @@ export function VariantSelector({
   const selectedVariant = variants?.find((v) => v.id === selectedVariantId);
   const selectedColor = selectedVariant?.colorHex;
 
-  const sizesForColor = useMemo(() => {
-    if (!variants || !selectedColor) return [];
-    return variants
-      .filter((v) => v.colorHex === selectedColor && v.size)
-      .map((v) => ({ id: v.id, size: v.size!, stock: v.stock }));
-  }, [variants, selectedColor]);
-
   const setColor = (hex: string) => {
     selection();
     const first = variants?.find((v) => v.colorHex === hex);
     if (first) onVariantChange(first.id);
-  };
-
-  const setSize = (id: string) => {
-    selection();
-    onVariantChange(id);
   };
 
   const maxStock = selectedVariant?.stock ?? 99;
@@ -101,43 +89,6 @@ export function VariantSelector({
                       strokeWidth={3}
                     />
                   )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {sizesForColor.length > 0 && (
-        <div>
-          <div className="mb-2.5 flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-white/45">
-              {t('sizeLabel')}
-            </span>
-            <button className="text-xs font-semibold text-brand-yellow hover:underline">
-              {t('sizeChartButton')}
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {sizesForColor.map(({ id, size, stock }) => {
-              const active = id === selectedVariantId;
-              const oos = stock === 0;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => !oos && setSize(id)}
-                  disabled={oos}
-                  className={cn(
-                    'relative flex h-11 min-w-[60px] items-center justify-center rounded-xl border px-3 text-sm font-bold transition-all touch-feedback',
-                    active
-                      ? 'border-brand-yellow bg-brand-yellow/15 text-brand-yellow shadow-glow-sm'
-                      : 'border-brand-surface-border bg-brand-surface text-white/85 hover:border-white/30',
-                    oos &&
-                      'cursor-not-allowed border-brand-surface-border bg-transparent text-white/30 line-through opacity-50',
-                  )}
-                >
-                  {size}
                 </button>
               );
             })}
