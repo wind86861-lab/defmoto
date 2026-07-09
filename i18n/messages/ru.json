@@ -480,6 +480,12 @@
     "step3DescPickup": "Забери ваш товар из филиала",
     "step3DescDelivery": "Доставим по адресу в течение 1-2 рабочих дней",
     "trackOrderButton": "Отследить заказ",
+    "verifyingTitle": "Проверяем оплату...",
+    "verifyingDesc": "Ожидаем подтверждения оплаты. Это может занять несколько секунд.",
+    "pendingTitle": "Оплата не завершена",
+    "pendingDesc": "Оплата не подтверждена или отменена. Ваша корзина сохранена — вы можете попробовать снова.",
+    "retryPaymentButton": "Оплатить снова",
+    "backToCartButton": "Вернуться в корзину",
     "continueTelegramButton": "Продолжить в Telegram-боте",
     "homeButton": "На главную"
   },

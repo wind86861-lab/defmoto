@@ -480,6 +480,12 @@
     "step3DescPickup": "Filialdan tovaringizni olib keting",
     "step3DescDelivery": "1-2 ish kuni ichida manzilingizga yetkaziladi",
     "trackOrderButton": "Buyurtmani kuzatish",
+    "verifyingTitle": "Toʻlov tekshirilmoqda...",
+    "verifyingDesc": "Toʻlovingiz tasdiqlanishini kutmoqdamiz. Bu bir necha soniya olishi mumkin.",
+    "pendingTitle": "Toʻlov yakunlanmadi",
+    "pendingDesc": "Toʻlov tasdiqlanmadi yoki bekor qilindi. Savatingiz saqlanib qoldi — qayta urinib koʻrishingiz mumkin.",
+    "retryPaymentButton": "Qayta toʻlash",
+    "backToCartButton": "Savatga qaytish",
     "continueTelegramButton": "Telegram botda davom ettirish",
     "homeButton": "Bosh sahifaga"
   },

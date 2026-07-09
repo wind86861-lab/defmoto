@@ -1,29 +1,96 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { notFound, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Check, Send, Package, Home } from 'lucide-react';
+import { Check, Send, Package, Home, Clock, RefreshCw, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { MotoSpinner } from '@/components/ui/MotoLoader';
 import { formatPrice } from '@/lib/format';
 import { useOrdersStore } from '@/lib/stores/orders';
+import { useCartStore } from '@/lib/stores/cart';
+import { useCheckoutState } from '@/features/checkout/useCheckoutState';
 import { useHaptic } from '@/hooks/useHaptic';
+
+// Statuses that mean the payment landed (or is COD-accepted) → order is taken.
+const PAID_LIKE = ['paid', 'confirmed', 'shipping', 'delivered'];
 
 export function OrderSuccessClient({ id }: { id: string }) {
   const t = useTranslations('orders');
   const order = useOrdersStore((s) => s.orders.find((o) => o.id === id));
+  const markPaid = useOrdersStore((s) => s.markPaid);
+  const clearCart = useCartStore((s) => s.clear);
+  const resetCheckout = useCheckoutState((s) => s.reset);
   const { notify } = useHaptic();
   const router = useRouter();
 
-  useEffect(() => {
-    notify('success');
-  }, [notify]);
+  const isCash = order?.payment.method === 'cash';
+  const [serverStatus, setServerStatus] = useState<string | null>(null);
+  const [checking, setChecking] = useState(!isCash);
 
+  // Payment is confirmed when: COD, the local order is already marked paid, or
+  // the server (set by the Payme/Click callback) reports a paid-like status.
+  const confirmed = useMemo(
+    () =>
+      Boolean(isCash) ||
+      Boolean(order?.payment.paid) ||
+      PAID_LIKE.includes(serverStatus || '') ||
+      PAID_LIKE.includes(order?.status || ''),
+    [isCash, order?.payment.paid, order?.status, serverStatus],
+  );
+  const confirmedRef = useRef(confirmed);
+  confirmedRef.current = confirmed;
+
+  // Poll the real server status for online payments until it's confirmed.
+  useEffect(() => {
+    if (!order || isCash || order.payment.paid) {
+      setChecking(false);
+      return;
+    }
+    let alive = true;
+    let tries = 0;
+    const poll = async () => {
+      tries += 1;
+      try {
+        const r = await fetch(`/api/orders/${id}`, { cache: 'no-store' });
+        if (r.ok) {
+          const j = await r.json();
+          const st: string | undefined = j?.order?.status;
+          if (alive && st) {
+            setServerStatus(st);
+            if (PAID_LIKE.includes(st)) markPaid(id);
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+      if (!alive) return;
+      if (confirmedRef.current || tries >= 8) {
+        setChecking(false);
+        return;
+      }
+      setTimeout(poll, 2500);
+    };
+    poll();
+    return () => {
+      alive = false;
+    };
+  }, [id, isCash, order, markPaid]);
+
+  // Clear the cart + checkout ONLY once the payment is confirmed.
+  useEffect(() => {
+    if (confirmed) {
+      clearCart();
+      resetCheckout();
+      notify('success');
+    }
+  }, [confirmed, clearCart, resetCheckout, notify]);
+
+  // Opened without a local order (cold link) → home.
   useEffect(() => {
     if (!order && typeof window !== 'undefined') {
-      // After hydration, if no order found, redirect home
-      const timer = setTimeout(() => router.replace('/'), 100);
+      const timer = setTimeout(() => router.replace('/'), 1500);
       return () => clearTimeout(timer);
     }
   }, [order, router]);
@@ -32,6 +99,50 @@ export function OrderSuccessClient({ id }: { id: string }) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center text-white/55">
         {t('notFound')}
+      </div>
+    );
+  }
+
+  // Verifying an online payment.
+  if (!confirmed && checking) {
+    return (
+      <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-6 text-center">
+        <MotoSpinner size={56} />
+        <h1 className="mt-6 font-display text-2xl font-extrabold">{t('verifyingTitle')}</h1>
+        <p className="mt-2 text-sm text-white/60">{t('verifyingDesc')}</p>
+        <p className="mt-3 text-xs text-white/40">#{order.number} · {formatPrice(order.total)}</p>
+      </div>
+    );
+  }
+
+  // Payment not completed (cancelled / failed / still pending). The cart and
+  // checkout are preserved, so the buyer can retry without re-entering anything.
+  if (!confirmed) {
+    return (
+      <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-6 text-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-yellow/15 text-brand-yellow">
+          <Clock className="h-10 w-10" />
+        </div>
+        <h1 className="mt-6 font-display text-2xl font-extrabold">{t('pendingTitle')}</h1>
+        <p className="mt-2 text-sm text-white/60">{t('pendingDesc')}</p>
+        <p className="mt-1 text-xs text-white/40">#{order.number} · {formatPrice(order.total)}</p>
+        <div className="mt-8 w-full space-y-3">
+          <Link href="/checkout">
+            <Button size="xl" glow fullWidth leftIcon={<RefreshCw className="h-5 w-5" />}>
+              {t('retryPaymentButton')}
+            </Button>
+          </Link>
+          <Link href="/cart">
+            <Button variant="secondary" size="lg" fullWidth leftIcon={<ShoppingCart className="h-4 w-4" />}>
+              {t('backToCartButton')}
+            </Button>
+          </Link>
+          <Link href={`/orders/${order.id}`}>
+            <Button variant="ghost" size="lg" fullWidth leftIcon={<Package className="h-4 w-4" />}>
+              {t('trackOrderButton')}
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }
@@ -80,28 +191,16 @@ export function OrderSuccessClient({ id }: { id: string }) {
         <h3 className="text-xs font-bold uppercase tracking-wider text-white/45">
           {t('nextStepsTitle')}
         </h3>
-        <NextStep
-          step="1"
-          title={t('step1Title')}
-          desc={t('step1Desc')}
-        />
+        <NextStep step="1" title={t('step1Title')} desc={t('step1Desc')} />
         <NextStep
           step="2"
           title={t('step2Title')}
-          desc={
-            order.payment.method === 'cash'
-              ? t('step2DescCash')
-              : t('step2DescOnline')
-          }
+          desc={order.payment.method === 'cash' ? t('step2DescCash') : t('step2DescOnline')}
         />
         <NextStep
           step="3"
           title={t('step3Title')}
-          desc={
-            order.delivery.method === 'pickup'
-              ? t('step3DescPickup')
-              : t('step3DescDelivery')
-          }
+          desc={order.delivery.method === 'pickup' ? t('step3DescPickup') : t('step3DescDelivery')}
         />
       </div>
 
@@ -118,20 +217,13 @@ export function OrderSuccessClient({ id }: { id: string }) {
           size="lg"
           fullWidth
           leftIcon={<Send className="h-4 w-4" />}
-          onClick={() => {
-            window.open('https://t.me/DeftMotoBot', '_blank');
-          }}
+          onClick={() => window.open('https://t.me/DeftMotoBot', '_blank')}
         >
           {t('continueTelegramButton')}
         </Button>
 
         <Link href="/">
-          <Button
-            variant="ghost"
-            size="lg"
-            fullWidth
-            leftIcon={<Home className="h-4 w-4" />}
-          >
+          <Button variant="ghost" size="lg" fullWidth leftIcon={<Home className="h-4 w-4" />}>
             {t('homeButton')}
           </Button>
         </Link>
@@ -140,15 +232,7 @@ export function OrderSuccessClient({ id }: { id: string }) {
   );
 }
 
-function NextStep({
-  step,
-  title,
-  desc,
-}: {
-  step: string;
-  title: string;
-  desc: string;
-}) {
+function NextStep({ step, title, desc }: { step: string; title: string; desc: string }) {
   return (
     <div className="flex gap-3 rounded-2xl border border-brand-surface-border bg-brand-surface p-4">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-yellow/15 font-display text-base font-extrabold text-brand-yellow">

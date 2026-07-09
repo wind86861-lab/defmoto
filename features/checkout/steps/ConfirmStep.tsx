@@ -119,16 +119,18 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
         payload: order,
       }),
     }).catch(() => {});
-    clearCart();
 
-    // Cash → straight to success page (no online payment)
+    // Cash (COD) is accepted immediately → clear cart + go to success.
     if (state.payment.method === 'cash') {
+      clearCart();
       resetCheckout();
       router.push(`/order/${order.id}/success`);
       return;
     }
 
-    // Online payment → open PaymentProcessor
+    // Online payment → open PaymentProcessor (redirects to the provider).
+    // Keep the cart + checkout intact: they're cleared only once the payment is
+    // confirmed on the success page, so a cancelled/failed payment loses nothing.
     setPaymentReq({
       orderId: order.id,
       orderNumber: order.number,
@@ -141,8 +143,9 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
   };
 
   const handlePaymentClose = () => {
+    // Cancelled / failed payment: keep the cart + checkout so the buyer can
+    // retry or pick another method — nothing is reset here.
     setPaymentReq(null);
-    resetCheckout();
   };
 
   return (
@@ -240,10 +243,11 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
           request={paymentReq}
           onClose={handlePaymentClose}
           onSuccess={() => {
-            // Redirect to success page after payment closes
+            // Go to the success page — it verifies the payment and only then
+            // clears the cart + checkout. (For the live redirect flow this line
+            // isn't reached; the provider returns the buyer to the success page.)
             setTimeout(() => {
               router.push(`/order/${paymentReq.orderId}/success`);
-              resetCheckout();
             }, 600);
           }}
         />

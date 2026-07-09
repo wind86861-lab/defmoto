@@ -480,6 +480,12 @@
     "step3DescPickup": "Pick up your item from the branch",
     "step3DescDelivery": "Delivered to your address within 1-2 business days",
     "trackOrderButton": "Track order",
+    "verifyingTitle": "Verifying payment...",
+    "verifyingDesc": "Waiting for your payment to be confirmed. This can take a few seconds.",
+    "pendingTitle": "Payment not completed",
+    "pendingDesc": "The payment wasn't confirmed or was cancelled. Your cart is saved — you can try again.",
+    "retryPaymentButton": "Pay again",
+    "backToCartButton": "Back to cart",
     "continueTelegramButton": "Continue in Telegram bot",
     "homeButton": "Go home"
   },
