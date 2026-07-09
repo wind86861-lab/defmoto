@@ -426,6 +426,12 @@ export function updateUser(id: string, patch: Partial<UserAccount>): UserAccount
   return u;
 }
 
+/** All registered accounts, newest first (for the admin Customers page). */
+export function listUsers(): UserAccount[] {
+  load();
+  return [...store.users].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+}
+
 /* --------------------------- marketing links ----------------------------- */
 
 function slugifyCode(s: string): string {

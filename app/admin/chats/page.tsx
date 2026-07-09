@@ -13,6 +13,7 @@ import {
   Check,
   Trash2,
 } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useChatStore } from '@/lib/stores/chat';
@@ -29,6 +30,14 @@ interface OperatorState {
   operator: { name: string; phone: string } | null;
 }
 
+interface RelayMsg {
+  id: string;
+  author: 'operator' | 'customer';
+  text: string;
+  image?: string;
+  createdAt: string;
+}
+
 interface RelaySession {
   id: string;
   customerName?: string;
@@ -36,6 +45,7 @@ interface RelaySession {
   lastActivity: number;
   messageCount: number;
   customerCount: number;
+  messages: RelayMsg[];
 }
 
 export default function AdminChatsPage() {
@@ -53,6 +63,34 @@ export default function AdminChatsPage() {
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [reply, setReply] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const sendReply = async (sessionId: string, customerName?: string) => {
+    if (!reply.trim()) return;
+    setSending(true);
+    try {
+      const res = await fetch('/api/chat/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, text: reply.trim(), customerName }),
+      });
+      const d = await res.json();
+      if (d.ok) {
+        notify('success');
+        setReply('');
+        // Refresh the thread immediately.
+        fetch('/api/chat/sessions', { cache: 'no-store' })
+          .then((r) => r.json())
+          .then((x: { sessions: RelaySession[] }) => setSessions(x.sessions || []))
+          .catch(() => {});
+        if (!d.relayed) toast.info('Yuborildi', 'Operator ulanmagan — xabar saqlandi.');
+      }
+    } finally {
+      setSending(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -263,35 +301,104 @@ export default function AdminChatsPage() {
             {t('liveSessionsTitle', { count: sessions.length })}
           </h2>
           <ul className="space-y-2.5">
-            {sessions.map((s) => (
-              <li
-                key={s.id}
-                className="flex items-start gap-3 rounded-2xl border border-brand-surface-border bg-brand-surface p-4"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-yellow font-display text-sm font-extrabold text-brand-dark">
-                  {(s.customerName || 'M').slice(0, 1).toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="truncate font-bold">
-                      {s.customerName || t('customerLabel')}{' '}
-                      <span className="font-mono text-[11px] font-normal text-white/40">
-                        #{s.id.slice(-6)}
-                      </span>
-                    </h3>
-                    <span className="shrink-0 text-[10px] text-white/40">
-                      {formatDateTime(new Date(s.lastActivity).toISOString())}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 line-clamp-1 text-sm text-white/65">
-                    {s.lastText}
-                  </p>
-                  <p className="mt-1 text-[10px] text-white/40">
-                    {t('messageCountText', { count: s.messageCount })}
-                  </p>
-                </div>
-              </li>
-            ))}
+            {sessions.map((s) => {
+              const open = openId === s.id;
+              return (
+                <li
+                  key={s.id}
+                  className="overflow-hidden rounded-2xl border border-brand-surface-border bg-brand-surface"
+                >
+                  {/* Header — click to open the full conversation */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenId(open ? null : s.id);
+                      setReply('');
+                    }}
+                    className="flex w-full items-start gap-3 p-4 text-left transition-colors hover:bg-white/3"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-yellow font-display text-sm font-extrabold text-brand-dark">
+                      {(s.customerName || 'M').slice(0, 1).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="truncate font-bold">
+                          {s.customerName || t('customerLabel')}{' '}
+                          <span className="font-mono text-[11px] font-normal text-white/40">#{s.id.slice(-6)}</span>
+                        </h3>
+                        <span className="shrink-0 text-[10px] text-white/40">
+                          {formatDateTime(new Date(s.lastActivity).toISOString())}
+                        </span>
+                      </div>
+                      {!open && <p className="mt-0.5 line-clamp-1 text-sm text-white/65">{s.lastText}</p>}
+                      <p className="mt-1 text-[10px] text-white/40">
+                        {t('messageCountText', { count: s.messageCount })}
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Full thread + reply */}
+                  {open && (
+                    <div className="border-t border-brand-surface-border p-4">
+                      <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                        {s.messages.map((m) => (
+                          <div
+                            key={m.id}
+                            className={cn('flex', m.author === 'customer' ? 'justify-start' : 'justify-end')}
+                          >
+                            <div
+                              className={cn(
+                                'max-w-[80%] rounded-2xl px-3 py-2 text-sm',
+                                m.author === 'customer'
+                                  ? 'rounded-tl-sm bg-brand-dark/60 text-white/85'
+                                  : 'rounded-tr-sm bg-brand-yellow/15 text-brand-yellow',
+                              )}
+                            >
+                              {m.image && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={m.image} alt="" className="mb-1 max-h-40 rounded-lg" />
+                              )}
+                              {m.text && <p className="whitespace-pre-wrap break-words">{m.text}</p>}
+                              <p className="mt-1 text-[9px] uppercase tracking-wide opacity-50">
+                                {m.author === 'customer' ? t('customerLabel') : t('operatorLabel')} ·{' '}
+                                {formatDateTime(m.createdAt)}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Reply box */}
+                      <div className="mt-3 flex items-end gap-2">
+                        <div className="flex-1">
+                          <Input
+                            placeholder={t('opReplyPlaceholder')}
+                            value={reply}
+                            onChange={(e) => setReply(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                void sendReply(s.id, s.customerName);
+                              }
+                            }}
+                          />
+                        </div>
+                        <Button
+                          size="lg"
+                          glow
+                          onClick={() => sendReply(s.id, s.customerName)}
+                          loading={sending}
+                          disabled={!reply.trim()}
+                          leftIcon={<Send className="h-4 w-4" />}
+                        >
+                          {t('opReplySend')}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : (
