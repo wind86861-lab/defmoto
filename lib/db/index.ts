@@ -22,6 +22,19 @@ const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const PAYMENTS_FILE = path.join(DATA_DIR, 'payments.json');
 const REVIEWS_FILE = path.join(DATA_DIR, 'reviews.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const LINKS_FILE = path.join(DATA_DIR, 'links.json');
+
+/** Marketing campaign / referral link with click tracking. */
+export interface CampaignLink {
+  id: string;
+  code: string; // short slug used in /r/<code>
+  label: string; // human name (e.g. "Instagram oktabr")
+  target: string; // internal path to land on (e.g. "/product/xyz")
+  clicks: number; // total visits
+  uniques: number; // distinct visitors (cookie-deduped)
+  createdAt: number;
+  lastClickAt?: number;
+}
 
 interface Store {
   content: Record<string, unknown>;
@@ -29,6 +42,7 @@ interface Store {
   payments: PaymentRecord[];
   reviews: ReviewRecord[];
   users: UserAccount[];
+  links: CampaignLink[];
   loaded: boolean;
 }
 
@@ -41,6 +55,7 @@ const store: Store =
     payments: [],
     reviews: [],
     users: [],
+    links: [],
     loaded: false,
   });
 
@@ -71,6 +86,11 @@ function load() {
     store.users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
   } catch {
     store.users = [];
+  }
+  try {
+    store.links = JSON.parse(fs.readFileSync(LINKS_FILE, 'utf8'));
+  } catch {
+    store.links = [];
   }
 }
 
@@ -404,4 +424,70 @@ export function updateUser(id: string, patch: Partial<UserAccount>): UserAccount
   if (patch.phone) u.phone = normPhone(patch.phone);
   atomicWrite(USERS_FILE, store.users);
   return u;
+}
+
+/* --------------------------- marketing links ----------------------------- */
+
+function slugifyCode(s: string): string {
+  return (s || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+}
+
+export function listLinks(): CampaignLink[] {
+  load();
+  return [...store.links].sort((a, b) => b.createdAt - a.createdAt);
+}
+
+export function getLinkByCode(code: string): CampaignLink | null {
+  load();
+  const c = code.toLowerCase();
+  return store.links.find((l) => l.code.toLowerCase() === c) ?? null;
+}
+
+export function createLink(input: { label: string; target: string; code?: string }): CampaignLink {
+  load();
+  let base = slugifyCode(input.code || input.label) || `l${Date.now().toString(36)}`;
+  // Ensure the code is unique.
+  let code = base;
+  let n = 1;
+  while (store.links.some((l) => l.code === code)) code = `${base}-${++n}`;
+  // Only allow internal targets (must start with "/").
+  let target = (input.target || '/').trim();
+  if (!target.startsWith('/')) target = `/${target}`;
+  const link: CampaignLink = {
+    id: `lnk_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    code,
+    label: input.label || code,
+    target,
+    clicks: 0,
+    uniques: 0,
+    createdAt: Date.now(),
+  };
+  store.links.push(link);
+  atomicWrite(LINKS_FILE, store.links);
+  return link;
+}
+
+/** Record a click. `unique` bumps the distinct-visitor counter too. */
+export function recordLinkClick(code: string, unique: boolean): CampaignLink | null {
+  load();
+  const link = getLinkByCode(code);
+  if (!link) return null;
+  link.clicks += 1;
+  if (unique) link.uniques += 1;
+  link.lastClickAt = Date.now();
+  atomicWrite(LINKS_FILE, store.links);
+  return link;
+}
+
+export function deleteLink(id: string): boolean {
+  load();
+  const before = store.links.length;
+  store.links = store.links.filter((l) => l.id !== id);
+  const changed = store.links.length !== before;
+  if (changed) atomicWrite(LINKS_FILE, store.links);
+  return changed;
 }

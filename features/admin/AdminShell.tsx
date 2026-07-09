@@ -14,6 +14,7 @@ import {
   Store,
   MapPin,
   Truck,
+  Link2,
   ExternalLink,
   LogOut,
 } from 'lucide-react';
@@ -64,6 +65,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     { href: '/admin/locations', label: t('navLocations'), icon: MapPin },
     { href: '/admin/marketplaces', label: t('navMarketplaces'), icon: Store },
     { href: '/admin/delivery', label: t('navDelivery'), icon: Truck },
+    { href: '/admin/links', label: t('navLinks'), icon: Link2 },
     { href: '/admin/chats', label: t('navChats'), icon: MessageCircle },
   ];
 
