@@ -883,6 +883,13 @@
     "fldProdAddMarket": "Add marketplace",
     "fldProdMarketHint": "Add marketplace prices — the biggest gap is shown to the customer.",
     "fldProdMarketDerive": "The highest marketplace price is shown as the old price.",
+    "fldProdVariants": "Variants (colour / size / stock)",
+    "fldProdAddVariant": "Add variant",
+    "fldProdVariantHint": "Add colours and sizes — they appear on the product page.",
+    "fldProdVarColorName": "Colour name",
+    "fldProdVarSize": "Size",
+    "fldProdVarStock": "Stock",
+    "fldProdVariantDerive": "Each row = colour + size + stock. Sizes appear under the selected colour.",
     "fldTelegram": "Telegram",
     "fldMapUrl": "Google Maps link",
     "fldProdMarketLink": "Marketplace product link (optional)"

@@ -883,6 +883,13 @@
     "fldProdAddMarket": "Marketplace qo'shish",
     "fldProdMarketHint": "Marketplace narxlarini qo'shing — eng katta farq mijozga ko'rsatiladi.",
     "fldProdMarketDerive": "Eski narx sifatida eng qimmat marketplace narxi ko'rsatiladi.",
+    "fldProdVariants": "Variantlar (rang / o'lcham / zaxira)",
+    "fldProdAddVariant": "Variant qo'shish",
+    "fldProdVariantHint": "Rang va o'lchamlarni qo'shing — mahsulot sahifasida ko'rinadi.",
+    "fldProdVarColorName": "Rang nomi",
+    "fldProdVarSize": "O'lcham",
+    "fldProdVarStock": "Zaxira",
+    "fldProdVariantDerive": "Har bir qator = rang + o'lcham + zaxira. O'lchamlar tanlangan rang ostida chiqadi.",
     "fldTelegram": "Telegram",
     "fldMapUrl": "Google Maps havolasi",
     "fldProdMarketLink": "Marketplace mahsulot linki (ixtiyoriy)"

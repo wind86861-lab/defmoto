@@ -22,7 +22,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { useToast } from '@/components/ui/Toaster';
 import { categoryName } from '@/lib/categoryName';
 import { uploadImage } from '@/lib/uploadImage';
-import type { Product, CompetitorPrice } from '@/types/product';
+import type { Product, CompetitorPrice, ProductVariant } from '@/types/product';
 
 function slugify(s: string) {
   return (
@@ -234,11 +234,26 @@ function ProductModal({
   };
   const removeComp = (idx: number) => setComp(comp.filter((_, i) => i !== idx));
 
+  // Variants (colour / size / stock).
+  const vars = draft.variants ?? [];
+  const setVars = (next: ProductVariant[]) => set({ variants: next });
+  const addVar = () =>
+    setVars([
+      ...vars,
+      { id: `v_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, color: '', colorHex: '#111111', size: '', stock: 0 },
+    ]);
+  const updateVar = (idx: number, patch: Partial<ProductVariant>) =>
+    setVars(vars.map((v, i) => (i === idx ? { ...v, ...patch } : v)));
+  const removeVar = (idx: number) => setVars(vars.filter((_, i) => i !== idx));
+
   const save = () => {
     const cleanComp = (draft.competitorPrices ?? []).filter((c) => c.price > 0 && c.source);
+    // Keep only variants that carry a colour or a size.
+    const cleanVars = (draft.variants ?? []).filter((v) => (v.color && v.colorHex) || v.size);
     const next: Product = {
       ...draft,
       competitorPrices: cleanComp.length ? cleanComp : undefined,
+      variants: cleanVars.length ? cleanVars : undefined,
       // "Old price" is derived from the highest marketplace price so the
       // storefront shows the biggest saving vs marketplaces.
       oldPrice: cleanComp.length ? Math.max(...cleanComp.map((c) => c.price)) : undefined,
@@ -356,6 +371,67 @@ function ProductModal({
                   </div>
                 ))}
                 <p className="text-[11px] text-white/40">{t('fldProdMarketDerive')}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Variants — colour / size / stock */}
+          <div className="sm:col-span-2">
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-white/45">
+                {t('fldProdVariants')}
+              </span>
+              <button
+                type="button"
+                onClick={addVar}
+                className="inline-flex items-center gap-1 rounded-lg border border-brand-surface-border px-2.5 py-1 text-[11px] font-bold text-white/75 hover:border-brand-yellow/40 hover:text-brand-yellow"
+              >
+                <Plus className="h-3 w-3" /> {t('fldProdAddVariant')}
+              </button>
+            </div>
+            {vars.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-brand-surface-border px-3 py-2.5 text-[11px] text-white/40">
+                {t('fldProdVariantHint')}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {vars.map((v, i) => (
+                  <div key={v.id} className="flex items-center gap-2 rounded-xl border border-brand-surface-border bg-brand-surface/40 p-2">
+                    <input
+                      type="color"
+                      value={v.colorHex || '#111111'}
+                      onChange={(e) => updateVar(i, { colorHex: e.target.value })}
+                      aria-label={t('fldProdVarColorName')}
+                      className="h-9 w-9 shrink-0 cursor-pointer rounded-lg border border-brand-surface-border bg-transparent"
+                    />
+                    <Input
+                      value={v.color ?? ''}
+                      placeholder={t('fldProdVarColorName')}
+                      onChange={(e) => updateVar(i, { color: e.target.value })}
+                    />
+                    <Input
+                      value={v.size ?? ''}
+                      placeholder={t('fldProdVarSize')}
+                      className="w-20 shrink-0"
+                      onChange={(e) => updateVar(i, { size: e.target.value || undefined })}
+                    />
+                    <Input
+                      value={v.stock ? String(v.stock) : ''}
+                      placeholder={t('fldProdVarStock')}
+                      inputMode="numeric"
+                      className="w-20 shrink-0"
+                      onChange={(e) => updateVar(i, { stock: Number(e.target.value.replace(/\D/g, '')) || 0 })}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeVar(i)}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/55 hover:bg-danger/15 hover:text-danger"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+                <p className="text-[11px] text-white/40">{t('fldProdVariantDerive')}</p>
               </div>
             )}
           </div>

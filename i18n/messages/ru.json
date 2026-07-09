@@ -883,6 +883,13 @@
     "fldProdAddMarket": "Добавить маркетплейс",
     "fldProdMarketHint": "Добавьте цены маркетплейсов — клиенту покажется наибольшая разница.",
     "fldProdMarketDerive": "Как старая цена показывается самая высокая цена маркетплейса.",
+    "fldProdVariants": "Варианты (цвет / размер / остаток)",
+    "fldProdAddVariant": "Добавить вариант",
+    "fldProdVariantHint": "Добавьте цвета и размеры — они появятся на странице товара.",
+    "fldProdVarColorName": "Название цвета",
+    "fldProdVarSize": "Размер",
+    "fldProdVarStock": "Остаток",
+    "fldProdVariantDerive": "Каждая строка = цвет + размер + остаток. Размеры показываются под выбранным цветом.",
     "fldTelegram": "Telegram",
     "fldMapUrl": "Ссылка Google Maps",
     "fldProdMarketLink": "Ссылка на товар в маркетплейсе (необяз.)"
