@@ -31,12 +31,13 @@ export interface Order {
       apartment?: string;
       note?: string;
     };
-    // Selected BTS pickup branch (method === 'bts').
+    // BTS destination: branch (method 'bts') or just a city (courier 'post').
     bts?: {
-      regionCode: string;
-      cityCode: string;
-      branchCode: string;
-      branchName: string;
+      regionCode?: string;
+      cityCode?: string;
+      cityName?: string;
+      branchCode?: string;
+      branchName?: string;
       branchAddress?: string;
     };
   };

@@ -135,7 +135,17 @@ export function DeliveryStep({ onNext, onBack }: { onNext: () => void; onBack: (
             <button
               key={opt.method}
               type="button"
-              onClick={() => setDelivery({ method: opt.method, branchId: undefined })}
+              onClick={() =>
+                setDelivery({
+                  method: opt.method,
+                  branchId: undefined,
+                  // Reset BTS selection so filial/courier prices don't carry over.
+                  btsBranchCode: undefined,
+                  btsBranchName: undefined,
+                  btsBranchAddress: undefined,
+                  btsPrice: undefined,
+                })
+              }
               className={cn(
                 'flex w-full items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all touch-feedback',
                 active

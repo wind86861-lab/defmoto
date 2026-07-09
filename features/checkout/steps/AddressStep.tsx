@@ -1,10 +1,13 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { MapPin, Home, FileText } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { formatPrice } from '@/lib/format';
 import { useCheckoutState } from '../useCheckoutState';
+import { BtsCityPicker } from './BtsCityPicker';
 
 export function AddressStep({
   onNext,
@@ -15,6 +18,21 @@ export function AddressStep({
 }) {
   const t = useTranslations('checkout');
   const { address, setAddress, delivery } = useCheckoutState();
+  const [btsAvailable, setBtsAvailable] = useState(false);
+
+  // Detect whether BTS is wired up → then we collect a BTS city (with a code)
+  // so the courier price can be calculated, instead of a free-text city.
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/delivery/bts/directory?type=regions')
+      .then((r) => {
+        if (alive && r.ok) setBtsAvailable(true);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const cities = [
     t('cityTashkent'),
@@ -31,7 +49,9 @@ export function AddressStep({
     return null;
   }
 
-  const canContinue = address.city && address.street.trim().length >= 3;
+  const canContinue = btsAvailable
+    ? Boolean(delivery.btsCityCode) && address.street.trim().length >= 3
+    : Boolean(address.city) && address.street.trim().length >= 3;
 
   return (
     <div className="space-y-6">
@@ -45,27 +65,44 @@ export function AddressStep({
       </header>
 
       <div className="space-y-3">
-        <div>
-          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-white/45">
-            {t('cityLabel')}
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {cities.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setAddress({ city: c })}
-                className={`h-10 rounded-lg border text-sm font-semibold transition-colors touch-feedback ${
-                  address.city === c
-                    ? 'border-brand-yellow bg-brand-yellow/10 text-brand-yellow shadow-glow-sm'
-                    : 'border-brand-surface-border bg-brand-surface text-white/75 hover:border-brand-yellow/40'
-                }`}
-              >
-                {c}
-              </button>
-            ))}
+        {btsAvailable ? (
+          <>
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-white/45">
+                {t('cityLabel')}
+              </label>
+              <BtsCityPicker />
+            </div>
+            {delivery.btsPrice != null && (
+              <div className="flex items-center justify-between rounded-xl border border-brand-yellow/30 bg-brand-yellow/8 px-3 py-2.5 text-sm">
+                <span className="font-semibold text-white/75">{t('deliveryTitle')} (BTS)</span>
+                <span className="font-display font-extrabold text-brand-yellow">{formatPrice(delivery.btsPrice)}</span>
+              </div>
+            )}
+          </>
+        ) : (
+          <div>
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-white/45">
+              {t('cityLabel')}
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {cities.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setAddress({ city: c })}
+                  className={`h-10 rounded-lg border text-sm font-semibold transition-colors touch-feedback ${
+                    address.city === c
+                      ? 'border-brand-yellow bg-brand-yellow/10 text-brand-yellow shadow-glow-sm'
+                      : 'border-brand-surface-border bg-brand-surface text-white/75 hover:border-brand-yellow/40'
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <Input
           placeholder={t('streetPlaceholder')}

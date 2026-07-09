@@ -53,8 +53,8 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
   const deliveryFee =
     state.delivery.method === 'pickup'
       ? 0
-      : state.delivery.method === 'bts'
-        ? state.delivery.btsPrice ?? 0 // live BTS estimate; settled by BTS at shipment
+      : state.delivery.btsPrice != null
+        ? state.delivery.btsPrice // live BTS estimate (filial or courier)
         : afterDiscount >= DELIVERY_FREE_THRESHOLD
           ? 0
           : DELIVERY_FEE;
@@ -85,16 +85,17 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
           state.delivery.method === 'post' || state.delivery.method === 'courier'
             ? state.address
             : undefined,
-        bts:
-          state.delivery.method === 'bts' && state.delivery.btsBranchCode
-            ? {
-                regionCode: state.delivery.btsRegionCode || '',
-                cityCode: state.delivery.btsCityCode || '',
-                branchCode: state.delivery.btsBranchCode,
-                branchName: state.delivery.btsBranchName || '',
-                branchAddress: state.delivery.btsBranchAddress,
-              }
-            : undefined,
+        // BTS destination — a branch (filial pickup) or just a city (courier).
+        bts: state.delivery.btsCityCode
+          ? {
+              regionCode: state.delivery.btsRegionCode || '',
+              cityCode: state.delivery.btsCityCode,
+              cityName: state.delivery.btsCityName || '',
+              branchCode: state.delivery.btsBranchCode || undefined,
+              branchName: state.delivery.btsBranchName || undefined,
+              branchAddress: state.delivery.btsBranchAddress,
+            }
+          : undefined,
       },
       payment: {
         method: state.payment.method,
