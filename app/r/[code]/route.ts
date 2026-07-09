@@ -10,7 +10,13 @@ export const dynamic = 'force-dynamic';
  * visitors. Unknown codes just go home.
  */
 export function GET(req: Request, { params }: { params: { code: string } }) {
-  const origin = new URL(req.url).origin;
+  // Build the PUBLIC origin from the proxy headers (the app runs behind nginx
+  // on localhost, so req.url would otherwise redirect users to localhost).
+  const proto = req.headers.get('x-forwarded-proto') || 'https';
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
+  const origin =
+    (host ? `${proto}://${host}` : process.env.NEXT_PUBLIC_APP_URL) || new URL(req.url).origin;
+
   const link = getLinkByCode(params.code);
   if (!link) {
     return NextResponse.redirect(`${origin}/`, 302);
