@@ -49,11 +49,11 @@ export function PriceCompare({
       index[norm(c.source)] || index[norm(c.label)] || index[norm(c.source).replace(/^mp/, '')];
   }, [mounted, stored]);
 
-  const { maxCompetitor, savings, savingsPct } = useMemo(() => {
+  const { savings, savingsPct } = useMemo(() => {
     const max = Math.max(...competitors.map((c) => c.price));
     const save = max - ourPrice;
     const pct = Math.round((save / max) * 100);
-    return { maxCompetitor: max, savings: save, savingsPct: pct };
+    return { savings: save, savingsPct: pct };
   }, [competitors, ourPrice]);
 
   if (!competitors.length) return null;
@@ -90,23 +90,25 @@ export function PriceCompare({
               storeLabel={t('goToStore')}
               price={c.price}
               locale={locale}
-              isMax={c.price === maxCompetitor}
             />
           ))}
 
-          {/* Our price — featured */}
-          <div className="!mt-3 flex items-center justify-between gap-2 rounded-xl border border-brand-yellow/40 bg-brand-yellow/8 px-3 py-2.5 shadow-glow-sm">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-yellow">
-                <Check className="h-4 w-4 text-brand-dark" strokeWidth={3} />
+          {/* Our price — featured winner card */}
+          <div className="!mt-3 flex items-center gap-3 rounded-2xl border-2 border-brand-yellow/50 bg-brand-yellow/10 p-3 shadow-glow-sm">
+            <div className="flex h-11 w-16 shrink-0 items-center justify-center rounded-xl bg-gradient-yellow">
+              <Check className="h-6 w-6 text-brand-dark" strokeWidth={3} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="truncate text-sm font-extrabold text-brand-yellow">{t('ourPrice')}</span>
+                <span className="shrink-0 rounded-md bg-success/20 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-success">
+                  −{savingsPct}%
+                </span>
               </div>
-              <span className="text-sm font-bold text-brand-yellow">
-                {t('ourPrice')}
+              <span className="font-display text-lg font-extrabold text-brand-yellow">
+                {formatPrice(ourPrice, locale)}
               </span>
             </div>
-            <span className="font-display text-lg font-extrabold text-brand-yellow">
-              {formatPrice(ourPrice, locale)}
-            </span>
           </div>
         </div>
 
@@ -130,7 +132,6 @@ function CompetitorRow({
   storeLabel,
   price,
   locale,
-  isMax,
 }: {
   label: string;
   color: string;
@@ -139,51 +140,57 @@ function CompetitorRow({
   storeLabel: string;
   price: number;
   locale: Locale;
-  isMax: boolean;
 }) {
-  const badge = icon ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={icon}
-      alt={label}
-      className="h-6 w-12 rounded-md bg-white/5 object-contain p-0.5"
-    />
-  ) : (
-    <span
-      className="inline-flex h-6 min-w-12 items-center justify-center rounded-md px-1.5 text-[10px] font-bold text-white"
-      style={{ background: color }}
+  // Logo in a white tile (like a real store card) or a coloured brand tile.
+  const logoTile = (
+    <div
+      className={cn(
+        'flex h-11 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl',
+        icon ? 'bg-white p-1.5' : 'px-1.5',
+      )}
+      style={icon ? undefined : { background: color }}
     >
-      {label}
-    </span>
+      {icon ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={icon} alt={label} className="h-full w-full object-contain" />
+      ) : (
+        <span className="truncate text-xs font-black uppercase tracking-wide text-white">{label}</span>
+      )}
+    </div>
   );
 
-  const inner = (
-    <>
-      <div className="flex min-w-0 items-center gap-2">
-        {badge}
-        {url && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white/60 transition-all group-hover/row:border-brand-yellow/50 group-hover/row:bg-brand-yellow/10 group-hover/row:text-brand-yellow group-hover/row:shadow-glow-sm">
-            {storeLabel}
-            <ExternalLink className="h-2.5 w-2.5 transition-transform group-hover/row:translate-x-0.5" />
-          </span>
-        )}
+  const content = (
+    <div className="flex items-center gap-3">
+      {logoTile}
+
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-bold text-white">{label}</p>
+        <p className="font-display text-sm font-bold text-white/45 line-through decoration-white/25 decoration-2">
+          {formatPrice(price, locale)}
+        </p>
       </div>
-      <span className="font-display text-sm text-white/50 line-through decoration-2">
-        {formatPrice(price, locale)}
-      </span>
-    </>
+
+      {url && (
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-brand-yellow/40 bg-brand-yellow/10 px-3 py-2 text-xs font-bold text-brand-yellow transition-all group-hover/row:bg-brand-yellow group-hover/row:text-brand-dark group-hover/row:shadow-glow-sm">
+          {storeLabel}
+          <ExternalLink className="h-3.5 w-3.5 transition-transform group-hover/row:translate-x-0.5" />
+        </span>
+      )}
+    </div>
   );
 
-  const cls = cn(
-    'flex items-center justify-between gap-2 rounded-lg px-3 py-2 transition-colors',
-    isMax ? 'bg-white/3' : 'bg-transparent',
-  );
+  const cls = 'block rounded-2xl border border-brand-surface-border bg-brand-surface/50 p-2.5 transition-all';
 
   return url ? (
-    <a href={url} target="_blank" rel="noopener noreferrer" className={cn(cls, 'group/row hover:bg-white/5')}>
-      {inner}
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(cls, 'group/row hover:border-brand-yellow/30 hover:bg-brand-surface active:scale-[0.99]')}
+    >
+      {content}
     </a>
   ) : (
-    <div className={cls}>{inner}</div>
+    <div className={cls}>{content}</div>
   );
 }
