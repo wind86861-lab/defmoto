@@ -162,9 +162,9 @@ function CompetitorRow({
       <div className="flex min-w-0 items-center gap-2">
         {badge}
         {url && (
-          <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-white/45 group-hover/row:text-brand-yellow">
+          <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white/60 transition-all group-hover/row:border-brand-yellow/50 group-hover/row:bg-brand-yellow/10 group-hover/row:text-brand-yellow group-hover/row:shadow-glow-sm">
             {storeLabel}
-            <ExternalLink className="h-3 w-3" />
+            <ExternalLink className="h-2.5 w-2.5 transition-transform group-hover/row:translate-x-0.5" />
           </span>
         )}
       </div>
