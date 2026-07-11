@@ -35,6 +35,7 @@ import {
   hashPassword,
   verifyPassword,
 } from './userAuth';
+import { tgApi } from './tgFetch';
 import {
   getUserByTelegramId,
   getUserByPhone,
@@ -116,17 +117,10 @@ const globalRef = globalThis as unknown as { __deftPollerStarted?: boolean };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function tg(method: string, params: Record<string, unknown> = {}) {
-  // Abort a hung request instead of wedging the loop. Long-poll calls carry a
-  // `timeout` (seconds); give them that plus headroom, others a short ceiling.
-  const pollSecs = typeof params.timeout === 'number' ? params.timeout : 0;
-  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params),
-    signal: AbortSignal.timeout((pollSecs + 15) * 1000),
-  });
-  return res.json();
+// Uses the https-module caller (fresh IPv4 connection per call) — the global
+// fetch/undici pool went stale behind the NAT and hung the bot forever.
+async function tg(method: string, params: Record<string, unknown> = {}): Promise<any> {
+  return tgApi(method, params);
 }
 
 interface TgUpdate {

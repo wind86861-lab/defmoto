@@ -17,6 +17,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { listOrders, getUserByTelegramId } from '@/lib/db';
+import { tgApi } from './tgFetch';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const ENV_OPERATOR = process.env.TELEGRAM_OPERATOR_CHAT_ID || '';
@@ -226,13 +227,10 @@ export async function tryBindOperator(
   return 'phone-mismatch';
 }
 
-async function tg(method: string, body: Record<string, unknown>) {
-  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  return res.json();
+// Fresh IPv4 connection per call (see tgFetch) — the pooled global fetch went
+// stale behind the host NAT and hung, breaking operator delivery.
+async function tg(method: string, body: Record<string, unknown>): Promise<any> {
+  return tgApi(method, body);
 }
 
 function getSession(id: string): Session {
@@ -426,7 +424,9 @@ async function downloadTelegramPhoto(fileId: string): Promise<string | undefined
     const r = await tg('getFile', { file_id: fileId });
     const filePath: string | undefined = r?.result?.file_path;
     if (!filePath) return undefined;
-    const res = await fetch(`https://api.telegram.org/file/bot${BOT_TOKEN}/${filePath}`);
+    const res = await fetch(`https://api.telegram.org/file/bot${BOT_TOKEN}/${filePath}`, {
+      signal: AbortSignal.timeout(20_000),
+    });
     const buf = Buffer.from(await res.arrayBuffer());
     const ext = (filePath.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
     const name = `op_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}.${ext}`;
