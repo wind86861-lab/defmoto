@@ -14,11 +14,21 @@ import { Partners } from '@/components/features/home/Partners';
 import { Reviews } from '@/components/features/home/Reviews';
 import { FaqBlock } from '@/components/features/home/FaqBlock';
 import { DemoBadge } from '@/components/features/DemoBadge';
-import { mockProducts, bestsellers } from '@/mocks/products';
+import { getProductsServer } from '@/lib/serverContent';
 import { popularCategories } from '@/mocks/categories';
+
+// Read admin-managed products fresh on each request (not baked at build time).
+export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   const t = await getTranslations('home');
+
+  // Admin-managed products (falls back to the seed only on a fresh install).
+  const products = getProductsServer();
+  const popular = products.slice(0, 8);
+  // "Hits" = products the admin marked as bestseller. Empty → the section
+  // hides itself, so the admin controls exactly what appears here.
+  const bestsellers = products.filter((p) => p.isBestseller);
 
   return (
     <>
@@ -43,7 +53,7 @@ export default async function HomePage() {
           <ProductShowcase
             title={t('popularProducts')}
             href="/catalog"
-            products={mockProducts.slice(0, 6)}
+            products={popular}
           />
         </Reveal>
 

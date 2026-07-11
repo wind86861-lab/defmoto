@@ -24,6 +24,9 @@ export function ProductShowcase({
 }: ProductShowcaseProps) {
   const t = useTranslations('common');
 
+  // Nothing to show (admin has no products in this section) → hide it entirely.
+  if (!products.length) return null;
+
   return (
     <section className="py-8 sm:py-10">
       <div className="mx-auto max-w-[1320px] px-4 sm:px-6 lg:px-8">
