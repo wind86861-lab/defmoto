@@ -67,14 +67,15 @@ export default function AdminChatsPage() {
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
 
-  const sendReply = async (sessionId: string, customerName?: string) => {
+  const sendReply = async (sessionId: string) => {
     if (!reply.trim()) return;
     setSending(true);
     try {
-      const res = await fetch('/api/chat/send', {
+      // Operator → customer reply (delivered to the customer's chat session).
+      const res = await fetch('/api/chat/reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, text: reply.trim(), customerName }),
+        body: JSON.stringify({ sessionId, text: reply.trim() }),
       });
       const d = await res.json();
       if (d.ok) {
@@ -85,7 +86,7 @@ export default function AdminChatsPage() {
           .then((r) => r.json())
           .then((x: { sessions: RelaySession[] }) => setSessions(x.sessions || []))
           .catch(() => {});
-        if (!d.relayed) toast.info('Yuborildi', 'Operator ulanmagan — xabar saqlandi.');
+        if (!d.delivered) toast.info('Saqlandi', 'Mijoz hozir oflayn — xabar suhbatga qoʻshildi.');
       }
     } finally {
       setSending(false);
@@ -378,7 +379,7 @@ export default function AdminChatsPage() {
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
-                                void sendReply(s.id, s.customerName);
+                                void sendReply(s.id);
                               }
                             }}
                           />
@@ -386,7 +387,7 @@ export default function AdminChatsPage() {
                         <Button
                           size="lg"
                           glow
-                          onClick={() => sendReply(s.id, s.customerName)}
+                          onClick={() => sendReply(s.id)}
                           loading={sending}
                           disabled={!reply.trim()}
                           leftIcon={<Send className="h-4 w-4" />}
