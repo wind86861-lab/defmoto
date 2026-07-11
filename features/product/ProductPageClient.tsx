@@ -129,7 +129,7 @@ export function ProductPageClient({ product, similar }: Props) {
       <div className="grid gap-8 md:grid-cols-2 md:gap-10 lg:gap-12">
         {/* Left — Gallery */}
         <div>
-          <ProductGallery images={product.images} alt={product.name} />
+          <ProductGallery images={product.images} video={product.video} alt={product.name} />
         </div>
 
         {/* Right — Info */}

@@ -21,7 +21,7 @@ import { useMounted } from '@/hooks/useMounted';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useToast } from '@/components/ui/Toaster';
 import { categoryName } from '@/lib/categoryName';
-import { uploadImage } from '@/lib/uploadImage';
+import { uploadImage, uploadVideo } from '@/lib/uploadImage';
 import type { Product, CompetitorPrice, ProductVariant } from '@/types/product';
 
 function slugify(s: string) {
@@ -185,7 +185,9 @@ function ProductModal({
   const categories = useContentStore((s) => s.categories);
   const marketplaces = useSiteSettings((s) => s.marketplaces);
   const fileRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [videoUploading, setVideoUploading] = useState(false);
 
   const [draft, setDraft] = useState<Product>(product);
   const set = (patch: Partial<Product>) => setDraft((d) => ({ ...d, ...patch }));
@@ -212,6 +214,20 @@ function ProductModal({
   };
   const removeImage = (idx: number) =>
     set({ images: draft.images.filter((_, i) => i !== idx) });
+
+  const addVideoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setVideoUploading(true);
+    try {
+      set({ video: await uploadVideo(file) });
+    } catch {
+      toast.info(t('uploadFailed'));
+    } finally {
+      setVideoUploading(false);
+    }
+  };
 
   /* marketplace prices */
   const comp = draft.competitorPrices ?? [];
@@ -485,6 +501,50 @@ function ProductModal({
               </button>
               <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" multiple hidden onChange={addImages} />
             </div>
+          </div>
+
+          {/* Video */}
+          <div className="sm:col-span-2">
+            <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-white/45">
+              {t('fldProdVideo')}
+            </span>
+            {draft.video ? (
+              <div className="space-y-2">
+                <div className="relative overflow-hidden rounded-xl border border-brand-surface-border bg-brand-dark">
+                  {/youtu\.?be/.test(draft.video) ? (
+                    <div className="px-3 py-2 text-xs text-white/70">YouTube: {draft.video}</div>
+                  ) : (
+                    // eslint-disable-next-line jsx-a11y/media-has-caption
+                    <video src={draft.video} controls className="max-h-48 w-full bg-black" />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => set({ video: undefined })}
+                    className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded bg-black/70 text-white hover:bg-danger"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => videoRef.current?.click()}
+                  disabled={videoUploading}
+                  className="inline-flex items-center gap-2 rounded-xl border border-dashed border-brand-surface-border px-3 py-2.5 text-sm font-semibold text-white/70 hover:border-brand-yellow/40 hover:text-brand-yellow disabled:opacity-50"
+                >
+                  <Upload className="h-4 w-4" />
+                  {videoUploading ? '…' : t('fldProdVideoUpload')}
+                </button>
+                <Input
+                  value={draft.video ?? ''}
+                  placeholder={t('fldProdVideoUrl')}
+                  onChange={(e) => set({ video: e.target.value || undefined })}
+                />
+              </div>
+            )}
+            <input ref={videoRef} type="file" accept="video/mp4,video/webm,video/quicktime" hidden onChange={addVideoFile} />
           </div>
 
           <div className="flex flex-wrap items-center gap-4 sm:col-span-2">

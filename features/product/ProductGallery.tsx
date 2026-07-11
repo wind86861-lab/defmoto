@@ -1,26 +1,39 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useTranslations } from 'next-intl';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ProductImage } from '@/components/ui/ProductImage';
 
 interface ProductGalleryProps {
   images: string[];
+  video?: string;
   alt: string;
 }
 
-export function ProductGallery({ images, alt }: ProductGalleryProps) {
+const isYouTube = (u: string) => /youtu\.?be/.test(u);
+const ytEmbed = (u: string) => {
+  const m = u.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]{11})/);
+  return m ? `https://www.youtube.com/embed/${m[1]}` : u;
+};
+
+export function ProductGallery({ images, video, alt }: ProductGalleryProps) {
   const t = useTranslations('product');
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, align: 'start' });
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const scrollTo = useCallback(
-    (idx: number) => emblaApi?.scrollTo(idx),
-    [emblaApi],
+  // The video (if any) is the first slide, then the images.
+  const media = useMemo(
+    () => [
+      ...(video ? [{ type: 'video' as const, src: video }] : []),
+      ...images.map((src) => ({ type: 'image' as const, src })),
+    ],
+    [video, images],
   );
+
+  const scrollTo = useCallback((idx: number) => emblaApi?.scrollTo(idx), [emblaApi]);
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -38,15 +51,30 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
       <div className="relative overflow-hidden rounded-3xl border border-brand-surface-border bg-brand-surface">
         <div ref={emblaRef} className="overflow-hidden">
           <div className="flex">
-            {images.map((src, i) => (
+            {media.map((m, i) => (
               <div key={i} className="relative flex-[0_0_100%]">
                 <div className="aspect-square">
-                  <ProductImage
-                    src={src}
-                    alt={`${alt} - ${i + 1}`}
-                    className="h-full w-full object-cover"
-                    fallbackClassName="h-full w-full"
-                  />
+                  {m.type === 'video' ? (
+                    isYouTube(m.src) ? (
+                      <iframe
+                        src={ytEmbed(m.src)}
+                        title={alt}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="h-full w-full bg-black"
+                      />
+                    ) : (
+                      // eslint-disable-next-line jsx-a11y/media-has-caption
+                      <video src={m.src} controls playsInline className="h-full w-full bg-black object-contain" />
+                    )
+                  ) : (
+                    <ProductImage
+                      src={m.src}
+                      alt={`${alt} - ${i + 1}`}
+                      className="h-full w-full object-cover"
+                      fallbackClassName="h-full w-full"
+                    />
+                  )}
                 </div>
               </div>
             ))}
@@ -55,11 +83,11 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
 
         {/* Counter pill */}
         <div className="pointer-events-none absolute right-3 top-3 rounded-full bg-brand-dark/70 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-md">
-          {selectedIndex + 1} / {images.length}
+          {selectedIndex + 1} / {media.length}
         </div>
 
         {/* Arrows — desktop only */}
-        {images.length > 1 && (
+        {media.length > 1 && (
           <>
             <button
               type="button"
@@ -81,9 +109,9 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
         )}
 
         {/* Mobile dots */}
-        {images.length > 1 && (
+        {media.length > 1 && (
           <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 md:hidden">
-            {images.map((_, i) => (
+            {media.map((_, i) => (
               <button
                 key={i}
                 type="button"
@@ -91,9 +119,7 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
                 aria-label={t('slideAria', { number: i + 1 })}
                 className={cn(
                   'h-1.5 rounded-full transition-all',
-                  i === selectedIndex
-                    ? 'w-6 bg-brand-yellow shadow-glow-sm'
-                    : 'w-1.5 bg-white/40',
+                  i === selectedIndex ? 'w-6 bg-brand-yellow shadow-glow-sm' : 'w-1.5 bg-white/40',
                 )}
               />
             ))}
@@ -102,9 +128,9 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
       </div>
 
       {/* Thumbnails */}
-      {images.length > 1 && (
+      {media.length > 1 && (
         <div className="-mx-1 flex gap-2 overflow-x-auto px-1 scrollbar-hide">
-          {images.map((src, i) => (
+          {media.map((m, i) => (
             <button
               key={i}
               type="button"
@@ -117,12 +143,13 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
                   : 'border-brand-surface-border opacity-70 hover:opacity-100',
               )}
             >
-              <ProductImage
-                src={src}
-                alt=""
-                className="h-full w-full object-cover"
-                fallbackClassName="h-full w-full"
-              />
+              {m.type === 'video' ? (
+                <span className="flex h-full w-full items-center justify-center bg-brand-dark">
+                  <Play className="h-6 w-6 text-brand-yellow" fill="currentColor" />
+                </span>
+              ) : (
+                <ProductImage src={m.src} alt="" className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
+              )}
             </button>
           ))}
         </div>

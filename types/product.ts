@@ -25,6 +25,7 @@ export interface Product {
   categorySlug: string;
   description?: string;
   images: string[];
+  video?: string; // uploaded /uploads/*.mp4 or a video/YouTube URL
   price: number;
   oldPrice?: number;
   currency: Currency;

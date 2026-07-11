@@ -12,3 +12,8 @@ export async function uploadImage(file: File): Promise<string> {
   if (!data.url) throw new Error('upload-failed');
   return data.url;
 }
+
+/** Upload a video file (same endpoint — the server routes by extension). */
+export function uploadVideo(file: File): Promise<string> {
+  return uploadImage(file);
+}
