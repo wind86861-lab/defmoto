@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { TrendingDown, Check, ExternalLink } from 'lucide-react';
+import { TrendingDown, Check, ArrowUpRight } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { formatPrice } from '@/lib/format';
 import { useSiteSettings, DEFAULT_MARKETPLACES } from '@/lib/stores/siteSettings';
@@ -174,9 +174,11 @@ function CompetitorRow({
       </div>
 
       {url && (
-        <span className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-brand-yellow/40 bg-brand-yellow/10 px-3.5 py-2 text-xs font-bold text-brand-yellow transition-all group-hover/row:bg-brand-yellow group-hover/row:text-brand-dark group-hover/row:shadow-glow-sm">
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/12 bg-white/5 py-1.5 pl-3.5 pr-1.5 text-[11px] font-bold uppercase tracking-wide text-white/70 transition-all group-hover/row:border-brand-yellow/45 group-hover/row:text-brand-yellow">
           {storeLabel}
-          <ExternalLink className="h-3.5 w-3.5 transition-transform group-hover/row:translate-x-0.5" />
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-white/85 transition-all group-hover/row:bg-brand-yellow group-hover/row:text-brand-dark group-hover/row:shadow-glow-sm">
+            <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover/row:translate-x-0.5 group-hover/row:-translate-y-0.5" />
+          </span>
         </span>
       )}
     </div>
