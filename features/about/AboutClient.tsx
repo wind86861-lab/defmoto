@@ -39,20 +39,22 @@ export function AboutClient() {
       </Reveal>
 
       {/* === About the company === */}
-      <Reveal direction="left" className="mt-10 grid gap-6 sm:gap-8 lg:grid-cols-2 lg:items-center">
-        <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-brand-surface-border bg-brand-surface lg:aspect-square">
-          <ProductImage
-            src={ABOUT_PHOTO}
-            alt={t('aboutHeading')}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        </div>
-        <div>
-          <h2 className="font-display text-display-sm font-extrabold sm:text-display-md">
-            {t('aboutHeading')}
-          </h2>
-          <p className="mt-4 text-base leading-relaxed text-white/65">{t('aboutIntroP1')}</p>
-          <p className="mt-3 text-base leading-relaxed text-white/65">{t('aboutIntroP2')}</p>
+      <Reveal direction="left" className="mt-10">
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-2 lg:items-center">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-brand-surface-border bg-brand-surface lg:aspect-square">
+            <ProductImage
+              src={ABOUT_PHOTO}
+              alt={t('aboutHeading')}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          </div>
+          <div>
+            <h2 className="font-display text-display-sm font-extrabold sm:text-display-md">
+              {t('aboutHeading')}
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-white/65">{t('aboutIntroP1')}</p>
+            <p className="mt-3 text-base leading-relaxed text-white/65">{t('aboutIntroP2')}</p>
+          </div>
         </div>
       </Reveal>
 
@@ -89,28 +91,30 @@ export function AboutClient() {
       </Reveal>
 
       {/* === Stats === */}
-      <Reveal direction="right" className="mt-14 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {[
-          { value: '5+', label: t('statBranches') },
-          { value: '10K+', label: t('statProducts') },
-          { value: '5K+', label: t('statCustomers') },
-          { value: '24/7', label: t('statSupport') },
-        ].map((s) => (
-          <div
-            key={s.label}
-            className="relative overflow-hidden rounded-2xl border border-brand-yellow/25 bg-gradient-to-br from-brand-surface to-brand-dark p-6 text-center"
-          >
-            <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-brand-yellow/15 blur-2xl" />
-            <div className="relative">
-              <div className="font-display text-display-lg font-extrabold text-gradient-yellow">
-                {s.value}
-              </div>
-              <div className="mt-1 text-xs font-bold uppercase tracking-wider text-white/60">
-                {s.label}
+      <Reveal direction="right" className="mt-14">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          {[
+            { value: '5+', label: t('statBranches') },
+            { value: '10K+', label: t('statProducts') },
+            { value: '5K+', label: t('statCustomers') },
+            { value: '24/7', label: t('statSupport') },
+          ].map((s) => (
+            <div
+              key={s.label}
+              className="relative overflow-hidden rounded-2xl border border-brand-yellow/25 bg-gradient-to-br from-brand-surface to-brand-dark p-6 text-center"
+            >
+              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-brand-yellow/15 blur-2xl" />
+              <div className="relative">
+                <div className="font-display text-display-lg font-extrabold text-gradient-yellow">
+                  {s.value}
+                </div>
+                <div className="mt-1 text-xs font-bold uppercase tracking-wider text-white/60">
+                  {s.label}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </Reveal>
 
       {/* === Why choose us === */}

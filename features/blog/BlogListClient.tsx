@@ -71,10 +71,12 @@ export function BlogListClient() {
       </div>
 
       {/* Grid */}
-      <Reveal direction="right" className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {posts.map((p) => (
-          <PostCard key={p.id} post={p} />
-        ))}
+      <Reveal direction="right">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {posts.map((p) => (
+            <PostCard key={p.id} post={p} />
+          ))}
+        </div>
       </Reveal>
 
       {posts.length === 0 && (
