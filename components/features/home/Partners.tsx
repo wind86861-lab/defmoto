@@ -1,6 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useSiteSettings } from '@/lib/stores/siteSettings';
+import { useMounted } from '@/hooks/useMounted';
 
 interface Partner {
   name: string;
@@ -84,6 +86,9 @@ const partners: Partner[] = [
 
 export function Partners() {
   const t = useTranslations('home');
+  const mounted = useMounted();
+  const adminPartners = useSiteSettings((s) => s.partners);
+  const useAdmin = mounted && adminPartners.length > 0;
 
   return (
     <section className="py-12 sm:py-16">
@@ -98,33 +103,54 @@ export function Partners() {
         </header>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {partners.map((p) => {
-            const Logo = p.logo;
-            return (
-              <div
-                key={p.name}
-                className="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-brand-surface-border bg-brand-surface p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-brand-yellow/40 hover:shadow-card-hover"
-              >
-                {/* Brand color logo */}
+          {useAdmin
+            ? adminPartners.map((p) => (
                 <div
-                  className="flex h-14 w-14 items-center justify-center transition-all duration-300 group-hover:scale-110"
-                  style={{ color: p.color }}
+                  key={p.id}
+                  className="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-brand-surface-border bg-brand-surface p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-brand-yellow/40 hover:shadow-card-hover"
                 >
-                  <Logo className="h-full w-full" />
-                </div>
-
-                {/* Name */}
-                <div className="text-center">
-                  <div className="font-display text-base font-extrabold text-white transition-colors group-hover:text-brand-yellow sm:text-lg">
-                    {p.name}
+                  <div className="flex h-14 w-14 items-center justify-center overflow-hidden transition-all duration-300 group-hover:scale-110">
+                    {p.logo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.logo} alt={p.name} className="h-full w-full object-contain" />
+                    ) : (
+                      <span className="font-display text-2xl font-extrabold text-brand-yellow">
+                        {p.name.slice(0, 1).toUpperCase()}
+                      </span>
+                    )}
                   </div>
-                  <div className="mt-0.5 text-[10px] uppercase tracking-wider text-white/35">
-                    {p.tagline}
+                  <div className="text-center">
+                    <div className="font-display text-base font-extrabold text-white transition-colors group-hover:text-brand-yellow sm:text-lg">
+                      {p.name}
+                    </div>
+                    {p.tagline && (
+                      <div className="mt-0.5 text-[10px] uppercase tracking-wider text-white/35">{p.tagline}</div>
+                    )}
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              ))
+            : partners.map((p) => {
+                const Logo = p.logo;
+                return (
+                  <div
+                    key={p.name}
+                    className="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-brand-surface-border bg-brand-surface p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-brand-yellow/40 hover:shadow-card-hover"
+                  >
+                    <div
+                      className="flex h-14 w-14 items-center justify-center transition-all duration-300 group-hover:scale-110"
+                      style={{ color: p.color }}
+                    >
+                      <Logo className="h-full w-full" />
+                    </div>
+                    <div className="text-center">
+                      <div className="font-display text-base font-extrabold text-white transition-colors group-hover:text-brand-yellow sm:text-lg">
+                        {p.name}
+                      </div>
+                      <div className="mt-0.5 text-[10px] uppercase tracking-wider text-white/35">{p.tagline}</div>
+                    </div>
+                  </div>
+                );
+              })}
         </div>
       </div>
     </section>

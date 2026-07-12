@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { Settings, Check, Plus, Trash2, Phone, MapPin, Clock, Send, Truck } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Settings, Check, Plus, Trash2, Phone, MapPin, Clock, Send, Truck, Upload, Award, X } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { ProductImage } from '@/components/ui/ProductImage';
 import { useSiteSettings } from '@/lib/stores/siteSettings';
 import { useMounted } from '@/hooks/useMounted';
 import { useHaptic } from '@/hooks/useHaptic';
+import { uploadImage } from '@/lib/uploadImage';
 
 export default function AdminSettingsPage() {
   const mounted = useMounted();
@@ -15,11 +17,34 @@ export default function AdminSettingsPage() {
   const setContact = useSiteSettings((s) => s.setContact);
   const deliveryTerms = useSiteSettings((s) => s.deliveryTerms);
   const setDeliveryTerms = useSiteSettings((s) => s.setDeliveryTerms);
+  const partners = useSiteSettings((s) => s.partners);
+  const addPartner = useSiteSettings((s) => s.addPartner);
+  const updatePartner = useSiteSettings((s) => s.updatePartner);
+  const removePartner = useSiteSettings((s) => s.removePartner);
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const logoUploadFor = useRef<string | null>(null);
+  const logoInput = useRef<HTMLInputElement>(null);
 
   const flash = () => {
     setSavedAt(new Date().toLocaleTimeString('en-GB'));
     setTimeout(() => setSavedAt(null), 2000);
+  };
+
+  const pickLogo = (id: string) => {
+    logoUploadFor.current = id;
+    logoInput.current?.click();
+  };
+  const onLogoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    const id = logoUploadFor.current;
+    if (!file || !id) return;
+    try {
+      updatePartner(id, { logo: await uploadImage(file) });
+      flash();
+    } catch {
+      /* ignore */
+    }
   };
 
   const updateTerm = (i: number, patch: Partial<{ title: string; text: string }>) => {
@@ -132,6 +157,55 @@ export default function AdminSettingsPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Partner brands (home page) */}
+      <section className="space-y-3 rounded-2xl border border-brand-surface-border bg-brand-surface p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white/45">
+            <Award className="h-4 w-4 text-brand-yellow" /> Hamkor brendlar (bosh sahifa)
+          </h2>
+          <button
+            type="button"
+            onClick={() => {
+              addPartner({ id: `pt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, name: '', tagline: '' });
+              notify('success');
+            }}
+            className="inline-flex items-center gap-1 rounded-lg border border-brand-surface-border px-2.5 py-1 text-[11px] font-bold text-white/75 hover:border-brand-yellow/40 hover:text-brand-yellow"
+          >
+            <Plus className="h-3 w-3" /> Brend qo'shish
+          </button>
+        </div>
+        <p className="text-[11px] text-white/40">Bo'sh qoldirilsa — standart brendlar ko'rinadi. Bittasi qo'shilsa, faqat siznikilar chiqadi.</p>
+        <div className="space-y-2">
+          {partners.map((p) => (
+            <div key={p.id} className="flex items-center gap-2 rounded-xl border border-brand-surface-border bg-brand-surface/40 p-2">
+              <button
+                type="button"
+                onClick={() => pickLogo(p.id)}
+                className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-brand-surface-border bg-brand-dark text-white/50 hover:border-brand-yellow/40"
+              >
+                {p.logo ? (
+                  <ProductImage src={p.logo} alt="" className="h-full w-full object-contain p-1" fallbackClassName="h-full w-full" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+              </button>
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <Input value={p.name} placeholder="Brend nomi (masalan: Yamaha)" onChange={(e) => updatePartner(p.id, { name: e.target.value })} onBlur={flash} />
+                <Input value={p.tagline ?? ''} placeholder="Shior (ixtiyoriy)" onChange={(e) => updatePartner(p.id, { tagline: e.target.value })} onBlur={flash} />
+              </div>
+              <button
+                type="button"
+                onClick={() => removePartner(p.id)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/55 hover:bg-danger/15 hover:text-danger"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+        <input ref={logoInput} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden onChange={onLogoFile} />
       </section>
     </div>
   );

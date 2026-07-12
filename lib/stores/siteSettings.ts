@@ -64,6 +64,14 @@ export interface DeliveryTerm {
   text: string;
 }
 
+// A partner brand shown on the home page (admin-managed).
+export interface PartnerBrand {
+  id: string;
+  name: string;
+  tagline?: string;
+  logo?: string; // uploaded logo image (data URL / /uploads/...)
+}
+
 interface SiteSettingsState {
   hero: HeroOverride;
   banner: PromoBanner | null;
@@ -71,9 +79,13 @@ interface SiteSettingsState {
   bts: BtsSettings;
   contact: SiteContact;
   deliveryTerms: DeliveryTerm[];
+  partners: PartnerBrand[];
   setBts: (patch: Partial<BtsSettings>) => void;
   setContact: (patch: Partial<SiteContact>) => void;
   setDeliveryTerms: (terms: DeliveryTerm[]) => void;
+  addPartner: (p: PartnerBrand) => void;
+  updatePartner: (id: string, patch: Partial<PartnerBrand>) => void;
+  removePartner: (id: string) => void;
   setHero: (patch: Partial<HeroOverride>) => void;
   resetHero: () => void;
   addSlide: (slide: HeroSlide) => void;
@@ -162,8 +174,13 @@ export const useSiteSettings = create<SiteSettingsState>()(
       bts: DEFAULT_BTS_SETTINGS,
       contact: DEFAULT_CONTACT,
       deliveryTerms: DEFAULT_DELIVERY_TERMS,
+      partners: [],
       setContact: (patch) => set((state) => ({ contact: { ...state.contact, ...patch } })),
       setDeliveryTerms: (terms) => set({ deliveryTerms: terms }),
+      addPartner: (p) => set((state) => ({ partners: [...state.partners, p] })),
+      updatePartner: (id, patch) =>
+        set((state) => ({ partners: state.partners.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
+      removePartner: (id) => set((state) => ({ partners: state.partners.filter((x) => x.id !== id) })),
       setBts: (patch) => set((state) => ({ bts: { ...state.bts, ...patch } })),
       setHero: (patch) =>
         set((state) => ({ hero: { ...state.hero, ...patch } })),
@@ -216,7 +233,7 @@ export const useSiteSettings = create<SiteSettingsState>()(
     }),
     {
       name: 'deftmoto-site-settings',
-      version: 4,
+      version: 5,
       // Persist to the server (global) instead of localStorage.
       storage: createServerPersist('site-settings'),
       // v0 persisted state had no seeded slides — backfill so existing
@@ -239,6 +256,8 @@ export const useSiteSettings = create<SiteSettingsState>()(
         if (!state.deliveryTerms || state.deliveryTerms.length === 0) {
           state.deliveryTerms = DEFAULT_DELIVERY_TERMS;
         }
+        // v5 introduces admin-managed partner brands.
+        if (!state.partners) state.partners = [];
         return state;
       },
     },
