@@ -773,6 +773,7 @@
     "navDelivery": "BTS delivery",
     "navLinks": "Marketing links",
     "navCustomers": "Customers",
+    "navSettings": "Site settings",
     "marketplacesSubtitle": "Manage the marketplace links shown in the navbar",
     "marketplacesSectionTitle": "Marketplaces ({count})",
     "addMarketplaceButton": "Marketplace",

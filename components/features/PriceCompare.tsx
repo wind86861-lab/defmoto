@@ -141,12 +141,13 @@ function CompetitorRow({
   price: number;
   locale: Locale;
 }) {
-  // Logo in a white tile (like a real store card) or a coloured brand tile.
+  // Logo on a clean white tile (with a hairline ring so light logos still read
+  // as a tile), or a coloured brand tile with the name when there's no logo.
   const logoTile = (
     <div
       className={cn(
-        'flex h-11 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl',
-        icon ? 'bg-white p-1.5' : 'px-1.5',
+        'flex h-12 w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-xl',
+        icon ? 'bg-white p-2 ring-1 ring-black/10' : 'px-2',
       )}
       style={icon ? undefined : { background: color }}
     >
@@ -165,13 +166,15 @@ function CompetitorRow({
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-bold text-white">{label}</p>
-        <p className="font-display text-sm font-bold text-white/45 line-through decoration-white/25 decoration-2">
-          {formatPrice(price, locale)}
+        <p className="mt-0.5 flex items-baseline gap-1.5">
+          <span className="font-display text-base font-bold text-white/45 line-through decoration-white/25 decoration-2">
+            {formatPrice(price, locale)}
+          </span>
         </p>
       </div>
 
       {url && (
-        <span className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-brand-yellow/40 bg-brand-yellow/10 px-3 py-2 text-xs font-bold text-brand-yellow transition-all group-hover/row:bg-brand-yellow group-hover/row:text-brand-dark group-hover/row:shadow-glow-sm">
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-brand-yellow/40 bg-brand-yellow/10 px-3.5 py-2 text-xs font-bold text-brand-yellow transition-all group-hover/row:bg-brand-yellow group-hover/row:text-brand-dark group-hover/row:shadow-glow-sm">
           {storeLabel}
           <ExternalLink className="h-3.5 w-3.5 transition-transform group-hover/row:translate-x-0.5" />
         </span>

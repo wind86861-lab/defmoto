@@ -17,8 +17,27 @@ import {
 import { Logo } from '@/components/ui/Logo';
 import { SocialDot, WhatsAppIcon, ViberIcon } from '@/components/ui/SocialIcons';
 import { FooterSmoke } from '@/components/ui/FooterSmoke';
-import { telegramHref, telegramLabel } from '@/lib/contactLinks';
-import { mockBranches } from '@/mocks/branches';
+import { useSiteSettings, DEFAULT_CONTACT } from '@/lib/stores/siteSettings';
+import { useMounted } from '@/hooks/useMounted';
+
+// Turn an admin-entered handle/number into a full URL for each platform.
+function socialHref(kind: 'telegram' | 'whatsapp' | 'instagram' | 'viber', v?: string): string | null {
+  const s = (v || '').trim();
+  if (!s) return null;
+  if (/^https?:\/\//i.test(s)) return s;
+  const handle = s.replace(/^@/, '');
+  const digits = s.replace(/\D/g, '');
+  switch (kind) {
+    case 'telegram':
+      return `https://t.me/${handle}`;
+    case 'instagram':
+      return `https://instagram.com/${handle}`;
+    case 'whatsapp':
+      return digits ? `https://wa.me/${digits}` : null;
+    case 'viber':
+      return digits ? `viber://chat?number=%2B${digits}` : s;
+  }
+}
 
 const catalogLinks = [
   'motorcycles',
@@ -40,9 +59,16 @@ const companyLinks = [
 export function Footer() {
   const t = useTranslations('footer');
   const tNav = useTranslations('nav');
-  const tContact = useTranslations('contact');
   const tHome = useTranslations('home');
-  const headOffice = mockBranches.find((b) => b.isHeadOffice) ?? mockBranches[0];
+  const mounted = useMounted();
+  const storedContact = useSiteSettings((s) => s.contact);
+  const contact = mounted && storedContact ? { ...DEFAULT_CONTACT, ...storedContact } : DEFAULT_CONTACT;
+  const socials = [
+    { kind: 'telegram' as const, color: '#229ED9', label: 'Telegram', href: socialHref('telegram', contact.telegram), icon: <Send className="h-4 w-4" fill="currentColor" /> },
+    { kind: 'whatsapp' as const, color: '#25D366', label: 'WhatsApp', href: socialHref('whatsapp', contact.whatsapp), icon: <WhatsAppIcon className="h-4 w-4" /> },
+    { kind: 'viber' as const, color: '#7360F2', label: 'Viber', href: socialHref('viber', contact.viber), icon: <ViberIcon className="h-4 w-4" /> },
+    { kind: 'instagram' as const, color: '#E1306C', label: 'Instagram', href: socialHref('instagram', contact.instagram), icon: <Instagram className="h-4 w-4" /> },
+  ].filter((s) => s.href);
 
   const trustItems = [
     { icon: Layers, label: tHome('benefitChoice') },
@@ -81,22 +107,17 @@ export function Footer() {
           <div className="sm:col-span-2 lg:col-span-2">
             <Logo size="md" />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/55">
-              {t('tagline')}
+              {contact.tagline || t('tagline')}
             </p>
-            <div className="mt-5 flex items-center gap-2.5">
-              <SocialDot color="#229ED9" href="https://t.me/" label="Telegram" className="h-9 w-9">
-                <Send className="h-4 w-4" fill="currentColor" />
-              </SocialDot>
-              <SocialDot color="#25D366" href="https://wa.me/" label="WhatsApp" className="h-9 w-9">
-                <WhatsAppIcon className="h-4 w-4" />
-              </SocialDot>
-              <SocialDot color="#7360F2" href="https://viber.com" label="Viber" className="h-9 w-9">
-                <ViberIcon className="h-4 w-4" />
-              </SocialDot>
-              <SocialDot color="#E1306C" href="https://instagram.com/" label="Instagram" className="h-9 w-9">
-                <Instagram className="h-4 w-4" />
-              </SocialDot>
-            </div>
+            {socials.length > 0 && (
+              <div className="mt-5 flex items-center gap-2.5">
+                {socials.map((s) => (
+                  <SocialDot key={s.kind} color={s.color} href={s.href!} label={s.label} className="h-9 w-9">
+                    {s.icon}
+                  </SocialDot>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Catalog */}
@@ -133,38 +154,26 @@ export function Footer() {
               {t('contactTitle')}
             </h4>
             <ul className="space-y-3 text-sm text-white/70">
-              <li className="flex items-start gap-2.5">
-                <Phone className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
-                <a
-                  href={`tel:${tContact('phone').replace(/\D/g, '')}`}
-                  className="hover:text-brand-yellow"
-                >
-                  {tContact('phone')}
-                </a>
-              </li>
-              {telegramHref(headOffice.telegram) && (
+              {contact.phone && (
                 <li className="flex items-start gap-2.5">
-                  <Send className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
-                  <a
-                    href={telegramHref(headOffice.telegram)!}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-brand-yellow"
-                  >
-                    {telegramLabel(headOffice.telegram)}
+                  <Phone className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
+                  <a href={`tel:${contact.phone.replace(/\s/g, '')}`} className="hover:text-brand-yellow">
+                    {contact.phone}
                   </a>
                 </li>
               )}
-              <li className="flex items-start gap-2.5">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
-                <span>
-                  {headOffice.address}, {headOffice.city}
-                </span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
-                <span>{headOffice.workingHours}</span>
-              </li>
+              {contact.address && (
+                <li className="flex items-start gap-2.5">
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
+                  <span>{contact.address}</span>
+                </li>
+              )}
+              {contact.workingHours && (
+                <li className="flex items-start gap-2.5">
+                  <Clock className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
+                  <span>{contact.workingHours}</span>
+                </li>
+              )}
             </ul>
           </div>
         </div>

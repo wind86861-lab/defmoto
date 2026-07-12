@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Star, ShoppingBag, Heart, Share2 } from 'lucide-react';
+import { Star, ShoppingBag, Heart } from 'lucide-react';
 import { PriceCompare } from '@/components/features/PriceCompare';
 import { MarketplaceDealBanner } from '@/components/features/MarketplaceDealBanner';
 import { Button } from '@/components/ui/Button';
@@ -96,21 +96,6 @@ export function ProductPageClient({ product, similar }: Props) {
     }
   };
 
-  const handleShare = async () => {
-    impact('light');
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: product.name,
-          text: `${product.name} — ${formatPrice(product.price)}`,
-          url: window.location.href,
-        });
-      } catch {
-        /* user cancelled */
-      }
-    }
-  };
-
   const discountPct =
     product.oldPrice && product.oldPrice > product.price
       ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
@@ -147,14 +132,6 @@ export function ProductPageClient({ product, similar }: Props) {
               </h1>
             </div>
             <div className="flex shrink-0 items-center gap-1">
-              <button
-                type="button"
-                onClick={handleShare}
-                aria-label={t('shareAria')}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-brand-surface-border bg-brand-surface text-white/85 transition-colors hover:border-brand-yellow/40 hover:text-brand-yellow touch-feedback"
-              >
-                <Share2 className="h-4 w-4" />
-              </button>
               <button
                 type="button"
                 onClick={handleToggleWishlist}

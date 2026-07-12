@@ -46,12 +46,34 @@ export interface BtsSettings {
   dispatch?: 'self' | 'courier';
 }
 
+// Footer / contact block — editable from the admin panel.
+export interface SiteContact {
+  tagline?: string;
+  phone?: string;
+  address?: string;
+  workingHours?: string;
+  telegram?: string;
+  whatsapp?: string;
+  instagram?: string;
+  viber?: string;
+}
+
+// One delivery-terms row (same for every product), shown on the product page.
+export interface DeliveryTerm {
+  title: string;
+  text: string;
+}
+
 interface SiteSettingsState {
   hero: HeroOverride;
   banner: PromoBanner | null;
   marketplaces: Marketplace[];
   bts: BtsSettings;
+  contact: SiteContact;
+  deliveryTerms: DeliveryTerm[];
   setBts: (patch: Partial<BtsSettings>) => void;
+  setContact: (patch: Partial<SiteContact>) => void;
+  setDeliveryTerms: (terms: DeliveryTerm[]) => void;
   setHero: (patch: Partial<HeroOverride>) => void;
   resetHero: () => void;
   addSlide: (slide: HeroSlide) => void;
@@ -113,6 +135,24 @@ export const DEFAULT_MARKETPLACES: Marketplace[] = [
 
 export const DEFAULT_BTS_SETTINGS: BtsSettings = { enabled: true, dispatch: 'self' };
 
+export const DEFAULT_CONTACT: SiteContact = {
+  tagline: "Premium moto-texnika va ehtiyot qismlar do'koni. Bozordan arzon narxlar, rasmiy kafolat, professional servis.",
+  phone: '+998 99 810-70-90',
+  address: "Yunusobod tumani, Amir Temur ko'chasi 12, Toshkent",
+  workingHours: 'Du-Sh: 09:00 — 20:00 · Yak: 10:00 — 18:00',
+  telegram: '',
+  whatsapp: '',
+  instagram: '',
+  viber: '',
+};
+
+export const DEFAULT_DELIVERY_TERMS: DeliveryTerm[] = [
+  { title: 'Toshkent ichida', text: '1-2 ish kuni • Bepul (300 000 dan)' },
+  { title: 'Viloyatlarga', text: '3-5 ish kuni • Pochta/kuryer' },
+  { title: 'Filialdan olib ketish', text: '3+ filial • Bepul' },
+  { title: 'Qaytarish', text: '14 kun ichida sababsiz' },
+];
+
 export const useSiteSettings = create<SiteSettingsState>()(
   persist(
     (set) => ({
@@ -120,6 +160,10 @@ export const useSiteSettings = create<SiteSettingsState>()(
       banner: null,
       marketplaces: DEFAULT_MARKETPLACES,
       bts: DEFAULT_BTS_SETTINGS,
+      contact: DEFAULT_CONTACT,
+      deliveryTerms: DEFAULT_DELIVERY_TERMS,
+      setContact: (patch) => set((state) => ({ contact: { ...state.contact, ...patch } })),
+      setDeliveryTerms: (terms) => set({ deliveryTerms: terms }),
       setBts: (patch) => set((state) => ({ bts: { ...state.bts, ...patch } })),
       setHero: (patch) =>
         set((state) => ({ hero: { ...state.hero, ...patch } })),
@@ -172,7 +216,7 @@ export const useSiteSettings = create<SiteSettingsState>()(
     }),
     {
       name: 'deftmoto-site-settings',
-      version: 3,
+      version: 4,
       // Persist to the server (global) instead of localStorage.
       storage: createServerPersist('site-settings'),
       // v0 persisted state had no seeded slides — backfill so existing
@@ -189,6 +233,11 @@ export const useSiteSettings = create<SiteSettingsState>()(
         // v3 introduces BTS sender settings.
         if (!state.bts) {
           state.bts = DEFAULT_BTS_SETTINGS;
+        }
+        // v4 introduces footer/contact + delivery terms.
+        if (!state.contact) state.contact = DEFAULT_CONTACT;
+        if (!state.deliveryTerms || state.deliveryTerms.length === 0) {
+          state.deliveryTerms = DEFAULT_DELIVERY_TERMS;
         }
         return state;
       },

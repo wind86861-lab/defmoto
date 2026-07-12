@@ -6,6 +6,10 @@ import { ProductReviews } from './ProductReviews';
 import type { Product } from '@/types/product';
 import type { useProductReviews } from '@/hooks/useProductReviews';
 import { Truck, Package, RotateCcw, MapPin } from 'lucide-react';
+import { useSiteSettings, DEFAULT_DELIVERY_TERMS } from '@/lib/stores/siteSettings';
+import { useMounted } from '@/hooks/useMounted';
+
+const DELIVERY_ICONS = [Truck, MapPin, Package, RotateCcw];
 
 export function ProductInfo({
   product,
@@ -17,6 +21,9 @@ export function ProductInfo({
   const t = useTranslations('product');
   const tCategories = useTranslations('categories');
   const summary = reviews.data.summary;
+  const mounted = useMounted();
+  const storedTerms = useSiteSettings((s) => s.deliveryTerms);
+  const deliveryTerms = mounted && storedTerms?.length ? storedTerms : DEFAULT_DELIVERY_TERMS;
 
   const items: TabItem[] = [
     {
@@ -56,25 +63,23 @@ export function ProductInfo({
       label: t('tabDelivery'),
       content: (
         <div className="space-y-3">
-          {[
-            { icon: Truck, title: t('deliveryTashkentTitle'), text: t('deliveryTashkentText') },
-            { icon: MapPin, title: t('deliveryRegionsTitle'), text: t('deliveryRegionsText') },
-            { icon: Package, title: t('deliveryPickupTitle'), text: t('deliveryPickupText') },
-            { icon: RotateCcw, title: t('deliveryReturnTitle'), text: t('deliveryReturnText') },
-          ].map((d) => (
-            <div
-              key={d.title}
-              className="flex items-start gap-3 rounded-xl border border-brand-surface-border bg-brand-surface p-4"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-yellow/10 text-brand-yellow">
-                <d.icon className="h-5 w-5" />
+          {deliveryTerms.map((d, i) => {
+            const Icon = DELIVERY_ICONS[i % DELIVERY_ICONS.length];
+            return (
+              <div
+                key={i}
+                className="flex items-start gap-3 rounded-xl border border-brand-surface-border bg-brand-surface p-4"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-yellow/10 text-brand-yellow">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold">{d.title}</h4>
+                  <p className="mt-0.5 text-xs text-white/55">{d.text}</p>
+                </div>
               </div>
-              <div>
-                <h4 className="text-sm font-bold">{d.title}</h4>
-                <p className="mt-0.5 text-xs text-white/55">{d.text}</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ),
     },
