@@ -4,6 +4,7 @@ export interface Branch {
   name: string;
   legalName?: string;
   director?: string;
+  region?: string; // viloyat — for the region filter
   address: string;
   city: string;
   phone: string;
@@ -24,6 +25,7 @@ export interface ServiceCenter {
   name: string;
   shortName?: string;
   about?: string;
+  region?: string; // viloyat — for the region filter
   address: string;
   phone: string;
   secondaryPhone?: string;
@@ -41,6 +43,20 @@ export interface ServiceItem {
   description?: string;
   priceFrom?: number;
   duration?: string;
+}
+
+// A franchise location, shown like a branch (with a region filter).
+export interface FranchiseLocation {
+  id: string;
+  name: string;
+  region?: string; // viloyat
+  city?: string;
+  address?: string;
+  phone?: string;
+  telegram?: string;
+  workingHours?: string;
+  mapUrl?: string;
+  image?: string;
 }
 
 export type BlogCategory = 'news' | 'tips' | 'reviews' | 'promotion';

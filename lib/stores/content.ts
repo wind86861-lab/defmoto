@@ -5,7 +5,7 @@ import { mockBranches } from '@/mocks/branches';
 import { mockServiceCenters } from '@/mocks/services';
 import { mockProducts } from '@/mocks/products';
 import { mockCategories } from '@/mocks/categories';
-import type { Branch, ServiceCenter, ServiceItem } from '@/types/content';
+import type { Branch, ServiceCenter, ServiceItem, FranchiseLocation } from '@/types/content';
 import type { Product, Category } from '@/types/product';
 
 /**
@@ -32,6 +32,7 @@ interface ContentState {
   branches: Branch[];
   serviceCenters: ServiceCenter[];
   franchise: FranchiseOverride;
+  franchises: FranchiseLocation[];
   products: Product[];
   categories: Category[];
 
@@ -55,6 +56,12 @@ interface ContentState {
   // Franchise
   setFranchise: (patch: Partial<FranchiseOverride>) => void;
   resetFranchise: () => void;
+
+  // Franchise locations (branch-like list)
+  addFranchise: (f: FranchiseLocation) => void;
+  updateFranchise: (id: string, patch: Partial<FranchiseLocation>) => void;
+  removeFranchise: (id: string) => void;
+  reorderFranchise: (id: string, dir: -1 | 1) => void;
 
   // Products
   addProduct: (p: Product) => void;
@@ -86,6 +93,7 @@ export const useContentStore = create<ContentState>()(
       branches: mockBranches,
       serviceCenters: mockServiceCenters,
       franchise: {},
+      franchises: [],
       products: mockProducts,
       categories: mockCategories,
 
@@ -144,6 +152,12 @@ export const useContentStore = create<ContentState>()(
         set((s) => ({ franchise: { ...s.franchise, ...patch } })),
       resetFranchise: () => set({ franchise: {} }),
 
+      addFranchise: (f) => set((s) => ({ franchises: [...s.franchises, f] })),
+      updateFranchise: (id, patch) =>
+        set((s) => ({ franchises: s.franchises.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
+      removeFranchise: (id) => set((s) => ({ franchises: s.franchises.filter((x) => x.id !== id) })),
+      reorderFranchise: (id, dir) => set((s) => ({ franchises: move(s.franchises, id, dir) })),
+
       addProduct: (p) => set((s) => ({ products: [p, ...s.products] })),
       updateProduct: (id, patch) =>
         set((s) => ({
@@ -165,14 +179,16 @@ export const useContentStore = create<ContentState>()(
     }),
     {
       name: 'deftmoto-content',
-      version: 2,
+      version: 3,
       // Persist to the server (global) instead of localStorage.
       storage: createServerPersist('content-store'),
       // v2 adds products + categories — seed them for older persisted state.
+      // v3 adds franchise locations.
       migrate: (persisted) => {
         const s = persisted as ContentState;
         if (!s.products || s.products.length === 0) s.products = mockProducts;
         if (!s.categories || s.categories.length === 0) s.categories = mockCategories;
+        if (!s.franchises) s.franchises = [];
         return s;
       },
     },

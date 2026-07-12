@@ -305,11 +305,14 @@ function ServiceCard({ center, index, total }: { center: ServiceCenter; index: n
 
 function FranchiseTab() {
   const t = useTranslations('admin');
-  const { notify } = useHaptic();
+  const { notify, impact } = useHaptic();
   const toast = useToast();
   const mounted = useMounted();
   const fr = useContentStore((s) => s.franchise);
   const setFr = useContentStore((s) => s.setFranchise);
+  const franchises = useContentStore((s) => s.franchises);
+  const addF = useContentStore((s) => s.addFranchise);
+  const list = mounted ? franchises : [];
 
   const [draft, setDraft] = useState(fr);
   const [dirty, setDirty] = useState(false);
@@ -319,27 +322,72 @@ function FranchiseTab() {
   const v = mounted ? draft : {};
 
   return (
-    <section className="space-y-3">
+    <section className="space-y-4">
+      {/* Section heading text */}
       <article className="rounded-2xl border border-brand-surface-border bg-brand-surface p-4">
         <div className="grid gap-2.5 sm:grid-cols-2">
           <F label={t('frTitleLabel')} full><Input value={v.title ?? ''} onChange={(e) => set({ title: e.target.value })} /></F>
           <F label={t('frDescLabel')} full>
             <textarea value={v.description ?? ''} onChange={(e) => set({ description: e.target.value })} rows={2} className="w-full rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-2.5 text-base text-white outline-none focus:border-brand-yellow/60" />
           </F>
-          <F label={t('fldCity')}><Input value={v.city ?? ''} onChange={(e) => set({ city: e.target.value })} /></F>
-          <F label={t('fldAddress')}><Input value={v.address ?? ''} onChange={(e) => set({ address: e.target.value })} /></F>
-          <F label={t('fldPhone')}><Input value={v.phone ?? ''} onChange={(e) => set({ phone: e.target.value })} /></F>
-          <F label={t('fldTelegram')}><Input value={v.telegram ?? ''} placeholder="@username" onChange={(e) => set({ telegram: e.target.value })} /></F>
-          <F label={t('fldHours')}><Input value={v.workingHours ?? ''} onChange={(e) => set({ workingHours: e.target.value })} /></F>
-          <F label={t('fldMapUrl')}><Input value={v.mapUrl ?? ''} placeholder="https://maps.google.com/..." onChange={(e) => set({ mapUrl: e.target.value })} /></F>
-          <ImageUpload value={v.image} onChange={(url) => set({ image: url })} label={t('fldImage')} />
         </div>
-        <div className="mt-3 flex items-center justify-between gap-2">
-          <p className="text-[11px] text-white/45">{t('frOverrideHint')}</p>
+        <div className="mt-3 flex justify-end">
           <SaveBtn dirty={dirty} onClick={save} label={t('itemSaveBtn')} hint={t('unsavedHint')} />
         </div>
       </article>
+
+      {/* Franchise locations list */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-white/45">{t('frLocationsCount', { count: list.length })}</h2>
+        <button
+          type="button"
+          onClick={() => { impact('light'); addF({ id: `fr_${Date.now()}`, name: '' }); }}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-yellow px-3 py-1.5 text-xs font-bold text-brand-dark shadow-glow-sm transition-all hover:brightness-110"
+        >
+          <Plus className="h-3.5 w-3.5" /> {t('frAddLocation')}
+        </button>
+      </div>
+      {list.map((f, i) => (
+        <FranchiseLocCard key={f.id} f={f} index={i} total={list.length} />
+      ))}
     </section>
+  );
+}
+
+function FranchiseLocCard({ f, index, total }: { f: import('@/types/content').FranchiseLocation; index: number; total: number }) {
+  const t = useTranslations('admin');
+  const { notify } = useHaptic();
+  const toast = useToast();
+  const update = useContentStore((s) => s.updateFranchise);
+  const remove = useContentStore((s) => s.removeFranchise);
+  const reorder = useContentStore((s) => s.reorderFranchise);
+  const [draft, setDraft] = useState(f);
+  const [dirty, setDirty] = useState(false);
+  useEffect(() => { setDraft(f); setDirty(false); }, [f]);
+  const set = (patch: Partial<typeof f>) => { setDraft((d) => ({ ...d, ...patch })); setDirty(true); };
+  const save = () => { update(f.id, draft); setDirty(false); notify('success'); toast.success(t('itemSavedToast')); };
+
+  return (
+    <article className="rounded-2xl border border-brand-surface-border bg-brand-surface p-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <span className="truncate font-display text-sm font-extrabold">{draft.name || t('fldName')}</span>
+        <RowActions index={index} total={total} onUp={() => reorder(f.id, -1)} onDown={() => reorder(f.id, 1)} onRemove={() => { if (confirm(t('locDeleteConfirm'))) remove(f.id); }} />
+      </div>
+      <div className="grid gap-2.5 sm:grid-cols-2">
+        <F label={t('fldName')}><Input value={draft.name} onChange={(e) => set({ name: e.target.value })} /></F>
+        <F label={t('fldRegion')}><Input value={draft.region ?? ''} placeholder="Toshkent viloyati" onChange={(e) => set({ region: e.target.value })} /></F>
+        <F label={t('fldCity')}><Input value={draft.city ?? ''} onChange={(e) => set({ city: e.target.value })} /></F>
+        <F label={t('fldAddress')}><Input value={draft.address ?? ''} onChange={(e) => set({ address: e.target.value })} /></F>
+        <F label={t('fldPhone')}><Input value={draft.phone ?? ''} onChange={(e) => set({ phone: e.target.value })} /></F>
+        <F label={t('fldTelegram')}><Input value={draft.telegram ?? ''} placeholder="@username" onChange={(e) => set({ telegram: e.target.value })} /></F>
+        <F label={t('fldHours')}><Input value={draft.workingHours ?? ''} onChange={(e) => set({ workingHours: e.target.value })} /></F>
+        <F label={t('fldMapUrl')}><Input value={draft.mapUrl ?? ''} placeholder="https://maps.google.com/..." onChange={(e) => set({ mapUrl: e.target.value })} /></F>
+        <ImageUpload value={draft.image} onChange={(url) => set({ image: url })} label={t('fldImage')} />
+      </div>
+      <div className="mt-3 flex justify-end">
+        <SaveBtn dirty={dirty} onClick={save} label={t('itemSaveBtn')} hint={t('unsavedHint')} />
+      </div>
+    </article>
   );
 }
 

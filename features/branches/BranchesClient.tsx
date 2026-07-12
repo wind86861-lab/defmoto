@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   MapPin,
@@ -31,7 +31,7 @@ import { useToast } from '@/components/ui/Toaster';
 import { useContentStore } from '@/lib/stores/content';
 import { mapsHref, telegramHref, telegramLabel } from '@/lib/contactLinks';
 import { mockBranches } from '@/mocks/branches';
-import type { Branch } from '@/types/content';
+import type { Branch, FranchiseLocation } from '@/types/content';
 
 export function BranchesClient() {
   const t = useTranslations('branches');
@@ -450,46 +450,18 @@ function FrContact({
 
 function FranchiseSection() {
   const t = useTranslations('branches');
-  const { notify } = useHaptic();
-  const toast = useToast();
   const mounted = useMounted();
   const fr = useContentStore((s) => s.franchise);
+  const list = useContentStore((s) => s.franchises);
+  const franchises = mounted ? list : [];
   const ov = mounted ? fr : {};
-  const [open, setOpen] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [form, setForm] = useState({
-    name: '',
-    phone: '',
-    city: '',
-    budget: '',
-    message: '',
-  });
+  const [region, setRegion] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    notify('success');
-    setSubmitted(true);
-    void fetch('/api/lead', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'franchise',
-        name: form.name,
-        phone: form.phone,
-        city: form.city,
-        budget: form.budget,
-        message: form.message,
-      }),
-    }).catch(() => {});
-    toast.success(t('franchiseSuccessTitle'), t('franchiseSuccessDesc'));
-    setTimeout(() => {
-      setSubmitted(false);
-      setForm({ name: '', phone: '', city: '', budget: '', message: '' });
-    }, 5000);
-  };
-
-  const canSubmit =
-    form.name.length >= 2 && form.phone.length >= 9 && form.city.length >= 2;
+  const regions = useMemo(
+    () => Array.from(new Set(franchises.map((f) => f.region).filter(Boolean))) as string[],
+    [franchises],
+  );
+  const filtered = region ? franchises.filter((f) => f.region === region) : franchises;
 
   const benefits = [
     { icon: Briefcase, title: t('franchiseBenefit1Title'), desc: t('franchiseBenefit1Desc') },
@@ -498,13 +470,8 @@ function FranchiseSection() {
     { icon: Truck, title: t('franchiseBenefit4Title'), desc: t('franchiseBenefit4Desc') },
   ];
 
-  const frMap = mapsHref(ov);
-  const frTg = telegramHref(ov.telegram);
-  const frLocation = [ov.city, ov.address].filter(Boolean).join(', ');
-  const hasContact = Boolean(frLocation || ov.phone || frTg || ov.workingHours || frMap);
-
   return (
-    <section>
+    <section className="space-y-8">
       <div className="relative overflow-hidden rounded-3xl bg-gradient-yellow p-6 sm:p-10">
         <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-10 -left-10 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
@@ -523,24 +490,6 @@ function FranchiseSection() {
               {ov.description || t('franchiseDesc')}
             </p>
           </div>
-
-          {/* Location + contact — like a branch */}
-          {hasContact && (
-            <div className="mt-6 grid gap-2.5 sm:mt-8 sm:max-w-2xl sm:grid-cols-2">
-              {frLocation && (
-                <FrContact icon={MapPin} label={t('address')} value={frLocation} href={frMap ?? undefined} />
-              )}
-              {ov.workingHours && (
-                <FrContact icon={Clock} label={t('workingHours')} value={ov.workingHours} />
-              )}
-              {ov.phone && (
-                <FrContact icon={Phone} label="Tel" value={ov.phone} href={`tel:${ov.phone.replace(/\s/g, '')}`} />
-              )}
-              {frTg && (
-                <FrContact icon={Send} label="Telegram" value={telegramLabel(ov.telegram)} href={frTg} />
-              )}
-            </div>
-          )}
 
           {/* Benefits */}
           <div className="mt-8">
@@ -570,72 +519,109 @@ function FranchiseSection() {
             </div>
           </div>
 
-          {/* CTA + form */}
-          {!open ? (
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              className="mt-8 inline-flex h-12 items-center gap-2 rounded-xl bg-brand-dark px-6 font-bold text-white shadow-card transition-all hover:bg-black hover:shadow-card-hover active:scale-[0.98]"
-            >
-              {t('franchiseSubmit')}
-              <ChevronDown className="h-4 w-4" />
-            </button>
-          ) : (
-            <form
-              onSubmit={handleSubmit}
-              className="mt-8 grid gap-3 rounded-2xl bg-brand-dark/90 p-4 backdrop-blur-md animate-slide-up sm:grid-cols-2 sm:p-5"
-            >
-              <h3 className="font-display text-lg font-extrabold text-white sm:col-span-2">
-                {t('franchiseFormTitle')}
-              </h3>
-              <Input
-                placeholder={t('franchiseName')}
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                disabled={submitted}
-              />
-              <Input
-                type="tel"
-                placeholder={t('franchisePhone')}
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                disabled={submitted}
-              />
-              <Input
-                placeholder={t('franchiseCity')}
-                value={form.city}
-                onChange={(e) => setForm({ ...form, city: e.target.value })}
-                disabled={submitted}
-              />
-              <Input
-                placeholder={t('franchiseBudget')}
-                value={form.budget}
-                onChange={(e) => setForm({ ...form, budget: e.target.value })}
-                disabled={submitted}
-              />
-              <textarea
-                rows={3}
-                placeholder={t('franchiseMessage')}
-                value={form.message}
-                onChange={(e) => setForm({ ...form, message: e.target.value })}
-                disabled={submitted}
-                className="rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-3 text-base text-white outline-none placeholder:text-white/35 transition-colors focus:border-brand-yellow/60 focus:shadow-glow-sm sm:col-span-2"
-              />
-              <Button
-                type="submit"
-                size="lg"
-                glow
-                fullWidth
-                leftIcon={<Send className="h-4 w-4" />}
-                disabled={!canSubmit || submitted}
-                className="sm:col-span-2"
-              >
-                {submitted ? `✓ ${t('sentLabel')}` : t('franchiseSubmit')}
-              </Button>
-            </form>
-          )}
         </div>
       </div>
+
+      {/* Region filter + franchise locations (branch-like) */}
+      {franchises.length > 0 ? (
+        <div className="space-y-4">
+          {regions.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              <RegionChip label={t('allRegions')} active={!region} onClick={() => setRegion('')} />
+              {regions.map((r) => (
+                <RegionChip key={r} label={r} active={region === r} onClick={() => setRegion(r)} />
+              ))}
+            </div>
+          )}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((f) => (
+              <FranchiseCard key={f.id} f={f} />
+            ))}
+          </div>
+          {filtered.length === 0 && (
+            <p className="rounded-2xl border border-dashed border-brand-surface-border py-10 text-center text-sm text-white/50">
+              {t('franchiseNoneInRegion')}
+            </p>
+          )}
+        </div>
+      ) : (
+        <p className="rounded-2xl border border-dashed border-brand-surface-border py-10 text-center text-sm text-white/50">
+          {t('franchiseNone')}
+        </p>
+      )}
     </section>
+  );
+}
+
+function RegionChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'rounded-full border px-3.5 py-1.5 text-sm font-bold transition-colors',
+        active
+          ? 'border-brand-yellow bg-brand-yellow/10 text-brand-yellow shadow-glow-sm'
+          : 'border-brand-surface-border bg-brand-surface text-white/70 hover:border-brand-yellow/40 hover:text-brand-yellow',
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+function FranchiseCard({ f }: { f: FranchiseLocation }) {
+  const location = [f.city, f.address].filter(Boolean).join(', ');
+  const map =
+    f.mapUrl || (location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}` : null);
+  const tg = telegramHref(f.telegram);
+  return (
+    <div className="overflow-hidden rounded-2xl border border-brand-surface-border bg-brand-surface">
+      {f.image && (
+        <div className="relative h-36 w-full overflow-hidden bg-brand-dark">
+          <ProductImage src={f.image} alt={f.name} className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
+        </div>
+      )}
+      <div className="space-y-2.5 p-4">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="font-display text-base font-extrabold leading-tight">{f.name}</h3>
+          {f.region && (
+            <span className="shrink-0 rounded-md bg-brand-yellow/15 px-2 py-0.5 text-[10px] font-bold text-brand-yellow">
+              {f.region}
+            </span>
+          )}
+        </div>
+        <ul className="space-y-2 text-sm text-white/70">
+          {location && (
+            <li className="flex items-start gap-2">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
+              {map ? (
+                <a href={map} target="_blank" rel="noopener noreferrer" className="hover:text-brand-yellow">{location}</a>
+              ) : (
+                <span>{location}</span>
+              )}
+            </li>
+          )}
+          {f.phone && (
+            <li className="flex items-start gap-2">
+              <Phone className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
+              <a href={`tel:${f.phone.replace(/\s/g, '')}`} className="hover:text-brand-yellow">{f.phone}</a>
+            </li>
+          )}
+          {tg && (
+            <li className="flex items-start gap-2">
+              <Send className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
+              <a href={tg} target="_blank" rel="noopener noreferrer" className="hover:text-brand-yellow">{telegramLabel(f.telegram)}</a>
+            </li>
+          )}
+          {f.workingHours && (
+            <li className="flex items-start gap-2">
+              <Clock className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
+              <span>{f.workingHours}</span>
+            </li>
+          )}
+        </ul>
+      </div>
+    </div>
   );
 }
