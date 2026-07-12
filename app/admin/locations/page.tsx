@@ -174,6 +174,7 @@ function BranchCard({ branch, index, total }: { branch: Branch; index: number; t
         <F label={t('fldNumber')}><Input type="number" value={String(draft.number)} onChange={(e) => set({ number: Number(e.target.value) || 0 })} /></F>
         <F label={t('fldLegalName')}><Input value={draft.legalName ?? ''} onChange={(e) => set({ legalName: e.target.value })} /></F>
         <F label={t('fldDirector')}><Input value={draft.director ?? ''} onChange={(e) => set({ director: e.target.value })} /></F>
+        <F label={t('fldRegion')}><Input value={draft.region ?? ''} placeholder="Toshkent viloyati" onChange={(e) => set({ region: e.target.value })} /></F>
         <F label={t('fldCity')}><Input value={draft.city} onChange={(e) => set({ city: e.target.value })} /></F>
         <F label={t('fldAddress')}><Input value={draft.address} onChange={(e) => set({ address: e.target.value })} /></F>
         <F label={t('fldPhone')}><Input value={draft.phone} onChange={(e) => set({ phone: e.target.value })} /></F>
@@ -254,6 +255,7 @@ function ServiceCard({ center, index, total }: { center: ServiceCenter; index: n
       </div>
       <div className="grid gap-2.5 sm:grid-cols-2">
         <F label={t('fldName')}><Input value={draft.name} onChange={(e) => set({ name: e.target.value })} /></F>
+        <F label={t('fldRegion')}><Input value={draft.region ?? ''} placeholder="Toshkent viloyati" onChange={(e) => set({ region: e.target.value })} /></F>
         <F label={t('fldShortName')}><Input value={draft.shortName ?? ''} onChange={(e) => set({ shortName: e.target.value })} /></F>
         <F label={t('fldAddress')}><Input value={draft.address} onChange={(e) => set({ address: e.target.value })} /></F>
         <F label={t('fldHours')}><Input value={draft.workingHours} onChange={(e) => set({ workingHours: e.target.value })} /></F>

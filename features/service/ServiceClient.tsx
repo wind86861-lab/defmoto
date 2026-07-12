@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Wrench,
@@ -35,8 +35,21 @@ export function ServiceClient() {
   const storeCenters = useContentStore((s) => s.serviceCenters);
   const centers = mounted && storeCenters.length > 0 ? storeCenters : mockServiceCenters;
   const [activeId, setActiveId] = useState(mockServiceCenters[0].id);
+  const [region, setRegion] = useState('');
+
+  const regions = useMemo(
+    () => Array.from(new Set(centers.map((c) => c.region).filter(Boolean))) as string[],
+    [centers],
+  );
+  const filtered = region ? centers.filter((c) => c.region === region) : centers;
   const active =
-    centers.find((s) => s.id === activeId) ?? centers[0] ?? mockServiceCenters[0];
+    filtered.find((s) => s.id === activeId) ?? filtered[0] ?? centers[0] ?? mockServiceCenters[0];
+
+  const pickRegion = (r: string) => {
+    setRegion(r);
+    const first = (r ? centers.filter((c) => c.region === r) : centers)[0];
+    if (first) setActiveId(first.id);
+  };
 
   return (
     <div className="mx-auto max-w-[1320px] px-4 pb-16 pt-6 sm:px-6 sm:py-10 lg:px-8">
@@ -45,19 +58,46 @@ export function ServiceClient() {
           {t('title')}
         </h1>
         <p className="mt-2 text-sm text-white/55 sm:text-base">
-          <span className="font-bold text-white">{centers.length}</span>{' '}
+          <span className="font-bold text-white">{filtered.length}</span>{' '}
           {t('centers')} · {t('subtitle')}
         </p>
       </header>
 
+      {/* === Region filter === */}
+      {regions.length > 0 && (
+        <div className="mb-5 flex flex-wrap justify-center gap-2">
+          <SvcRegionChip label={t('allRegions')} active={!region} onClick={() => pickRegion('')} />
+          {regions.map((r) => (
+            <SvcRegionChip key={r} label={r} active={region === r} onClick={() => pickRegion(r)} />
+          ))}
+        </div>
+      )}
+
       {/* === Center selector === */}
-      <CenterSelector centers={centers} activeId={activeId} onChange={setActiveId} />
+      <CenterSelector centers={filtered} activeId={active.id} onChange={setActiveId} />
 
       {/* === Center detail === */}
       <Reveal direction="left">
         <CenterDetail center={active} />
       </Reveal>
     </div>
+  );
+}
+
+function SvcRegionChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'rounded-full border px-3.5 py-1.5 text-sm font-bold transition-colors',
+        active
+          ? 'border-brand-yellow bg-brand-yellow/10 text-brand-yellow shadow-glow-sm'
+          : 'border-brand-surface-border bg-brand-surface text-white/70 hover:border-brand-yellow/40 hover:text-brand-yellow',
+      )}
+    >
+      {label}
+    </button>
   );
 }
 

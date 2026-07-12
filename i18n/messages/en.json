@@ -196,6 +196,7 @@
     "title": "Service centres",
     "subtitle": "Professional repair and maintenance",
     "centers": "service centres",
+    "allRegions": "All",
     "address": "Address",
     "workingHours": "Working hours",
     "servicesList": "Services",
