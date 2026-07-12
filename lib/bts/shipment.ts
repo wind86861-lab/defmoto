@@ -55,7 +55,14 @@ export async function createShipmentForOrder(
   // Cash-on-delivery when not already paid online.
   const cod = paymentMethod === 'cash' || paymentMethod === 'bts';
   const piece = items.reduce((s, i) => s + (Number(i.quantity) || 1), 0) || 1;
-  const weight = ov.weight || Number(process.env.BTS_DEFAULT_WEIGHT || 1);
+  // Real shipment weight from the item kg × qty (fallback 1kg/item), so BTS
+  // prices by the actual weight instead of a flat default.
+  const fallbackKg = Number(process.env.BTS_DEFAULT_WEIGHT || 1);
+  const itemsWeight = items.reduce(
+    (s, i) => s + (Number(i.weight) > 0 ? Number(i.weight) : fallbackKg) * (Number(i.quantity) || 1),
+    0,
+  );
+  const weight = ov.weight || Math.max(0.1, Math.round(itemsWeight * 1000) / 1000) || fallbackKg;
 
   const input: BtsCreateOrderInput = {
     clientId: order.id,

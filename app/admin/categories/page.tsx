@@ -98,6 +98,7 @@ function CategoryRow({ category, index, total }: { category: Category; index: nu
   const update = useContentStore((s) => s.updateCategory);
   const remove = useContentStore((s) => s.removeCategory);
   const reorder = useContentStore((s) => s.reorderCategory);
+  const products = useContentStore((s) => s.products);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [draft, setDraft] = useState<Category>(category);
@@ -111,9 +112,13 @@ function CategoryRow({ category, index, total }: { category: Category; index: nu
     setDirty(true);
   };
 
+  // Product count is derived from the catalogue, never entered by hand.
+  const liveCount = products.filter((p) => p.categorySlug === draft.slug).length;
+
   const save = () => {
     const next = { ...draft };
     if (!next.slug || next.slug.startsWith('cat-')) next.slug = slugify(next.name);
+    next.productCount = products.filter((p) => p.categorySlug === next.slug).length;
     update(category.id, next);
     setDirty(false);
     notify('success');
@@ -161,14 +166,10 @@ function CategoryRow({ category, index, total }: { category: Category; index: nu
         <CF label={t('fldCatName')}>
           <Input value={draft.name} onChange={(e) => set({ name: e.target.value })} />
         </CF>
-        <CF label={t('fldCatSlug')}>
-          <Input value={draft.slug} onChange={(e) => set({ slug: e.target.value })} />
-        </CF>
         <CF label={t('fldCatCount')}>
-          <Input
-            value={draft.productCount != null ? String(draft.productCount) : ''}
-            onChange={(e) => set({ productCount: e.target.value ? Number(e.target.value.replace(/\D/g, '')) : undefined })}
-          />
+          <div className="flex h-12 items-center rounded-xl border border-brand-surface-border bg-brand-surface/50 px-3.5 text-sm font-semibold text-white/70">
+            {liveCount} <span className="ml-1 text-white/40">({t('fldCatCountAuto')})</span>
+          </div>
         </CF>
         <CF label={t('fldCatImage')} full>
           <div className="flex items-center gap-3">

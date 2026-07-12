@@ -7,6 +7,7 @@ export interface CartItem {
   image: string;
   price: number;
   oldPrice?: number;
+  weight?: number; // kg — for BTS delivery weight
   quantity: number;
   variant?: { color?: string; size?: string };
 }

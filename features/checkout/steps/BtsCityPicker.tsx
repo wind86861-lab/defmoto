@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useCheckoutState } from '../useCheckoutState';
 import { useSiteSettings } from '@/lib/stores/siteSettings';
+import { useCartStore } from '@/lib/stores/cart';
+import { cartWeightKg } from '@/lib/cartWeight';
 
 interface DirItem {
   code: string;
@@ -30,6 +32,7 @@ export function BtsCityPicker() {
   const t = useTranslations('checkout');
   const { delivery, setDelivery, setAddress } = useCheckoutState();
   const dispatch = useSiteSettings((s) => s.bts?.dispatch);
+  const weight = useCartStore((s) => cartWeightKg(s.items));
   const [regions, setRegions] = useState<DirItem[]>([]);
   const [cities, setCities] = useState<DirItem[]>([]);
   const [busy, setBusy] = useState(false);
@@ -77,7 +80,7 @@ export function BtsCityPicker() {
       const r = await fetch('/api/delivery/bts/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ receiverCityCode: code, dropoff_type: 'courier' }),
+        body: JSON.stringify({ receiverCityCode: code, dropoff_type: 'courier', weight }),
       });
       const j = await r.json();
       const cell = dispatch === 'courier' ? j?.data?.courier_to_courier : j?.data?.branch_to_courier;

@@ -51,6 +51,7 @@ export function ProductCard({ product, variant = 'grid', className }: ProductCar
         image: product.images[0],
         price: product.price,
         oldPrice: product.oldPrice,
+        weight: product.weight,
       });
       toast.cart(tProduct('addedToCartTitle'), product.name, {
         label: tProduct('goToCartAction'),

@@ -319,10 +319,21 @@ function ProductModal({
               ))}
             </select>
           </PF>
-          <PF label={t('fldProdPrice')} full>
+          <PF label={t('fldProdPrice')}>
             <Input
               value={String(draft.price)}
               onChange={(e) => set({ price: Number(e.target.value.replace(/\D/g, '')) || 0 })}
+            />
+          </PF>
+          <PF label={t('fldProdWeight')}>
+            <Input
+              value={draft.weight != null ? String(draft.weight) : ''}
+              placeholder="0.5"
+              inputMode="decimal"
+              onChange={(e) => {
+                const v = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '');
+                set({ weight: v === '' ? undefined : Number(v) });
+              }}
             />
           </PF>
 

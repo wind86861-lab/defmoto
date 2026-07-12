@@ -26,6 +26,7 @@ export interface Product {
   description?: string;
   images: string[];
   video?: string; // uploaded /uploads/*.mp4 or a video/YouTube URL
+  weight?: number; // kg — used for BTS delivery price
   price: number;
   oldPrice?: number;
   currency: Currency;

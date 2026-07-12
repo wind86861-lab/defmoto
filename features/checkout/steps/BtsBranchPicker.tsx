@@ -6,6 +6,8 @@ import { Navigation, Loader2, MapPin } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useCheckoutState } from '../useCheckoutState';
 import { useSiteSettings } from '@/lib/stores/siteSettings';
+import { useCartStore } from '@/lib/stores/cart';
+import { cartWeightKg } from '@/lib/cartWeight';
 
 interface DirItem {
   code: string;
@@ -51,6 +53,7 @@ export function BtsBranchPicker({ me }: { me: { lat: number; lng: number } | nul
   const t = useTranslations('checkout');
   const { delivery, setDelivery } = useCheckoutState();
   const dispatch = useSiteSettings((s) => s.bts?.dispatch);
+  const weight = useCartStore((s) => cartWeightKg(s.items));
   const [regions, setRegions] = useState<DirItem[]>([]);
   const [cities, setCities] = useState<DirItem[]>([]);
   const [branches, setBranches] = useState<DirItem[]>([]);
@@ -127,7 +130,7 @@ export function BtsBranchPicker({ me }: { me: { lat: number; lng: number } | nul
       const r = await fetch('/api/delivery/bts/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ receiverCityCode: delivery.btsCityCode, dropoff_type: 'branch' }),
+        body: JSON.stringify({ receiverCityCode: delivery.btsCityCode, dropoff_type: 'branch', weight }),
       });
       const j = await r.json();
       // Match the shop's dispatch mode: courier pickup → courier_to_branch,

@@ -60,6 +60,7 @@ export function ProductPageClient({ product, similar }: Props) {
         image: product.images[0],
         price: product.price,
         oldPrice: product.oldPrice,
+        weight: product.weight,
         variant: undefined,
       },
       qty,
