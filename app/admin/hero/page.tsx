@@ -8,14 +8,12 @@ import {
   Trash2,
   ArrowUp,
   ArrowDown,
-  RotateCcw,
   ExternalLink,
   Check,
   ImageOff,
   Link2,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useSiteSettings, type HeroSlide } from '@/lib/stores/siteSettings';
 import { useMounted } from '@/hooks/useMounted';
@@ -28,7 +26,6 @@ export default function AdminHeroPage() {
   const { notify, impact } = useHaptic();
   const hero = useSiteSettings((s) => s.hero);
   const setHero = useSiteSettings((s) => s.setHero);
-  const resetHero = useSiteSettings((s) => s.resetHero);
   const addSlide = useSiteSettings((s) => s.addSlide);
   const removeSlide = useSiteSettings((s) => s.removeSlide);
   const reorderSlide = useSiteSettings((s) => s.reorderSlide);
@@ -80,19 +77,6 @@ export default function AdminHeroPage() {
             <ExternalLink className="h-4 w-4" />
             {t('viewLink')}
           </Link>
-          <Button
-            variant="ghost"
-            size="md"
-            leftIcon={<RotateCcw className="h-4 w-4" />}
-            onClick={() => {
-              if (confirm(t('resetConfirmText'))) {
-                resetHero();
-                notify('warning');
-              }
-            }}
-          >
-            {t('resetButton')}
-          </Button>
         </div>
       </header>
 
