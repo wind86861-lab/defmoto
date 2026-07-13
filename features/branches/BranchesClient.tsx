@@ -40,8 +40,23 @@ export function BranchesClient() {
   const branches = mounted && storeBranches.length > 0 ? storeBranches : mockBranches;
   const [view, setView] = useState<'branches' | 'franchise'>('branches');
   const [activeId, setActiveId] = useState(mockBranches[0].id);
+  const [branchRegion, setBranchRegion] = useState('');
+
+  const branchRegions = useMemo(
+    () => Array.from(new Set(branches.map((b) => b.region || b.city).filter(Boolean))) as string[],
+    [branches],
+  );
+  const filteredBranches = branchRegion
+    ? branches.filter((b) => (b.region || b.city) === branchRegion)
+    : branches;
   const active =
-    branches.find((b) => b.id === activeId) ?? branches[0] ?? mockBranches[0];
+    filteredBranches.find((b) => b.id === activeId) ?? filteredBranches[0] ?? branches[0] ?? mockBranches[0];
+
+  const pickBranchRegion = (r: string) => {
+    setBranchRegion(r);
+    const first = (r ? branches.filter((b) => (b.region || b.city) === r) : branches)[0];
+    if (first) setActiveId(first.id);
+  };
 
   return (
     <div className="mx-auto max-w-[1320px] px-4 pb-16 pt-6 sm:px-6 sm:py-10 lg:px-8">
@@ -70,8 +85,18 @@ export function BranchesClient() {
 
       {view === 'branches' ? (
         <div className="animate-fade-in">
+          {/* === Region (viloyat) filter === */}
+          {branchRegions.length > 1 && (
+            <div className="mb-5 flex flex-wrap justify-center gap-2">
+              <RegionChip label={t('allRegions')} active={!branchRegion} onClick={() => pickBranchRegion('')} />
+              {branchRegions.map((r) => (
+                <RegionChip key={r} label={r} active={branchRegion === r} onClick={() => pickBranchRegion(r)} />
+              ))}
+            </div>
+          )}
+
           {/* === Branch selector === */}
-          <BranchSelector branches={branches} activeId={activeId} onChange={setActiveId} />
+          <BranchSelector branches={filteredBranches} activeId={active.id} onChange={setActiveId} />
 
           {/* === Branch detail === */}
           <Reveal direction="up">
@@ -451,10 +476,8 @@ function FrContact({
 function FranchiseSection() {
   const t = useTranslations('branches');
   const mounted = useMounted();
-  const fr = useContentStore((s) => s.franchise);
   const list = useContentStore((s) => s.franchises);
   const franchises = mounted ? list : [];
-  const ov = mounted ? fr : {};
   const [region, setRegion] = useState('');
 
   const regions = useMemo(
@@ -463,90 +486,33 @@ function FranchiseSection() {
   );
   const filtered = region ? franchises.filter((f) => f.region === region) : franchises;
 
-  const benefits = [
-    { icon: Briefcase, title: t('franchiseBenefit1Title'), desc: t('franchiseBenefit1Desc') },
-    { icon: Megaphone, title: t('franchiseBenefit2Title'), desc: t('franchiseBenefit2Desc') },
-    { icon: GraduationCap, title: t('franchiseBenefit3Title'), desc: t('franchiseBenefit3Desc') },
-    { icon: Truck, title: t('franchiseBenefit4Title'), desc: t('franchiseBenefit4Desc') },
-  ];
+  if (franchises.length === 0) {
+    return (
+      <p className="rounded-2xl border border-dashed border-brand-surface-border py-14 text-center text-sm text-white/50">
+        {t('franchiseNone')}
+      </p>
+    );
+  }
 
   return (
-    <section className="space-y-8">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-yellow p-6 sm:p-10">
-        <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-10 -left-10 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
-
-        <div className="relative">
-          {/* Header */}
-          <div className="max-w-2xl">
-            <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-brand-dark/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-dark backdrop-blur-md">
-              <Sparkles className="h-3 w-3" />
-              {t('franchiseBadge')}
-            </div>
-            <h2 className="font-display text-display-md font-extrabold leading-tight text-brand-dark sm:text-display-lg">
-              {ov.title || t('franchiseTitle')}
-            </h2>
-            <p className="mt-3 text-sm font-medium text-brand-dark/80 sm:text-base">
-              {ov.description || t('franchiseDesc')}
-            </p>
-          </div>
-
-          {/* Benefits */}
-          <div className="mt-8">
-            <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-brand-dark/70">
-              {t('franchiseBenefitsTitle')}
-            </h3>
-            <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
-              {benefits.map((b) => {
-                const Icon = b.icon;
-                return (
-                  <div
-                    key={b.title}
-                    className="rounded-2xl bg-brand-dark/85 p-4 backdrop-blur-md transition-transform hover:-translate-y-0.5"
-                  >
-                    <span className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-brand-yellow/15 text-brand-yellow">
-                      <Icon className="h-4.5 w-4.5" strokeWidth={2.2} />
-                    </span>
-                    <h4 className="font-display text-[15px] font-extrabold leading-tight text-white">
-                      {b.title}
-                    </h4>
-                    <p className="mt-1.5 text-xs leading-relaxed text-white/60">
-                      {b.desc}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
+    <section className="space-y-5">
+      {/* Region (viloyat) filter */}
+      {regions.length > 0 && (
+        <div className="flex flex-wrap justify-center gap-2">
+          <RegionChip label={t('allRegions')} active={!region} onClick={() => setRegion('')} />
+          {regions.map((r) => (
+            <RegionChip key={r} label={r} active={region === r} onClick={() => setRegion(r)} />
+          ))}
         </div>
+      )}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {filtered.map((f) => (
+          <FranchiseCard key={f.id} f={f} />
+        ))}
       </div>
-
-      {/* Region filter + franchise locations (branch-like) */}
-      {franchises.length > 0 ? (
-        <div className="space-y-4">
-          {regions.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              <RegionChip label={t('allRegions')} active={!region} onClick={() => setRegion('')} />
-              {regions.map((r) => (
-                <RegionChip key={r} label={r} active={region === r} onClick={() => setRegion(r)} />
-              ))}
-            </div>
-          )}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((f) => (
-              <FranchiseCard key={f.id} f={f} />
-            ))}
-          </div>
-          {filtered.length === 0 && (
-            <p className="rounded-2xl border border-dashed border-brand-surface-border py-10 text-center text-sm text-white/50">
-              {t('franchiseNoneInRegion')}
-            </p>
-          )}
-        </div>
-      ) : (
+      {filtered.length === 0 && (
         <p className="rounded-2xl border border-dashed border-brand-surface-border py-10 text-center text-sm text-white/50">
-          {t('franchiseNone')}
+          {t('franchiseNoneInRegion')}
         </p>
       )}
     </section>
