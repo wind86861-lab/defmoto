@@ -86,7 +86,7 @@ export function BranchesClient() {
       {view === 'branches' ? (
         <div className="animate-fade-in">
           {/* === Region (viloyat) filter === */}
-          {branchRegions.length > 1 && (
+          {branchRegions.length > 0 && (
             <div className="mb-5 flex flex-wrap justify-center gap-2">
               <RegionChip label={t('allRegions')} active={!branchRegion} onClick={() => pickBranchRegion('')} />
               {branchRegions.map((r) => (
