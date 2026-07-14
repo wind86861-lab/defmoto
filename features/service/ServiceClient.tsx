@@ -173,7 +173,7 @@ function CenterDetail({ center }: { center: ServiceCenter }) {
   return (
     <div className="space-y-6">
       {/* Equal-height row: header + photo  ⇄  booking form */}
-      <div className="grid gap-6 lg:grid-cols-[1.05fr_1fr] lg:gap-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.05fr_1fr] lg:gap-8">
         <div className="flex flex-col gap-4">
           {/* Header card */}
           <div className="flex items-center gap-3 rounded-2xl border border-brand-surface-border bg-brand-surface p-5">
@@ -204,7 +204,7 @@ function CenterDetail({ center }: { center: ServiceCenter }) {
       </div>
 
       {/* Contacts ⇄ Services list */}
-      <div className="grid gap-6 lg:grid-cols-[1.05fr_1fr] lg:gap-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.05fr_1fr] lg:gap-8">
         {/* LEFT — Contacts */}
         <ul className="space-y-2.5 rounded-2xl border border-brand-surface-border bg-brand-surface p-5">
           <ContactRow icon={MapPin} label={t('address')} value={center.address} />

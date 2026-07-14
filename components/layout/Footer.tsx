@@ -63,6 +63,12 @@ export function Footer() {
   const mounted = useMounted();
   const storedContact = useSiteSettings((s) => s.contact);
   const contact = mounted && storedContact ? { ...DEFAULT_CONTACT, ...storedContact } : DEFAULT_CONTACT;
+  // Translatable prose (tagline / address / hours) falls back to the localized
+  // i18n string when the admin hasn't set a custom value — so it stays correct
+  // in all 3 languages. Phone & socials are universal → admin single-value.
+  const tagline = contact.tagline?.trim() || t('tagline');
+  const address = contact.address?.trim() || t('addressText');
+  const workingHours = contact.workingHours?.trim() || t('hoursText');
   const socials = [
     { kind: 'telegram' as const, color: '#229ED9', label: 'Telegram', href: socialHref('telegram', contact.telegram), icon: <Send className="h-4 w-4" fill="currentColor" /> },
     { kind: 'whatsapp' as const, color: '#25D366', label: 'WhatsApp', href: socialHref('whatsapp', contact.whatsapp), icon: <WhatsAppIcon className="h-4 w-4" /> },
@@ -107,7 +113,7 @@ export function Footer() {
           <div className="sm:col-span-2 lg:col-span-2">
             <Logo size="md" />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/55">
-              {contact.tagline || t('tagline')}
+              {tagline}
             </p>
             {socials.length > 0 && (
               <div className="mt-5 flex items-center gap-2.5">
@@ -162,16 +168,16 @@ export function Footer() {
                   </a>
                 </li>
               )}
-              {contact.address && (
+              {address && (
                 <li className="flex items-start gap-2.5">
                   <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
-                  <span>{contact.address}</span>
+                  <span>{address}</span>
                 </li>
               )}
-              {contact.workingHours && (
+              {workingHours && (
                 <li className="flex items-start gap-2.5">
                   <Clock className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
-                  <span>{contact.workingHours}</span>
+                  <span>{workingHours}</span>
                 </li>
               )}
             </ul>

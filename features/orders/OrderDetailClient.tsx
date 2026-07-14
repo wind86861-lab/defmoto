@@ -124,7 +124,7 @@ export function OrderDetailClient({ id }: { id: string }) {
         <OrderStatusBadge status={order.status} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
           {/* Timeline */}
           <section className="rounded-2xl border border-brand-surface-border bg-brand-surface p-5">

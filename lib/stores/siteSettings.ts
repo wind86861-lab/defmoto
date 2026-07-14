@@ -148,22 +148,23 @@ export const DEFAULT_MARKETPLACES: Marketplace[] = [
 export const DEFAULT_BTS_SETTINGS: BtsSettings = { enabled: true, dispatch: 'self' };
 
 export const DEFAULT_CONTACT: SiteContact = {
-  tagline: "Premium moto-texnika va ehtiyot qismlar do'koni. Bozordan arzon narxlar, rasmiy kafolat, professional servis.",
+  // Translatable prose is left empty on purpose: the footer falls back to the
+  // localized i18n strings (footer.tagline / addressText / hoursText) so it
+  // reads correctly in uz/ru/en. Admin can still override per field.
+  tagline: '',
   phone: '+998 99 810-70-90',
-  address: "Yunusobod tumani, Amir Temur ko'chasi 12, Toshkent",
-  workingHours: 'Du-Sh: 09:00 — 20:00 · Yak: 10:00 — 18:00',
+  address: '',
+  workingHours: '',
   telegram: '',
   whatsapp: '',
   instagram: '',
   viber: '',
 };
 
-export const DEFAULT_DELIVERY_TERMS: DeliveryTerm[] = [
-  { title: 'Toshkent ichida', text: '1-2 ish kuni • Bepul (300 000 dan)' },
-  { title: 'Viloyatlarga', text: '3-5 ish kuni • Pochta/kuryer' },
-  { title: 'Filialdan olib ketish', text: '3+ filial • Bepul' },
-  { title: 'Qaytarish', text: '14 kun ichida sababsiz' },
-];
+// Empty by default: the product Delivery tab falls back to localized i18n
+// terms (product.delivery*) so it reads correctly in uz/ru/en. Admin can
+// override with custom single-language terms.
+export const DEFAULT_DELIVERY_TERMS: DeliveryTerm[] = [];
 
 export const useSiteSettings = create<SiteSettingsState>()(
   persist(
@@ -233,7 +234,7 @@ export const useSiteSettings = create<SiteSettingsState>()(
     }),
     {
       name: 'deftmoto-site-settings',
-      version: 5,
+      version: 6,
       // Persist to the server (global) instead of localStorage.
       storage: createServerPersist('site-settings'),
       // v0 persisted state had no seeded slides — backfill so existing
@@ -253,11 +254,28 @@ export const useSiteSettings = create<SiteSettingsState>()(
         }
         // v4 introduces footer/contact + delivery terms.
         if (!state.contact) state.contact = DEFAULT_CONTACT;
-        if (!state.deliveryTerms || state.deliveryTerms.length === 0) {
-          state.deliveryTerms = DEFAULT_DELIVERY_TERMS;
-        }
+        if (!state.deliveryTerms) state.deliveryTerms = DEFAULT_DELIVERY_TERMS;
         // v5 introduces admin-managed partner brands.
         if (!state.partners) state.partners = [];
+        // v6: footer tagline/address/hours + delivery terms are now localized
+        // via i18n. Drop the old Uzbek seed (only if still untouched) so the
+        // UI reads correctly in all 3 languages; genuine admin edits survive.
+        const OLD_TAGLINE =
+          "Premium moto-texnika va ehtiyot qismlar do'koni. Bozordan arzon narxlar, rasmiy kafolat, professional servis.";
+        const OLD_ADDRESS = "Yunusobod tumani, Amir Temur ko'chasi 12, Toshkent";
+        const OLD_HOURS = 'Du-Sh: 09:00 — 20:00 · Yak: 10:00 — 18:00';
+        if (state.contact) {
+          if (state.contact.tagline === OLD_TAGLINE) state.contact.tagline = '';
+          if (state.contact.address === OLD_ADDRESS) state.contact.address = '';
+          if (state.contact.workingHours === OLD_HOURS) state.contact.workingHours = '';
+        }
+        if (
+          Array.isArray(state.deliveryTerms) &&
+          state.deliveryTerms.length > 0 &&
+          state.deliveryTerms[0]?.title === 'Toshkent ichida'
+        ) {
+          state.deliveryTerms = [];
+        }
         return state;
       },
     },

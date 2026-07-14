@@ -229,7 +229,7 @@ function BranchDetail({ branch }: { branch: Branch }) {
   return (
     <div className="space-y-6">
       {/* Equal-height row: header + photo  ⇄  request form */}
-      <div className="grid gap-6 lg:grid-cols-[1.05fr_1fr] lg:gap-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.05fr_1fr] lg:gap-8">
         {/* LEFT — header + photo */}
         <div className="flex flex-col gap-4">
           {/* Header */}
@@ -288,7 +288,7 @@ function BranchDetail({ branch }: { branch: Branch }) {
       </div>
 
       {/* Contacts ⇄ Map */}
-      <div className="grid gap-6 lg:grid-cols-[1.05fr_1fr] lg:gap-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.05fr_1fr] lg:gap-8">
         {/* LEFT — Contacts */}
         <ul className="space-y-2.5 rounded-2xl border border-brand-surface-border bg-brand-surface p-5">
           <ContactRow icon={MapPin} label={t('address')} value={fullAddress} />

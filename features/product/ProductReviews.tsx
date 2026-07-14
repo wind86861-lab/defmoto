@@ -25,7 +25,7 @@ export function ProductReviews({ reviews }: { reviews: ReviewsHook }) {
   return (
     <div className="space-y-6">
       {/* Summary */}
-      <div className="grid gap-5 rounded-2xl border border-brand-surface-border bg-brand-surface p-5 sm:grid-cols-[200px_1fr]">
+      <div className="grid grid-cols-1 gap-5 rounded-2xl border border-brand-surface-border bg-brand-surface p-5 sm:grid-cols-[200px_1fr]">
         <div className="flex flex-col items-center justify-center text-center sm:items-start sm:text-left">
           <div className="font-display text-display-lg font-extrabold text-gradient-yellow">
             {total ? summary.average.toFixed(1) : '—'}

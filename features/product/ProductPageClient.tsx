@@ -112,14 +112,14 @@ export function ProductPageClient({ product, similar }: Props) {
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-32 pt-6 sm:px-6 sm:pb-10 sm:pt-10">
-      <div className="grid gap-8 md:grid-cols-2 md:gap-10 lg:gap-12">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-10 lg:gap-12">
         {/* Left — Gallery */}
-        <div>
+        <div className="min-w-0">
           <ProductGallery images={product.images} video={product.video} alt={product.name} />
         </div>
 
         {/* Right — Info */}
-        <div className="space-y-5">
+        <div className="min-w-0 space-y-5">
           {/* Brand + actions */}
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -190,7 +190,7 @@ export function ProductPageClient({ product, similar }: Props) {
 
           {/* Price */}
           <div className="rounded-2xl border border-brand-surface-border bg-brand-surface p-4">
-            <div className="flex items-baseline gap-3">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <span className="font-display text-display-md font-extrabold text-brand-yellow">
                 {formatPrice(product.price)}
               </span>

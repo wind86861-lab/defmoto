@@ -47,7 +47,7 @@ export function CatalogClient() {
       {/* === Categories strip — visible always, active highlighted === */}
       <CategoriesStrip activeSlug={query.category} categories={categories} />
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[280px_1fr] lg:gap-8">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr] lg:gap-8">
         {/* Desktop sidebar */}
         <aside className="hidden lg:block">
           <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl border border-brand-surface-border bg-brand-surface scrollbar-hide">

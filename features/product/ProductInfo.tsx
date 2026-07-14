@@ -6,7 +6,7 @@ import { ProductReviews } from './ProductReviews';
 import type { Product } from '@/types/product';
 import type { useProductReviews } from '@/hooks/useProductReviews';
 import { Truck, Package, RotateCcw, MapPin } from 'lucide-react';
-import { useSiteSettings, DEFAULT_DELIVERY_TERMS } from '@/lib/stores/siteSettings';
+import { useSiteSettings } from '@/lib/stores/siteSettings';
 import { useMounted } from '@/hooks/useMounted';
 
 const DELIVERY_ICONS = [Truck, MapPin, Package, RotateCcw];
@@ -23,7 +23,15 @@ export function ProductInfo({
   const summary = reviews.data.summary;
   const mounted = useMounted();
   const storedTerms = useSiteSettings((s) => s.deliveryTerms);
-  const deliveryTerms = mounted && storedTerms?.length ? storedTerms : DEFAULT_DELIVERY_TERMS;
+  // Localized defaults — used unless the admin has set custom delivery terms,
+  // so the tab stays translated in all 3 languages.
+  const i18nTerms = [
+    { title: t('deliveryTashkentTitle'), text: t('deliveryTashkentText') },
+    { title: t('deliveryRegionsTitle'), text: t('deliveryRegionsText') },
+    { title: t('deliveryPickupTitle'), text: t('deliveryPickupText') },
+    { title: t('deliveryReturnTitle'), text: t('deliveryReturnText') },
+  ];
+  const deliveryTerms = mounted && storedTerms?.length ? storedTerms : i18nTerms;
 
   const items: TabItem[] = [
     {
