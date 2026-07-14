@@ -12,22 +12,27 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { useToast } from '@/components/ui/Toaster';
+import { useContentStore } from '@/lib/stores/content';
+import { useMounted } from '@/hooks/useMounted';
 import { mockProducts } from '@/mocks/products';
 
 export function WishlistClient() {
   const t = useTranslations('wishlist');
   const router = useRouter();
   const toast = useToast();
+  const mounted = useMounted();
   const ids = useWishlistStore((s) => s.ids);
   const toggle = useWishlistStore((s) => s.toggle);
   const clear = useWishlistStore((s) => s.clear);
   const addToCart = useCartStore((s) => s.add);
+  const storeProducts = useContentStore((s) => s.products);
   const { notify, impact } = useHaptic();
 
-  const products = useMemo(
-    () => mockProducts.filter((p) => ids.includes(p.id)),
-    [ids],
-  );
+  // Resolve liked ids against the admin-managed catalogue (mock as fallback).
+  const products = useMemo(() => {
+    const all = mounted && storeProducts.length ? storeProducts : mockProducts;
+    return all.filter((p) => ids.includes(p.id));
+  }, [ids, mounted, storeProducts]);
 
   if (products.length === 0) {
     return (
@@ -122,6 +127,7 @@ export function WishlistClient() {
                       image: p.images[0],
                       price: p.price,
                       oldPrice: p.oldPrice,
+                      weight: p.weight,
                     });
                     toggle(p.id);
                     toast.cart(t('movedToCartTitle'), p.name, {
