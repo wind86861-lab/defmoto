@@ -56,7 +56,8 @@ export function SearchClient() {
   const brands = useMemo(() => {
     const counts = new Map<string, number>();
     for (const p of products) {
-      if (p.brand) counts.set(p.brand, (counts.get(p.brand) ?? 0) + 1);
+      const b = p.brand?.trim();
+      if (b) counts.set(b, (counts.get(b) ?? 0) + 1);
     }
     return [...counts.entries()]
       .sort((a, b) => b[1] - a[1])

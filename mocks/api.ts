@@ -63,8 +63,8 @@ export function queryProducts(
     items = items.filter((p) => p.categorySlug === category);
   }
   if (brands.length) {
-    const set = new Set(brands.map((b) => b.toLowerCase()));
-    items = items.filter((p) => p.brand && set.has(p.brand.toLowerCase()));
+    const set = new Set(brands.map((b) => b.trim().toLowerCase()));
+    items = items.filter((p) => p.brand && set.has(p.brand.trim().toLowerCase()));
   }
   if (colors.length) {
     const set = new Set(colors.map((c) => c.toLowerCase()));
