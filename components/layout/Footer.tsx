@@ -18,6 +18,9 @@ import { Logo } from '@/components/ui/Logo';
 import { SocialDot, WhatsAppIcon, ViberIcon } from '@/components/ui/SocialIcons';
 import { FooterSmoke } from '@/components/ui/FooterSmoke';
 import { useSiteSettings, DEFAULT_CONTACT } from '@/lib/stores/siteSettings';
+import { useContentStore } from '@/lib/stores/content';
+import { categoryName as resolveCategoryName } from '@/lib/categoryName';
+import { mockCategories } from '@/mocks/categories';
 import { useMounted } from '@/hooks/useMounted';
 
 // Turn an admin-entered handle/number into a full URL for each platform.
@@ -39,15 +42,6 @@ function socialHref(kind: 'telegram' | 'whatsapp' | 'instagram' | 'viber', v?: s
   }
 }
 
-const catalogLinks = [
-  'motorcycles',
-  'gear',
-  'parts',
-  'accessories',
-  'oils',
-  'tires',
-] as const;
-
 const companyLinks = [
   { href: '/', key: 'home' },
   { href: '/branches', key: 'branches' },
@@ -60,7 +54,11 @@ export function Footer() {
   const t = useTranslations('footer');
   const tNav = useTranslations('nav');
   const tHome = useTranslations('home');
+  const tCategories = useTranslations('categories');
   const mounted = useMounted();
+  // Catalog links follow the live admin categories (first 6), mock as fallback.
+  const storeCategories = useContentStore((s) => s.categories);
+  const categories = (mounted && storeCategories.length ? storeCategories : mockCategories).slice(0, 6);
   const storedContact = useSiteSettings((s) => s.contact);
   const contact = mounted && storedContact ? { ...DEFAULT_CONTACT, ...storedContact } : DEFAULT_CONTACT;
   // Translatable prose (tagline / address / hours) falls back to the localized
@@ -132,9 +130,9 @@ export function Footer() {
               {t('catalogTitle')}
             </h4>
             <ul className="space-y-2.5 text-sm">
-              {catalogLinks.map((slug) => (
-                <FooterLink key={slug} href={`/catalog?category=${slug}`}>
-                  {tNav(slug)}
+              {categories.map((c) => (
+                <FooterLink key={c.id} href={`/catalog?category=${c.slug}`}>
+                  {c.slug ? resolveCategoryName(tCategories, c) : c.name}
                 </FooterLink>
               ))}
             </ul>
