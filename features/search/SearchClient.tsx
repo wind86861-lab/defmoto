@@ -11,9 +11,11 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useRecentSearches } from '@/lib/stores/recentSearches';
 import { useHaptic } from '@/hooks/useHaptic';
 import { ProductImage } from '@/components/ui/ProductImage';
-import { searchProductsInstant } from '@/mocks/api';
+import { useContentStore } from '@/lib/stores/content';
+import { useMounted } from '@/hooks/useMounted';
+import { categoryName as resolveCategoryName } from '@/lib/categoryName';
 import { mockCategories } from '@/mocks/categories';
-import { popularBrands } from '@/mocks/brands';
+import { mockProducts } from '@/mocks/products';
 
 export function SearchClient() {
   const t = useTranslations('search');
@@ -24,12 +26,44 @@ export function SearchClient() {
   const debounced = useDebounce(value, 200);
   const { items: recent, add, remove, clear } = useRecentSearches();
   const { impact, selection } = useHaptic();
+  const mounted = useMounted();
+
+  // Live catalogue (admin-managed) — mock as fallback before hydration.
+  const storeProducts = useContentStore((s) => s.products);
+  const storeCategories = useContentStore((s) => s.categories);
+  const products = mounted && storeProducts.length ? storeProducts : mockProducts;
+  const categories = (mounted && storeCategories.length ? storeCategories : mockCategories).slice(0, 6);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  const results = useMemo(() => searchProductsInstant(debounced, 8), [debounced]);
+  // Instant search over the live catalogue (name / brand / category).
+  const results = useMemo(() => {
+    const q = debounced.trim().toLowerCase();
+    if (!q) return [];
+    return products
+      .filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.brand?.toLowerCase().includes(q) ||
+          p.category?.toLowerCase().includes(q),
+      )
+      .slice(0, 8);
+  }, [debounced, products]);
+
+  // Popular brands — derived from the actual products, most-listed first.
+  const brands = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const p of products) {
+      if (p.brand) counts.set(p.brand, (counts.get(p.brand) ?? 0) + 1);
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([name]) => name);
+  }, [products]);
+
   const hasQuery = debounced.trim().length > 0;
 
   const trendingQueries = [
@@ -164,36 +198,40 @@ export function SearchClient() {
               </div>
             </Section>
 
-            <Section title={t('categoriesTitle')}>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {mockCategories.slice(0, 6).map((c) => (
-                  <Link
-                    key={c.id}
-                    href={`/catalog?category=${c.slug}`}
-                    className="flex items-center gap-2 rounded-xl border border-brand-surface-border bg-brand-surface px-3 py-2.5 text-sm font-semibold transition-colors hover:border-brand-yellow/40 touch-feedback"
-                  >
-                    <span className="text-lg">{c.icon}</span>
-                    <span className="truncate">
-                      {c.slug ? tCategories(c.slug) : c.name}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </Section>
+            {categories.length > 0 && (
+              <Section title={t('categoriesTitle')}>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {categories.map((c) => (
+                    <Link
+                      key={c.id}
+                      href={`/catalog?category=${c.slug}`}
+                      className="flex items-center gap-2 rounded-xl border border-brand-surface-border bg-brand-surface px-3 py-2.5 text-sm font-semibold transition-colors hover:border-brand-yellow/40 touch-feedback"
+                    >
+                      <span className="text-lg">{c.icon}</span>
+                      <span className="truncate">
+                        {c.slug ? resolveCategoryName(tCategories, c) : c.name}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </Section>
+            )}
 
-            <Section title={t('popularBrandsTitle')}>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {popularBrands.map((b) => (
-                  <Link
-                    key={b.id}
-                    href={`/catalog?brands=${b.slug}`}
-                    className="rounded-xl border border-brand-surface-border bg-brand-surface px-3 py-2.5 text-center text-sm font-semibold transition-colors hover:border-brand-yellow/40 touch-feedback"
-                  >
-                    {b.name}
-                  </Link>
-                ))}
-              </div>
-            </Section>
+            {brands.length > 0 && (
+              <Section title={t('popularBrandsTitle')}>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {brands.map((name) => (
+                    <Link
+                      key={name}
+                      href={`/catalog?brands=${encodeURIComponent(name)}`}
+                      className="rounded-xl border border-brand-surface-border bg-brand-surface px-3 py-2.5 text-center text-sm font-semibold transition-colors hover:border-brand-yellow/40 touch-feedback"
+                    >
+                      {name}
+                    </Link>
+                  ))}
+                </div>
+              </Section>
+            )}
           </div>
         )}
 
