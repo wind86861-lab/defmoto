@@ -1,21 +1,16 @@
 import { getRequestConfig } from 'next-intl/server';
-import { cookies, headers } from 'next/headers';
+import { cookies } from 'next/headers';
 import { defaultLocale, locales, type Locale } from './config';
 
 const COOKIE_NAME = 'NEXT_LOCALE';
 
 function detectLocale(): Locale {
+  // First open (no cookie) always defaults to Uzbek — we intentionally ignore
+  // the browser's Accept-Language (most local phones report ru) so the site
+  // opens in uz. Once the user picks a language the NEXT_LOCALE cookie wins.
   const cookieLocale = cookies().get(COOKIE_NAME)?.value as Locale | undefined;
   if (cookieLocale && locales.includes(cookieLocale)) return cookieLocale;
-
-  const acceptLanguage = headers().get('accept-language') ?? '';
-  const preferred = acceptLanguage
-    .split(',')
-    .map((part) => part.split(';')[0].trim().toLowerCase().slice(0, 2));
-  const match = preferred.find((p): p is Locale =>
-    locales.includes(p as Locale),
-  );
-  return match ?? defaultLocale;
+  return defaultLocale;
 }
 
 export default getRequestConfig(async () => {

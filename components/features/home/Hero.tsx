@@ -8,8 +8,15 @@ import { cn } from '@/lib/cn';
 import { useSiteSettings, DEFAULT_HERO_SLIDES } from '@/lib/stores/siteSettings';
 import { useMounted } from '@/hooks/useMounted';
 
-function isExternalLink(href: string) {
-  return /^https?:\/\//i.test(href);
+// Resolve an admin-entered slide link into something safe to navigate to.
+// Empty → no link (image only); http(s) → external; a proper "/path" → internal;
+// anything else (a typo like "sd") → home, so a bad banner never 404s.
+function normalizeLink(href?: string): { href: string; external: boolean } | null {
+  const s = (href || '').trim();
+  if (!s) return null;
+  if (/^https?:\/\//i.test(s)) return { href: s, external: true };
+  if (s.startsWith('/')) return { href: s, external: false };
+  return { href: '/', external: false };
 }
 
 const SLIDE_DURATION = 6000;
@@ -72,6 +79,8 @@ export function Hero() {
                 />
               );
 
+              const link = normalizeLink(s.link);
+
               return (
                 <motion.div
                   key={s.image + i}
@@ -83,10 +92,10 @@ export function Hero() {
                   transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                   style={{ pointerEvents: isActive ? 'auto' : 'none' }}
                 >
-                  {s.link ? (
-                    isExternalLink(s.link) ? (
+                  {link ? (
+                    link.external ? (
                       <a
-                        href={s.link}
+                        href={link.href}
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label={t('heroBannerCta')}
@@ -96,7 +105,7 @@ export function Hero() {
                       </a>
                     ) : (
                       <Link
-                        href={s.link}
+                        href={link.href}
                         aria-label={t('heroBannerCta')}
                         className="block h-full w-full cursor-pointer outline-none"
                       >
