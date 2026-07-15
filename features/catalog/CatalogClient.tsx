@@ -7,7 +7,7 @@ import { SlidersHorizontal } from 'lucide-react';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { SectionHeader } from '@/components/features/SectionHeader';
-import { CategoryCard } from '@/components/features/CategoryCard';
+import { CategoryChip } from '@/components/features/CategoryChip';
 import { FilterPanel } from './FilterPanel';
 import { CatalogToolbar, ActiveFilterChips } from './CatalogToolbar';
 import { ProductGrid } from './ProductGrid';
@@ -147,16 +147,16 @@ function CategoriesStrip({
         )}
       </div>
 
-      {/* Mobile: 2-row horizontal scroll. Desktop: 5-column grid — 3 rows for 15 cards */}
-      <div className="-mx-4 overflow-x-auto px-4 scrollbar-hide sm:mx-0 sm:px-0">
-        <div className="grid grid-flow-col grid-rows-2 gap-3 sm:grid-flow-row sm:grid-rows-none sm:grid-cols-2 sm:gap-4 lg:grid-cols-5">
-          <CategoryCard
+      {/* Compact tiles: single-row horizontal scroll on mobile, wraps on desktop */}
+      <div className="-mx-4 overflow-x-auto px-4 scrollbar-hide sm:mx-0 sm:overflow-visible sm:px-0">
+        <div className="flex gap-3 pb-1 sm:flex-wrap sm:gap-4">
+          <CategoryChip
             category={{ id: 'all', slug: '', name: t('allCategory'), icon: '🗂️' }}
             href="/catalog"
             active={!activeSlug}
           />
           {categories.map((c) => (
-            <CategoryCard
+            <CategoryChip
               key={c.id}
               category={c}
               active={activeSlug === c.slug}
