@@ -12,7 +12,6 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { useTelegram } from '@/components/providers/TelegramProvider';
 import { ChatBubble, TypingIndicator } from './ChatBubble';
 import { ChatInput } from './ChatInput';
-import { generateOperatorReply } from './operatorBot';
 import type { ChatMessage } from '@/types/chat';
 
 function id() {
@@ -149,26 +148,10 @@ export function ChatClient() {
       relayed = false;
     }
 
-    updateMessage(userMsg.id, { status: 'read' });
-
-    // Live operator will answer via the poll loop — no fake reply needed.
-    if (relayed) return;
-
-    // Fallback: local auto-reply bot (relay off / no operator connected).
-    setOperatorTyping(true);
-    setTimeout(
-      () => {
-        const replies = generateOperatorReply(
-          { text, hasImage: Boolean(images?.length) },
-          t,
-        );
-        setOperatorTyping(false);
-        replies.forEach((reply, idx) => {
-          setTimeout(() => addMessage(reply), idx * 350);
-        });
-      },
-      1200 + (text?.length ?? 0) * 12,
-    );
+    // The message is relayed to (or recorded for) the live admin operator, who
+    // answers via the poll loop. No automatic bot reply — the customer only
+    // ever sees real operator replies.
+    updateMessage(userMsg.id, { status: relayed ? 'read' : 'delivered' });
   };
 
   // Group consecutive messages from same author for avatar logic
