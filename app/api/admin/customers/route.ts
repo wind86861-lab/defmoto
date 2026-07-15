@@ -29,6 +29,7 @@ export function GET(req: Request) {
       phone: u.phone,
       telegramId: u.telegramId ?? null,
       createdAt: u.createdAt,
+      isOperator: !!u.isOperator,
       orderCount: mine.length,
       spent,
       orders: mine.map((o) => ({

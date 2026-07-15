@@ -370,6 +370,7 @@ export interface UserAccount {
   passwordHash: string;
   telegramId?: string;
   createdAt: number;
+  isOperator?: boolean; // marked as a support operator by the admin
 }
 
 function normPhone(raw: string): string {

@@ -31,6 +31,7 @@ export interface RelayMessage {
   author: 'operator' | 'customer';
   text: string;
   image?: string; // /uploads/... when an image was sent
+  video?: string; // /uploads/... when a video was sent
   createdAt: string;
 }
 
@@ -417,18 +418,21 @@ export function operatorReplyToSession(sessionId: string, text: string): boolean
   return true;
 }
 
-/** Download a Telegram photo by file_id and save it under /uploads. */
-async function downloadTelegramPhoto(fileId: string): Promise<string | undefined> {
+/** Download a Telegram file (photo/video/document) by file_id → /uploads. */
+async function downloadTelegramFile(
+  fileId: string,
+  fallbackExt = 'bin',
+): Promise<string | undefined> {
   if (!BOT_TOKEN) return undefined;
   try {
     const r = await tg('getFile', { file_id: fileId });
     const filePath: string | undefined = r?.result?.file_path;
     if (!filePath) return undefined;
     const res = await fetch(`https://api.telegram.org/file/bot${BOT_TOKEN}/${filePath}`, {
-      signal: AbortSignal.timeout(20_000),
+      signal: AbortSignal.timeout(60_000),
     });
     const buf = Buffer.from(await res.arrayBuffer());
-    const ext = (filePath.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const ext = (filePath.split('.').pop() || fallbackExt).toLowerCase().replace(/[^a-z0-9]/g, '');
     const name = `op_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}.${ext}`;
     const dir = path.join(process.cwd(), 'public', 'uploads');
     await fs.mkdir(dir, { recursive: true });
@@ -447,7 +451,7 @@ export async function operatorReplyImageToSession(
 ): Promise<boolean> {
   const isTg = sessionId.startsWith('tg:');
   // Website sessions need a displayable URL; bot sessions can resend the file id.
-  const imageUrl = isTg ? undefined : await downloadTelegramPhoto(fileId);
+  const imageUrl = isTg ? undefined : await downloadTelegramFile(fileId, 'jpg');
   const session = getSession(sessionId);
   session.messages.push({
     id: `op_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
@@ -473,6 +477,42 @@ export async function ingestOperatorReplyPhoto(
   const sessionId = state.forwarded.get(replyToMessageId);
   if (!sessionId) return false;
   return operatorReplyImageToSession(sessionId, fileId, caption);
+}
+
+/** Operator sends a video reply to a session (bot resends it; website saves it). */
+export async function operatorReplyVideoToSession(
+  sessionId: string,
+  fileId: string,
+  caption?: string,
+): Promise<boolean> {
+  const isTg = sessionId.startsWith('tg:');
+  const videoUrl = isTg ? undefined : await downloadTelegramFile(fileId, 'mp4');
+  const session = getSession(sessionId);
+  session.messages.push({
+    id: `op_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    author: 'operator',
+    // Fallback text only if a website video couldn't be downloaded (e.g. >20MB).
+    text: caption || (!isTg && !videoUrl ? '🎥 Video' : ''),
+    video: videoUrl,
+    createdAt: new Date().toISOString(),
+  });
+  session.lastActivity = Date.now();
+  persistSessions();
+  if (isTg) {
+    await tg('sendVideo', { chat_id: sessionId.slice(3), video: fileId, caption: caption || undefined });
+  }
+  return true;
+}
+
+/** Operator replied to a forwarded message with a video (reply-to flow). */
+export async function ingestOperatorReplyVideo(
+  replyToMessageId: number,
+  fileId: string,
+  caption?: string,
+): Promise<boolean> {
+  const sessionId = state.forwarded.get(replyToMessageId);
+  if (!sessionId) return false;
+  return operatorReplyVideoToSession(sessionId, fileId, caption);
 }
 
 /**

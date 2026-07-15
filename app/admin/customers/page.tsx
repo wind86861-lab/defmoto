@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Users, Phone, Send, Search, Package, ChevronDown } from 'lucide-react';
+import { Users, Phone, Send, Search, Package, ChevronDown, Headset } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Input } from '@/components/ui/Input';
 import { formatPrice, formatDateTime } from '@/lib/format';
@@ -20,6 +20,7 @@ interface Customer {
   phone: string;
   telegramId: string | null;
   createdAt: number;
+  isOperator: boolean;
   orderCount: number;
   spent: number;
   orders: CustomerOrder[];
@@ -40,6 +41,7 @@ export default function AdminCustomersPage() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [openId, setOpenId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/admin/customers', { cache: 'no-store' })
@@ -49,22 +51,45 @@ export default function AdminCustomersPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Operators live in their own section — show only real customers here.
+  const nonOperators = useMemo(() => customers.filter((c) => !c.isOperator), [customers]);
+
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    if (!s) return customers;
-    return customers.filter(
+    if (!s) return nonOperators;
+    return nonOperators.filter(
       (c) => c.name?.toLowerCase().includes(s) || (c.phone || '').includes(s.replace(/\D/g, '')),
     );
-  }, [customers, q]);
+  }, [nonOperators, q]);
 
   const totals = useMemo(
     () => ({
-      count: customers.length,
-      orders: customers.reduce((s, c) => s + c.orderCount, 0),
-      spent: customers.reduce((s, c) => s + c.spent, 0),
+      count: nonOperators.length,
+      orders: nonOperators.reduce((s, c) => s + c.orderCount, 0),
+      spent: nonOperators.reduce((s, c) => s + c.spent, 0),
     }),
-    [customers],
+    [nonOperators],
   );
+
+  const makeOperator = async (c: Customer) => {
+    if (!confirm(`"${c.name || 'Mijoz'}" ni operator qilib belgilaysizmi? U "Operatorlar" boʻlimiga oʻtadi.`)) return;
+    setBusyId(c.id);
+    try {
+      const res = await fetch('/api/admin/operators', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: c.id, makeOperator: true }),
+      });
+      if (res.ok) {
+        setCustomers((prev) => prev.map((x) => (x.id === c.id ? { ...x, isOperator: true } : x)));
+        setOpenId(null);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -136,9 +161,20 @@ export default function AdminCustomersPage() {
 
                 {open && (
                   <div className="border-t border-brand-surface-border p-4">
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-white/40">
-                      Roʻyxatdan oʻtgan: {formatDateTime(new Date(c.createdAt).toISOString())}
-                    </p>
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">
+                        Roʻyxatdan oʻtgan: {formatDateTime(new Date(c.createdAt).toISOString())}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => makeOperator(c)}
+                        disabled={busyId === c.id}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-brand-yellow/40 bg-brand-yellow/10 px-2.5 py-1.5 text-[11px] font-bold text-brand-yellow transition-colors hover:bg-brand-yellow/20 disabled:opacity-50 touch-feedback"
+                      >
+                        <Headset className="h-3.5 w-3.5" />
+                        {busyId === c.id ? '...' : 'Operator qilish'}
+                      </button>
+                    </div>
                     {c.orders.length === 0 ? (
                       <p className="text-sm text-white/45">Hali buyurtma yoʻq.</p>
                     ) : (

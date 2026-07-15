@@ -4,6 +4,7 @@ export type ChatStatus = 'sending' | 'sent' | 'delivered' | 'read';
 
 export type ChatAttachment =
   | { kind: 'image'; url: string; alt?: string }
+  | { kind: 'video'; url: string }
   | {
       kind: 'product';
       productId: string;

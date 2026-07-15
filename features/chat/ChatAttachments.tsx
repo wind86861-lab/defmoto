@@ -13,6 +13,8 @@ export function ChatAttachmentView({ attachment }: { attachment: ChatAttachment 
   switch (attachment.kind) {
     case 'image':
       return <ImageAttachment src={attachment.url} alt={attachment.alt} />;
+    case 'video':
+      return <VideoAttachment src={attachment.url} />;
     case 'product':
       return <ProductLinkCard attachment={attachment} />;
     case 'service':
@@ -28,6 +30,21 @@ function ImageAttachment({ src, alt }: { src: string; alt?: string }) {
         alt={alt ?? ''}
         className="max-h-72 w-full object-cover"
         fallbackClassName="h-48 w-full"
+      />
+    </div>
+  );
+}
+
+function VideoAttachment({ src }: { src: string }) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-brand-surface-border bg-brand-dark">
+      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+      <video
+        src={src}
+        controls
+        playsInline
+        preload="metadata"
+        className="max-h-80 w-full bg-black object-contain"
       />
     </div>
   );

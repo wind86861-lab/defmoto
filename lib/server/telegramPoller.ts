@@ -26,6 +26,8 @@ import {
   operatorReplyToSession,
   operatorReplyImageToSession,
   ingestOperatorReplyPhoto,
+  operatorReplyVideoToSession,
+  ingestOperatorReplyVideo,
   MENU,
 } from './chatRelay';
 import {
@@ -132,6 +134,9 @@ interface TgUpdate {
     text?: string;
     caption?: string;
     photo?: { file_id: string }[];
+    video?: { file_id: string };
+    animation?: { file_id: string };
+    document?: { file_id: string; mime_type?: string };
     contact?: { phone_number?: string; user_id?: number };
     reply_to_message?: { message_id: number };
   };
@@ -214,6 +219,34 @@ async function handleUpdate(update: TgUpdate) {
     await tg('sendMessage', {
       chat_id: chatId,
       text: 'Rasmni yuborish uchun: "📨 Xabarlar" → suhbat → "✍️ Javob berish", soʻng rasmni yuboring.',
+    });
+    return;
+  }
+
+  /* --------------- operator video / animation / video-file reply ---------- */
+  const videoFileId =
+    msg.video?.file_id ||
+    msg.animation?.file_id ||
+    (msg.document?.mime_type?.startsWith('video/') ? msg.document.file_id : undefined);
+  if (videoFileId && isOperatorChat(chatId)) {
+    const caption = msg.caption;
+    const target = takePendingReply(chatId);
+    if (target) {
+      await operatorReplyVideoToSession(target, videoFileId, caption);
+      await tg('sendMessage', { chat_id: chatId, text: '✅ Video yuborildi.', reply_markup: startKeyboard() });
+      return;
+    }
+    if (msg.reply_to_message?.message_id) {
+      const ok = await ingestOperatorReplyVideo(msg.reply_to_message.message_id, videoFileId, caption);
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: ok ? '✅ Video yuborildi.' : '⚠️ Suhbat topilmadi. "📨 Xabarlar" orqali javob bering.',
+      });
+      return;
+    }
+    await tg('sendMessage', {
+      chat_id: chatId,
+      text: 'Videoni yuborish uchun: "📨 Xabarlar" → suhbat → "✍️ Javob berish", soʻng videoni yuboring.',
     });
     return;
   }

@@ -85,11 +85,15 @@ export function ChatClient() {
           for (const m of data.messages) {
             const ts = new Date(m.createdAt).getTime();
             if (ts > sinceRef.current) sinceRef.current = ts;
+            const attachments = [
+              ...(m.image ? [{ kind: 'image' as const, url: m.image }] : []),
+              ...(m.video ? [{ kind: 'video' as const, url: m.video }] : []),
+            ];
             addMessage({
               id: m.id,
               author: 'operator',
               text: m.text,
-              attachments: m.image ? [{ kind: 'image' as const, url: m.image }] : undefined,
+              attachments: attachments.length ? attachments : undefined,
               createdAt: m.createdAt,
               operatorName: SUPPORT_NAME,
               operatorRole: t('operatorRoleLabel'),

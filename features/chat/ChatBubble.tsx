@@ -17,6 +17,28 @@ function timeLabel(iso: string) {
   return `${hh}:${mm}`;
 }
 
+const URL_RE = /(https?:\/\/[^\s]+)/gi;
+
+// Render message text with clickable links (operators often paste product URLs).
+function renderText(text: string, isUser: boolean) {
+  const parts = text.split(URL_RE);
+  return parts.map((part, i) =>
+    /^https?:\/\//i.test(part) ? (
+      <a
+        key={i}
+        href={part}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn('underline underline-offset-2', isUser ? 'text-brand-dark' : 'text-brand-yellow')}
+      >
+        {part}
+      </a>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  );
+}
+
 export function ChatBubble({ message, showAvatar }: ChatBubbleProps) {
   const isUser = message.author === 'user';
   const isSystem = message.author === 'system';
@@ -70,7 +92,7 @@ export function ChatBubble({ message, showAvatar }: ChatBubbleProps) {
                 : 'rounded-bl-sm border border-brand-surface-border bg-brand-surface text-white',
             )}
           >
-            {message.text}
+            <span className="whitespace-pre-wrap break-words">{renderText(message.text, isUser)}</span>
           </div>
         )}
 
