@@ -16,7 +16,7 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
-import { listOrders, getUserByTelegramId } from '@/lib/db';
+import { listOrders, getOrder, getUserByTelegramId } from '@/lib/db';
 import { tgApi } from './tgFetch';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
@@ -598,6 +598,33 @@ export async function handleCallback(cb: {
     return;
   }
 
+  // Customer: back to their orders list (in-chat).
+  if (data === 'myorders' && chatId != null) {
+    const v = customerOrdersView(chatId);
+    if (msgId != null) {
+      await tg('editMessageText', { chat_id: chatId, message_id: msgId, text: v.text, reply_markup: v.keyboard });
+    } else {
+      await tg('sendMessage', { chat_id: chatId, text: v.text, reply_markup: v.keyboard });
+    }
+    await tg('answerCallbackQuery', { callback_query_id: cb.id });
+    return;
+  }
+
+  // Customer: open one order's details (in-chat). Plain text — no Markdown, so
+  // product names with special characters can't break the message.
+  if (data.startsWith('ord:')) {
+    const v = orderDetailView(data.slice(4));
+    if (!v) {
+      await tg('answerCallbackQuery', { callback_query_id: cb.id, text: 'Buyurtma topilmadi', show_alert: true });
+      return;
+    }
+    if (chatId != null && msgId != null) {
+      await tg('editMessageText', { chat_id: chatId, message_id: msgId, text: v.text, reply_markup: v.keyboard });
+    }
+    await tg('answerCallbackQuery', { callback_query_id: cb.id });
+    return;
+  }
+
   await tg('answerCallbackQuery', { callback_query_id: cb.id });
 }
 
@@ -609,14 +636,15 @@ interface InlineBtn {
 }
 
 /**
- * A button that opens the site. Over HTTPS it opens as a Telegram Mini App
- * (inside Telegram); otherwise it falls back to a normal URL button.
+ * A button that opens the site as a plain URL (opens reliably in Telegram's
+ * browser). We deliberately avoid inline `web_app` buttons here: they crash the
+ * Telegram Desktop webview ("Webview crashed"). The embedded Mini App is always
+ * available via the persistent "Ochish" menu button next to the input.
  */
 function openAppButton(text: string, path = ''): InlineBtn | null {
   const site = process.env.NEXT_PUBLIC_APP_URL || '';
-  if (!site) return null;
-  const url = `${site}${path}`;
-  return site.startsWith('https') ? { text, web_app: { url } } : { text, url };
+  if (!site || !site.startsWith('http')) return null;
+  return { text, url: `${site}${path}` };
 }
 
 /** Inline keyboard for the operator welcome / start message. */
@@ -673,6 +701,85 @@ const ORDER_STATUS: Record<string, string> = {
   expired: 'Muddati oʻtdi',
 };
 
+const DELIVERY_LABEL: Record<string, string> = {
+  pickup: 'Doʻkondan olib ketish',
+  bts: 'BTS filialidan olish',
+  courier: 'Kuryer',
+  post: 'Pochta / kuryer',
+};
+const PAYMENT_LABEL: Record<string, string> = {
+  cash: 'Naqd (yetkazishda)',
+  click: 'Click',
+  payme: 'Payme',
+  bts: 'BTS orqali',
+};
+const sum = (n: number) => (n || 0).toLocaleString('ru-RU');
+
+/** The customer's orders as one tappable inline button each (in-chat, no webview). */
+function customerOrdersView(chatId: number): { text: string; keyboard: { inline_keyboard: InlineBtn[][] } } {
+  const account = getUserByTelegramId(chatId);
+  const ids = new Set<string>([String(chatId)]);
+  if (account) ids.add(account.id);
+  const orders = listOrders()
+    .filter((o) => ids.has(String(o.userId ?? '')))
+    .slice(0, 12);
+
+  if (!orders.length) {
+    const rows: InlineBtn[][] = [];
+    const open = openAppButton('🛍 Katalog', '/catalog');
+    if (open) rows.push([open]);
+    return { text: 'Sizda hali buyurtmalar yoʻq. Katalogdan tanlang 👇', keyboard: { inline_keyboard: rows } };
+  }
+  const rows: InlineBtn[][] = orders.map((o) => [
+    {
+      text: `🧾 ${o.number} · ${sum(o.total)} soʻm · ${ORDER_STATUS[o.status] || o.status}`,
+      callback_data: `ord:${o.id}`,
+    },
+  ]);
+  return {
+    text: `📦 Buyurtmalaringiz (${orders.length})\n\nBatafsil koʻrish uchun buyurtmani tanlang 👇`,
+    keyboard: { inline_keyboard: rows },
+  };
+}
+
+/** One order's full details, in-chat, with a back button. */
+function orderDetailView(id: string): { text: string; keyboard: { inline_keyboard: InlineBtn[][] } } | null {
+  const rec = getOrder(id);
+  if (!rec) return null;
+  const p = (rec.payload || {}) as {
+    items?: Array<{ name?: string; price?: number; quantity?: number }>;
+    delivery?: { method?: string; bts?: { branchName?: string }; address?: { city?: string; street?: string } };
+    payment?: { method?: string };
+    contact?: { phone?: string };
+  };
+  const lines: string[] = [
+    `🧾 Buyurtma ${rec.number}`,
+    `Holat: ${ORDER_STATUS[rec.status] || rec.status}`,
+    `Sana: ${new Date(rec.createdAt).toLocaleString('ru-RU')}`,
+  ];
+  const items = p.items ?? [];
+  if (items.length) {
+    lines.push('', 'Mahsulotlar:');
+    for (const it of items) {
+      const qty = it.quantity ?? 1;
+      lines.push(`• ${it.name ?? '—'} × ${qty} — ${sum((it.price ?? 0) * qty)} soʻm`);
+    }
+  }
+  lines.push('', `💰 Jami: ${sum(rec.total)} soʻm`);
+  const d = p.delivery;
+  if (d?.method) {
+    let dl = DELIVERY_LABEL[d.method] || d.method;
+    if (d.bts?.branchName) dl += ` — ${d.bts.branchName}`;
+    else if (d.address?.city) dl += ` — ${[d.address.city, d.address.street].filter(Boolean).join(', ')}`;
+    lines.push(`🚚 ${dl}`);
+  }
+  if (p.payment?.method) lines.push(`💳 ${PAYMENT_LABEL[p.payment.method] || p.payment.method}`);
+  if (p.contact?.phone) lines.push(`📞 ${p.contact.phone}`);
+
+  const rows: InlineBtn[][] = [[{ text: '⬅️ Buyurtmalar', callback_data: 'myorders' }]];
+  return { text: lines.join('\n'), keyboard: { inline_keyboard: rows } };
+}
+
 /** True if this chat is the bound operator. */
 export function isOperatorChat(chatId: number): boolean {
   return state.operatorChatId != null && state.operatorChatId === chatId;
@@ -716,30 +823,13 @@ export async function handleCustomerMenu(chatId: number, text: string): Promise<
       });
       return true;
     case MENU.orders: {
-      // chatId is the customer's Telegram id in a private chat.
-      const account = getUserByTelegramId(chatId);
-      const ids = new Set<string>([String(chatId)]);
-      if (account) ids.add(account.id);
-      const orders = listOrders()
-        .filter((o) => ids.has(String(o.userId ?? '')))
-        .slice(0, 10);
-      if (!orders.length) {
-        await tg('sendMessage', {
-          chat_id: chatId,
-          text: 'Sizda hali buyurtmalar yoʻq. Katalogdan tanlang 👇',
-          reply_markup: link('/catalog', '🛍 Katalog'),
-        });
-        return true;
-      }
-      const lines = orders.map((o) => {
-        const st = ORDER_STATUS[o.status] || o.status;
-        return `🧾 *${o.number}* — ${o.total.toLocaleString('ru-RU')} soʻm\n   ${st}`;
-      });
+      // chatId is the customer's Telegram id in a private chat. Each order is a
+      // tappable inline button; details open in-chat (no crashing webview).
+      const v = customerOrdersView(chatId);
       await tg('sendMessage', {
         chat_id: chatId,
-        text: `📦 *Buyurtmalaringiz:*\n\n${lines.join('\n\n')}`,
-        parse_mode: 'Markdown',
-        reply_markup: link('/orders', 'Batafsil koʻrish'),
+        text: v.text,
+        reply_markup: v.keyboard,
       });
       return true;
     }
