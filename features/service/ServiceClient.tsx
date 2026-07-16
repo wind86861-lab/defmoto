@@ -271,27 +271,25 @@ function ServiceListItem({ item }: { item: ServiceItem }) {
   const t = useTranslations('service');
   return (
     <li className="group rounded-xl border border-brand-surface-border bg-brand-surface p-4 transition-all hover:border-brand-yellow/30">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start gap-2">
-            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-yellow" strokeWidth={3} />
-            <h4 className="text-sm font-bold leading-tight">{item.title}</h4>
-          </div>
-          {item.description && (
-            <p className="mt-1 pl-5 text-xs text-white/55">{item.description}</p>
-          )}
-        </div>
-        <div className="shrink-0 text-right">
+      <div className="flex items-start gap-2">
+        <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-yellow" strokeWidth={3} />
+        <h4 className="min-w-0 flex-1 break-words text-sm font-bold leading-tight">{item.title}</h4>
+      </div>
+      {item.description && (
+        <p className="mt-1 pl-5 text-xs text-white/55">{item.description}</p>
+      )}
+      {(item.priceFrom || item.duration) && (
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 pl-5">
           {item.priceFrom && (
-            <div className="font-display text-sm font-extrabold text-brand-yellow">
+            <span className="font-display text-sm font-extrabold text-brand-yellow">
               {t('from')} {formatPrice(item.priceFrom)}
-            </div>
+            </span>
           )}
           {item.duration && (
-            <div className="mt-0.5 text-[11px] text-white/45">{item.duration}</div>
+            <span className="text-[11px] text-white/45">· {item.duration}</span>
           )}
         </div>
-      </div>
+      )}
     </li>
   );
 }
