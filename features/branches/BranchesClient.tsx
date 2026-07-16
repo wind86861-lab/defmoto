@@ -85,13 +85,23 @@ export function BranchesClient() {
 
       {view === 'branches' ? (
         <div className="animate-fade-in">
-          {/* === Region (viloyat) filter === */}
+          {/* === Region (viloyat) select === */}
           {branchRegions.length > 0 && (
-            <div className="mb-5 flex flex-wrap justify-center gap-2">
-              <RegionChip label={t('allRegions')} active={!branchRegion} onClick={() => pickBranchRegion('')} />
-              {branchRegions.map((r) => (
-                <RegionChip key={r} label={r} active={branchRegion === r} onClick={() => pickBranchRegion(r)} />
-              ))}
+            <div className="mx-auto mb-5 flex max-w-2xl justify-center">
+              <div className="relative w-full">
+                <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-yellow" />
+                <select
+                  value={branchRegion}
+                  onChange={(e) => pickBranchRegion(e.target.value)}
+                  className="w-full appearance-none rounded-2xl border border-brand-surface-border bg-brand-surface py-3.5 pl-11 pr-10 text-sm font-bold text-white outline-none transition-colors focus:border-brand-yellow/60"
+                >
+                  <option value="">{t('allRegions')}</option>
+                  {branchRegions.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50" />
+              </div>
             </div>
           )}
 
@@ -496,13 +506,23 @@ function FranchiseSection() {
 
   return (
     <section className="space-y-5">
-      {/* Region (viloyat) filter */}
+      {/* Region (viloyat) select */}
       {regions.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-2">
-          <RegionChip label={t('allRegions')} active={!region} onClick={() => setRegion('')} />
-          {regions.map((r) => (
-            <RegionChip key={r} label={r} active={region === r} onClick={() => setRegion(r)} />
-          ))}
+        <div className="mx-auto flex max-w-2xl justify-center">
+          <div className="relative w-full">
+            <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-yellow" />
+            <select
+              value={region}
+              onChange={(e) => setRegion(e.target.value)}
+              className="w-full appearance-none rounded-2xl border border-brand-surface-border bg-brand-surface py-3.5 pl-11 pr-10 text-sm font-bold text-white outline-none transition-colors focus:border-brand-yellow/60"
+            >
+              <option value="">{t('allRegions')}</option>
+              {regions.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50" />
+          </div>
         </div>
       )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -516,23 +536,6 @@ function FranchiseSection() {
         </p>
       )}
     </section>
-  );
-}
-
-function RegionChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'rounded-full border px-3.5 py-1.5 text-sm font-bold transition-colors',
-        active
-          ? 'border-brand-yellow bg-brand-yellow/10 text-brand-yellow shadow-glow-sm'
-          : 'border-brand-surface-border bg-brand-surface text-white/70 hover:border-brand-yellow/40 hover:text-brand-yellow',
-      )}
-    >
-      {label}
-    </button>
   );
 }
 
