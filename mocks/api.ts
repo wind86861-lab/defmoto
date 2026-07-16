@@ -1,7 +1,6 @@
 import type { Product } from '@/types/product';
 import { mockProducts } from './products';
 import { mockCategories } from './categories';
-import { mockBrands } from './brands';
 
 export type SortKey = 'popular' | 'price-asc' | 'price-desc' | 'newest' | 'rating';
 
@@ -103,8 +102,9 @@ export function queryProducts(
   const colorCounts = new Map<string, { hex: string; name: string; count: number }>();
 
   for (const p of source) {
-    if (p.brand) {
-      brandCounts.set(p.brand, (brandCounts.get(p.brand) ?? 0) + 1);
+    const brand = p.brand?.trim();
+    if (brand) {
+      brandCounts.set(brand, (brandCounts.get(brand) ?? 0) + 1);
     }
     for (const v of p.variants ?? []) {
       if (v.colorHex && v.color) {
@@ -116,9 +116,11 @@ export function queryProducts(
     }
   }
 
-  const brandFacets = mockBrands
-    .filter((b) => brandCounts.has(b.name))
-    .map((b) => ({ slug: b.slug, name: b.name, count: brandCounts.get(b.name) ?? 0 }));
+  // Brands derived from the actual products (the brand name is also the filter
+  // value — /catalog?brands= matches p.brand case-insensitively). Most first.
+  const brandFacets = Array.from(brandCounts.entries())
+    .map(([name, count]) => ({ slug: name, name, count }))
+    .sort((a, b) => b.count - a.count);
 
   return {
     items: paged,

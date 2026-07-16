@@ -5,6 +5,9 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/cn';
 import { PriceRange } from '@/components/ui/PriceRange';
 import { useCatalogQuery } from './useCatalogQuery';
+import { useContentStore } from '@/lib/stores/content';
+import { useMounted } from '@/hooks/useMounted';
+import { categoryName as resolveCategoryName } from '@/lib/categoryName';
 import type { ProductListResponse } from '@/mocks/api';
 import { mockCategories } from '@/mocks/categories';
 
@@ -15,7 +18,20 @@ interface FilterPanelProps {
 
 export function FilterPanel({ facets, className }: FilterPanelProps) {
   const t = useTranslations('catalog');
+  const tCategories = useTranslations('categories');
   const { query, setMany } = useCatalogQuery();
+  const mounted = useMounted();
+  const storeCategories = useContentStore((s) => s.categories);
+  const storeProducts = useContentStore((s) => s.products);
+
+  // Live admin categories with real per-category counts (mock as fallback).
+  const useLive = mounted && storeCategories.length > 0;
+  const categories = useLive ? storeCategories : mockCategories;
+  const countFor = (slug: string): number | undefined =>
+    useLive ? storeProducts.filter((p) => p.categorySlug === slug).length : undefined;
+  const allCount = useLive
+    ? storeProducts.length
+    : facets.brands.reduce((s, b) => s + b.count, 0);
 
   const toggleBrand = (slug: string) => {
     const set = new Set(query.brands);
@@ -33,28 +49,7 @@ export function FilterPanel({ facets, className }: FilterPanelProps) {
 
   return (
     <div className={cn('space-y-6 p-5', className)}>
-      {/* Category */}
-      <FilterSection title={t('category')}>
-        <div className="space-y-1">
-          <CategoryRow
-            label={t('allCategory')}
-            active={!query.category}
-            count={facets.brands.reduce((s, b) => s + b.count, 0)}
-            onClick={() => setMany({ category: null })}
-          />
-          {mockCategories.map((c) => (
-            <CategoryRow
-              key={c.id}
-              label={`${c.icon ?? ''} ${c.name}`}
-              active={query.category === c.slug}
-              count={c.productCount}
-              onClick={() => setMany({ category: c.slug })}
-            />
-          ))}
-        </div>
-      </FilterSection>
-
-      {/* Price */}
+      {/* Price — first */}
       <FilterSection title={t('priceRange')}>
         <PriceRange
           min={facets.priceMin}
@@ -70,6 +65,27 @@ export function FilterPanel({ facets, className }: FilterPanelProps) {
             })
           }
         />
+      </FilterSection>
+
+      {/* Category — live admin categories */}
+      <FilterSection title={t('category')}>
+        <div className="space-y-1">
+          <CategoryRow
+            label={t('allCategory')}
+            active={!query.category}
+            count={allCount}
+            onClick={() => setMany({ category: null })}
+          />
+          {categories.map((c) => (
+            <CategoryRow
+              key={c.id}
+              label={`${c.icon ? c.icon + ' ' : ''}${useLive ? resolveCategoryName(tCategories, c) : c.name}`}
+              active={query.category === c.slug}
+              count={countFor(c.slug)}
+              onClick={() => setMany({ category: c.slug })}
+            />
+          ))}
+        </div>
       </FilterSection>
 
       {/* Brands */}
