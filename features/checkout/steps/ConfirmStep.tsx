@@ -66,12 +66,11 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
     setSubmitting(true);
     notify('success');
 
-    // Simulate order creation API call
-    await new Promise((r) => setTimeout(r, 700));
-
     const order: Order = {
-      id: `o_${Date.now()}`,
-      number: `DM-${Math.floor(100000 + Math.random() * 900000)}`,
+      // Random suffix so two orders placed in the same millisecond can't collide
+      // (the id is the payment/lookup key). Number is timestamp-based for spread.
+      id: `o_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      number: `DM-${String(Date.now()).slice(-6)}`,
       createdAt: new Date().toISOString(),
       status: 'pending',
       items: [...items],

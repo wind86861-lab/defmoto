@@ -39,16 +39,25 @@ const monthShort: Record<Locale, string[]> = {
   en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
 };
 
-/** Deterministic short date — same output on server and browser. */
-export function formatDate(input: string | Date, locale: Locale = 'uz'): string {
+// Uzbekistan is a fixed UTC+5 (Asia/Tashkent, no DST). Shift by the offset and
+// read UTC parts so the output is BOTH correct local time AND deterministic
+// (identical on server and browser — no hydration mismatch).
+const TASHKENT_OFFSET_MS = 5 * 60 * 60 * 1000;
+function tashkent(input: string | Date): Date {
   const d = typeof input === 'string' ? new Date(input) : input;
+  return new Date(d.getTime() + TASHKENT_OFFSET_MS);
+}
+
+/** Deterministic short date (Tashkent) — same output on server and browser. */
+export function formatDate(input: string | Date, locale: Locale = 'uz'): string {
+  const d = tashkent(input);
   return `${d.getUTCDate()} ${monthShort[locale][d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
-/** Deterministic date-time. */
+/** Deterministic date-time (Tashkent). */
 export function formatDateTime(input: string | Date, locale: Locale = 'uz'): string {
-  const d = typeof input === 'string' ? new Date(input) : input;
+  const d = tashkent(input);
   const hh = String(d.getUTCHours()).padStart(2, '0');
   const mm = String(d.getUTCMinutes()).padStart(2, '0');
-  return `${formatDate(d, locale)}, ${hh}:${mm}`;
+  return `${formatDate(input, locale)}, ${hh}:${mm}`;
 }

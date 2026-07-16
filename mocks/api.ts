@@ -129,8 +129,9 @@ export function queryProducts(
     pageSize,
     hasMore: start + pageSize < total,
     facets: {
-      priceMin: Math.min(...allPrices),
-      priceMax: Math.max(...allPrices),
+      // Guard against an empty set (Math.min/max of [] → ±Infinity breaks the slider).
+      priceMin: allPrices.length ? Math.min(...allPrices) : 0,
+      priceMax: allPrices.length ? Math.max(...allPrices) : 0,
       brands: brandFacets,
       colors: Array.from(colorCounts.values()),
     },

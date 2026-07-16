@@ -11,7 +11,8 @@ interface ChatBubbleProps {
 }
 
 function timeLabel(iso: string) {
-  const d = new Date(iso);
+  // Tashkent time (UTC+5, fixed) — deterministic across server/browser.
+  const d = new Date(new Date(iso).getTime() + 5 * 60 * 60 * 1000);
   const hh = String(d.getUTCHours()).padStart(2, '0');
   const mm = String(d.getUTCMinutes()).padStart(2, '0');
   return `${hh}:${mm}`;

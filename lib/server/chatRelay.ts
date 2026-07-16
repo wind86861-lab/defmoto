@@ -755,7 +755,7 @@ function orderDetailView(id: string): { text: string; keyboard: { inline_keyboar
   const lines: string[] = [
     `🧾 Buyurtma ${rec.number}`,
     `Holat: ${ORDER_STATUS[rec.status] || rec.status}`,
-    `Sana: ${new Date(rec.createdAt).toLocaleString('ru-RU')}`,
+    `Sana: ${new Date(rec.createdAt).toLocaleString('ru-RU', { timeZone: 'Asia/Tashkent' })}`,
   ];
   const items = p.items ?? [];
   if (items.length) {
