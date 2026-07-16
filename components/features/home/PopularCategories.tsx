@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
-import { CategoryCard } from '@/components/features/CategoryCard';
+import { CategoryChip } from '@/components/features/CategoryChip';
 import { useContentStore } from '@/lib/stores/content';
 import { useMounted } from '@/hooks/useMounted';
 import type { Category } from '@/types/product';
@@ -13,11 +13,8 @@ export function PopularCategories({ categories }: { categories: Category[] }) {
   const tCommon = useTranslations('common');
   const mounted = useMounted();
   const storeCategories = useContentStore((s) => s.categories);
-  // Admin-managed categories (with images) override the server-passed list.
-  const list =
-    mounted && storeCategories.length
-      ? storeCategories.filter((c) => c.image).slice(0, 5)
-      : categories;
+  // Admin-managed categories override the server-passed list.
+  const list = (mounted && storeCategories.length ? storeCategories : categories).slice(0, 8);
 
   return (
     <section className="relative pb-10 pt-7 sm:pb-14 sm:pt-9 lg:pt-11">
@@ -36,11 +33,11 @@ export function PopularCategories({ categories }: { categories: Category[] }) {
           </Link>
         </header>
 
-        {/* Mobile: horizontal scroll. Desktop: 5-column grid */}
-        <div className="-mx-4 overflow-x-auto px-4 scrollbar-hide sm:mx-0 sm:px-0">
-          <div className="flex gap-3 sm:grid sm:grid-cols-2 sm:gap-4 lg:grid-cols-5">
+        {/* Compact tiles like the catalog: single-row scroll on mobile, wraps on desktop */}
+        <div className="-mx-4 overflow-x-auto px-4 scrollbar-hide sm:mx-0 sm:overflow-visible sm:px-0">
+          <div className="flex gap-3 pb-1 sm:flex-wrap sm:gap-4">
             {list.map((cat) => (
-              <CategoryCard key={cat.id} category={cat} />
+              <CategoryChip key={cat.id} category={cat} />
             ))}
           </div>
         </div>
