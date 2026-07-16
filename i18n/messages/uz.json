@@ -409,6 +409,8 @@
     "free": "Bepul",
     "totalPayment": "Jami to'lov",
     "confirmOrder": "Buyurtmani tasdiqlash",
+    "orderAcceptedTitle": "Buyurtmangiz qabul qilindi ✅",
+    "orderAcceptedDesc": "Tez orada operator siz bilan bog'lanadi.",
     "payButton": "{amount} - to'lash",
     "termsPrefix": "Tasdiqlash orqali siz",
     "termsLink": "foydalanish shartlariga",

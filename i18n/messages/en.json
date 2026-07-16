@@ -409,6 +409,8 @@
     "free": "Free",
     "totalPayment": "Total payment",
     "confirmOrder": "Confirm order",
+    "orderAcceptedTitle": "Your order is accepted ✅",
+    "orderAcceptedDesc": "An operator will contact you shortly.",
     "payButton": "Pay {amount}",
     "termsPrefix": "By confirming, you agree to the",
     "termsLink": "terms of use",

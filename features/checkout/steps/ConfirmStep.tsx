@@ -10,6 +10,7 @@ import { useCartStore } from '@/lib/stores/cart';
 import { useOrdersStore } from '@/lib/stores/orders';
 import { useTelegram } from '@/components/providers/TelegramProvider';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useToast } from '@/components/ui/Toaster';
 import { useCheckoutState } from '../useCheckoutState';
 import { applyPromo } from '@/lib/promo';
 import { PaymentProcessor } from '@/features/payment/PaymentProcessor';
@@ -29,6 +30,7 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
   const resetCheckout = useCheckoutState((s) => s.reset);
   const { user } = useTelegram();
   const { notify } = useHaptic();
+  const toast = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [paymentReq, setPaymentReq] = useState<PaymentRequest | null>(null);
 
@@ -121,8 +123,9 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
       }),
     }).catch(() => {});
 
-    // Cash (COD) is accepted immediately → clear cart + go to success.
+    // Cash (COD) is accepted immediately → confirm, clear cart + go to success.
     if (state.payment.method === 'cash') {
+      toast.success(t('orderAcceptedTitle'), t('orderAcceptedDesc'));
       clearCart();
       resetCheckout();
       router.push(`/order/${order.id}/success`);

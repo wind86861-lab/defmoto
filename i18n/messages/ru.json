@@ -409,6 +409,8 @@
     "free": "Бесплатно",
     "totalPayment": "Итого к оплате",
     "confirmOrder": "Подтвердить заказ",
+    "orderAcceptedTitle": "Ваш заказ принят ✅",
+    "orderAcceptedDesc": "Оператор скоро свяжется с вами.",
     "payButton": "Оплатить {amount}",
     "termsPrefix": "Подтверждая заказ, вы соглашаетесь с",
     "termsLink": "условиями использования",
