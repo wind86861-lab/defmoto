@@ -71,7 +71,7 @@ export function ProductGallery({ images, video, alt }: ProductGalleryProps) {
                     <ProductImage
                       src={m.src}
                       alt={`${alt} - ${i + 1}`}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full bg-white object-contain"
                       fallbackClassName="h-full w-full"
                     />
                   )}
