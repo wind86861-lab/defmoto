@@ -45,6 +45,8 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
   const { id } = params;
   const [order, setOrder] = useState<ServerOrder | null>(null);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [shipErr, setShipErr] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/orders/${id}`, { cache: 'no-store' })
@@ -53,6 +55,33 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
+
+  // Push the order into BTS — one tap creates the shipment (tracking + status).
+  const createShipment = async () => {
+    setCreating(true);
+    setShipErr(null);
+    try {
+      const res = await fetch('/api/delivery/bts/shipment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: id }),
+      });
+      const data = await res.json();
+      if (res.ok && data?.ok) {
+        const r2 = await fetch(`/api/orders/${id}`, { cache: 'no-store' });
+        const d2 = await r2.json();
+        setOrder((prev) => d2?.order ?? prev);
+      } else if (data?.configured === false) {
+        setShipErr('BTS sozlanmagan (server .env).');
+      } else {
+        setShipErr(data?.error || 'BTS xatosi. Qayta urinib koʻring.');
+      }
+    } catch {
+      setShipErr('Tarmoq xatosi.');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   if (loading) {
     return <div className="py-16 text-center text-sm text-white/45">Yuklanmoqda...</div>;
@@ -111,16 +140,55 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
         />
       </section>
 
-      {order.bts?.barcode && (
-        <div className="rounded-xl border border-brand-surface-border bg-brand-surface px-4 py-3 text-sm">
-          <span className="text-white/45">BTS barcode:</span>{' '}
-          <span className="font-mono font-bold">{order.bts.barcode}</span>
-          {order.bts.tracking && (
-            <a href={order.bts.tracking} target="_blank" rel="noopener noreferrer" className="ml-2 text-brand-yellow hover:underline">
-              kuzatish
-            </a>
+      {/* BTS shipment — create with one tap, then shows tracking + status */}
+      {(d?.method === 'bts' || d?.method === 'post' || d?.method === 'courier') && (
+        <section className="rounded-2xl border border-brand-surface-border bg-brand-surface p-4">
+          <h2 className="mb-3 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white/45">
+            <Truck className="h-4 w-4 text-brand-yellow" /> BTS yetkazish
+          </h2>
+
+          {order.bts?.barcode ? (
+            <div className="space-y-1.5 text-sm">
+              <div>
+                <span className="text-white/45">Barcode:</span>{' '}
+                <span className="font-mono font-bold">{order.bts.barcode}</span>
+              </div>
+              {order.bts.cost != null && (
+                <div>
+                  <span className="text-white/45">Yetkazish narxi:</span>{' '}
+                  <span className="font-bold">{formatPrice(order.bts.cost)}</span>
+                </div>
+              )}
+              {order.bts.tracking && (
+                <a
+                  href={order.bts.tracking}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-semibold text-brand-yellow hover:underline"
+                >
+                  🔍 Kuzatish (tracking)
+                </a>
+              )}
+              <p className="pt-1 text-xs font-semibold text-success">✅ BTS joʻnatma yaratilgan</p>
+            </div>
+          ) : (
+            <div>
+              <p className="mb-3 text-xs text-white/55">
+                Buyurtmani BTS tizimiga topshiring — trek-raqam avtomatik olinadi.
+              </p>
+              <button
+                type="button"
+                onClick={createShipment}
+                disabled={creating}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-yellow px-4 py-2.5 text-sm font-bold text-brand-dark shadow-glow-sm transition-all hover:brightness-110 disabled:opacity-50 touch-feedback"
+              >
+                <Truck className="h-4 w-4" />
+                {creating ? 'Yaratilmoqda…' : "🚚 BTS joʻnatma yaratish"}
+              </button>
+              {shipErr && <p className="mt-2 text-xs text-danger">⚠️ {shipErr}</p>}
+            </div>
           )}
-        </div>
+        </section>
       )}
 
       {/* Items — what they ordered */}

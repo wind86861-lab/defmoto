@@ -7,6 +7,7 @@
 
 import { getOrder, setOrderBts, updateOrderStatus } from '@/lib/db';
 import { notifyOperator } from '@/lib/server/chatRelay';
+import { notifyOrderStatus } from '@/lib/server/orderNotify';
 import { getBtsSender } from './settings';
 import {
   btsCreateOrder,
@@ -121,6 +122,8 @@ export async function createShipmentForOrder(
     statusCode: r.data.status?.code ?? undefined,
   });
   updateOrderStatus(order.id, 'shipping');
+  // Tell the customer it's on the way (Telegram DM) the moment we hand it to BTS.
+  void notifyOrderStatus(order.id, 'shipping');
 
   void notifyOperator(
     [
