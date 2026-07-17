@@ -119,7 +119,10 @@
     "notFoundBadge": "Maxsus so'rov",
     "notFoundProductPlaceholder": "Tovar nomi yoki tavsif",
     "notFoundPhonePlaceholder": "+998 90 000 00 00",
-    "notFoundSent": "Yuborildi!"
+    "notFoundSent": "Yuborildi!",
+    "notFoundErrProduct": "Qidirayotgan tovaringizni yozing (kamida 3 belgi).",
+    "notFoundErrPhone": "To'g'ri telefon raqam kiriting (masalan: 90 123 45 67).",
+    "notFoundErrGeneric": "Yuborilmadi. Qayta urinib ko'ring."
   },
   "priceCompare": {
     "title": "Narxlarni solishtiring",
@@ -688,6 +691,7 @@
     "navBanner": "Banner",
     "navProducts": "Tovarlar",
     "navOrders": "Buyurtmalar",
+    "navLeads": "So'rovlar",
     "navCategories": "Kategoriyalar",
     "navChats": "Servis chatlar",
     "adminBadge": "Admin",

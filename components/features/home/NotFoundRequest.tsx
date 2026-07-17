@@ -3,20 +3,59 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Search, Send } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useHaptic } from '@/hooks/useHaptic';
 
+/** Real Uzbek phone: 9 local digits, optionally with a 998 prefix. */
+function isValidUzPhone(raw: string): boolean {
+  const digits = raw.replace(/\D/g, '');
+  return digits.length === 9 || (digits.length === 12 && digits.startsWith('998'));
+}
+
 export function NotFoundRequest() {
   const t = useTranslations('home');
-  const [submitted, setSubmitted] = useState(false);
   const { notify } = useHaptic();
+  const [product, setProduct] = useState('');
+  const [phone, setPhone] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    notify('success');
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 4000);
+    setError(null);
+
+    if (product.trim().length < 3) {
+      setError(t('notFoundErrProduct'));
+      return;
+    }
+    if (!isValidUzPhone(phone)) {
+      setError(t('notFoundErrPhone'));
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'product', product: product.trim(), phone: phone.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok && data?.ok) {
+        notify('success');
+        setSubmitted(true);
+        setProduct('');
+        setPhone('');
+        setTimeout(() => setSubmitted(false), 5000);
+      } else {
+        setError(data?.error === 'invalid-phone' ? t('notFoundErrPhone') : t('notFoundErrGeneric'));
+      }
+    } catch {
+      setError(t('notFoundErrGeneric'));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -44,21 +83,33 @@ export function NotFoundRequest() {
               <Input
                 placeholder={t('notFoundProductPlaceholder')}
                 className="bg-brand-dark/90 text-white placeholder:text-white/40"
-                disabled={submitted}
+                value={product}
+                onChange={(e) => setProduct(e.target.value)}
+                disabled={submitting || submitted}
               />
               <Input
                 placeholder={t('notFoundPhonePlaceholder')}
                 type="tel"
+                inputMode="tel"
                 className="bg-brand-dark/90 text-white placeholder:text-white/40"
-                disabled={submitted}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                disabled={submitting || submitted}
               />
+              {error && (
+                <p className="rounded-lg bg-brand-dark/85 px-3 py-2 text-xs font-bold text-red-400">
+                  ⚠️ {error}
+                </p>
+              )}
               <button
                 type="submit"
-                disabled={submitted}
+                disabled={submitting || submitted}
                 className="group inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-dark px-5 font-bold text-white shadow-card transition-all hover:bg-black hover:shadow-card-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-success disabled:text-white"
               >
                 {submitted ? (
                   <>✓ {t('notFoundSent')}</>
+                ) : submitting ? (
+                  <>…</>
                 ) : (
                   <>
                     <span>{t('notFoundCta')}</span>

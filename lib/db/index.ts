@@ -23,6 +23,7 @@ const PAYMENTS_FILE = path.join(DATA_DIR, 'payments.json');
 const REVIEWS_FILE = path.join(DATA_DIR, 'reviews.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const LINKS_FILE = path.join(DATA_DIR, 'links.json');
+const LEADS_FILE = path.join(DATA_DIR, 'leads.json');
 
 /** Marketing campaign / referral link with click tracking. */
 export interface CampaignLink {
@@ -43,6 +44,7 @@ interface Store {
   reviews: ReviewRecord[];
   users: UserAccount[];
   links: CampaignLink[];
+  leads: LeadRecord[];
   loaded: boolean;
 }
 
@@ -56,6 +58,7 @@ const store: Store =
     reviews: [],
     users: [],
     links: [],
+    leads: [],
     loaded: false,
   });
 
@@ -91,6 +94,11 @@ function load() {
     store.links = JSON.parse(fs.readFileSync(LINKS_FILE, 'utf8'));
   } catch {
     store.links = [];
+  }
+  try {
+    store.leads = JSON.parse(fs.readFileSync(LEADS_FILE, 'utf8'));
+  } catch {
+    store.leads = [];
   }
 }
 
@@ -515,4 +523,35 @@ export function deleteLink(id: string): boolean {
   const changed = store.links.length !== before;
   if (changed) atomicWrite(LINKS_FILE, store.links);
   return changed;
+}
+
+/* -------------------------------- leads ---------------------------------- */
+
+/** Customer request ("Maxsus so'rov" / branch / service / franchise forms). */
+export interface LeadRecord {
+  id: string;
+  type: string; // product | branch | service | franchise | ...
+  name?: string;
+  phone: string;
+  message?: string; // free text / requested product
+  meta?: Record<string, string>;
+  createdAt: number;
+}
+
+export function createLead(input: Omit<LeadRecord, 'id' | 'createdAt'>): LeadRecord {
+  load();
+  const lead: LeadRecord = {
+    ...input,
+    id: `ld_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    createdAt: Date.now(),
+  };
+  store.leads.unshift(lead);
+  atomicWrite(LEADS_FILE, store.leads);
+  return lead;
+}
+
+/** All leads, newest first (admin). */
+export function listLeads(): LeadRecord[] {
+  load();
+  return [...store.leads].sort((a, b) => b.createdAt - a.createdAt);
 }

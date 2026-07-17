@@ -119,7 +119,10 @@
     "notFoundBadge": "Special request",
     "notFoundProductPlaceholder": "Product name or description",
     "notFoundPhonePlaceholder": "+998 90 000 00 00",
-    "notFoundSent": "Sent!"
+    "notFoundSent": "Sent!",
+    "notFoundErrProduct": "Describe the product you need (min 3 characters).",
+    "notFoundErrPhone": "Enter a valid phone number (e.g. 90 123 45 67).",
+    "notFoundErrGeneric": "Not sent. Please try again."
   },
   "priceCompare": {
     "title": "Compare prices",
@@ -688,6 +691,7 @@
     "navBanner": "Banner",
     "navProducts": "Products",
     "navOrders": "Orders",
+    "navLeads": "Requests",
     "navCategories": "Categories",
     "navChats": "Service chats",
     "adminBadge": "Admin",

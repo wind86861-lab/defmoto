@@ -119,7 +119,10 @@
     "notFoundBadge": "Специальный запрос",
     "notFoundProductPlaceholder": "Название или описание товара",
     "notFoundPhonePlaceholder": "+998 90 000 00 00",
-    "notFoundSent": "Отправлено!"
+    "notFoundSent": "Отправлено!",
+    "notFoundErrProduct": "Напишите, какой товар вы ищете (мин. 3 символа).",
+    "notFoundErrPhone": "Введите корректный номер телефона (напр.: 90 123 45 67).",
+    "notFoundErrGeneric": "Не отправлено. Попробуйте ещё раз."
   },
   "priceCompare": {
     "title": "Сравните цены",
@@ -688,6 +691,7 @@
     "navBanner": "Баннер",
     "navProducts": "Товары",
     "navOrders": "Заказы",
+    "navLeads": "Заявки",
     "navCategories": "Категории",
     "navChats": "Чаты поддержки",
     "adminBadge": "Admin",
