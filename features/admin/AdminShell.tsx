@@ -17,6 +17,7 @@ import {
   Link2,
   Users,
   Headset,
+  Newspaper,
   Settings,
   ExternalLink,
   LogOut,
@@ -71,6 +72,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     { href: '/admin/marketplaces', label: t('navMarketplaces'), icon: Store },
     { href: '/admin/delivery', label: t('navDelivery'), icon: Truck },
     { href: '/admin/links', label: t('navLinks'), icon: Link2 },
+    { href: '/admin/blog', label: t('navBlog'), icon: Newspaper },
     { href: '/admin/settings', label: t('navSettings'), icon: Settings },
     { href: '/admin/chats', label: t('navChats'), icon: MessageCircle },
   ];

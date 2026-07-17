@@ -5,7 +5,15 @@ import { mockBranches } from '@/mocks/branches';
 import { mockServiceCenters } from '@/mocks/services';
 import { mockProducts } from '@/mocks/products';
 import { mockCategories } from '@/mocks/categories';
-import type { Branch, ServiceCenter, ServiceItem, FranchiseLocation } from '@/types/content';
+import { mockBlogPosts } from '@/mocks/blog';
+import type {
+  Branch,
+  ServiceCenter,
+  ServiceItem,
+  FranchiseLocation,
+  BlogPost,
+  AboutContent,
+} from '@/types/content';
 import type { Product, Category } from '@/types/product';
 
 /**
@@ -35,6 +43,8 @@ interface ContentState {
   franchises: FranchiseLocation[];
   products: Product[];
   categories: Category[];
+  blogPosts: BlogPost[];
+  about: AboutContent;
 
   // Branches
   addBranch: (b: Branch) => void;
@@ -75,6 +85,17 @@ interface ContentState {
   removeCategory: (id: string) => void;
   reorderCategory: (id: string, dir: -1 | 1) => void;
   resetCategories: () => void;
+
+  // Blog
+  addBlogPost: (p: BlogPost) => void;
+  updateBlogPost: (id: string, patch: Partial<BlogPost>) => void;
+  removeBlogPost: (id: string) => void;
+  reorderBlogPost: (id: string, dir: -1 | 1) => void;
+  resetBlogPosts: () => void;
+
+  // About page
+  setAbout: (patch: Partial<AboutContent>) => void;
+  resetAbout: () => void;
 }
 
 function move<T extends { id: string }>(list: T[], id: string, dir: -1 | 1): T[] {
@@ -96,6 +117,8 @@ export const useContentStore = create<ContentState>()(
       franchises: [],
       products: mockProducts,
       categories: mockCategories,
+      blogPosts: mockBlogPosts,
+      about: {},
 
       addBranch: (b) => set((s) => ({ branches: [...s.branches, b] })),
       updateBranch: (id, patch) =>
@@ -176,19 +199,31 @@ export const useContentStore = create<ContentState>()(
         set((s) => ({ categories: s.categories.filter((c) => c.id !== id) })),
       reorderCategory: (id, dir) => set((s) => ({ categories: move(s.categories, id, dir) })),
       resetCategories: () => set({ categories: mockCategories }),
+
+      addBlogPost: (p) => set((s) => ({ blogPosts: [p, ...s.blogPosts] })),
+      updateBlogPost: (id, patch) =>
+        set((s) => ({ blogPosts: s.blogPosts.map((p) => (p.id === id ? { ...p, ...patch } : p)) })),
+      removeBlogPost: (id) => set((s) => ({ blogPosts: s.blogPosts.filter((p) => p.id !== id) })),
+      reorderBlogPost: (id, dir) => set((s) => ({ blogPosts: move(s.blogPosts, id, dir) })),
+      resetBlogPosts: () => set({ blogPosts: mockBlogPosts }),
+
+      setAbout: (patch) => set((s) => ({ about: { ...s.about, ...patch } })),
+      resetAbout: () => set({ about: {} }),
     }),
     {
       name: 'deftmoto-content',
-      version: 3,
+      version: 4,
       // Persist to the server (global) instead of localStorage.
       storage: createServerPersist('content-store'),
-      // v2 adds products + categories — seed them for older persisted state.
-      // v3 adds franchise locations.
+      // v2 adds products + categories; v3 adds franchise locations;
+      // v4 adds blog posts + the About page content.
       migrate: (persisted) => {
         const s = persisted as ContentState;
         if (!s.products || s.products.length === 0) s.products = mockProducts;
         if (!s.categories || s.categories.length === 0) s.categories = mockCategories;
         if (!s.franchises) s.franchises = [];
+        if (!s.blogPosts || s.blogPosts.length === 0) s.blogPosts = mockBlogPosts;
+        if (!s.about) s.about = {};
         return s;
       },
     },

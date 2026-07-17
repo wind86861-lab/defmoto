@@ -233,7 +233,9 @@
     "shareTitle": "Ulashish:",
     "related": "Boshqa postlar",
     "promoLabel": "Aksiya",
-    "noPostsInCategory": "Bu turkumda postlar yo'q"
+    "noPostsInCategory": "Bu turkumda postlar yo'q",
+    "notFound": "Maqola topilmadi.",
+    "backToBlog": "← Blogga qaytish"
   },
   "about": {
     "title": "Biz haqimizda",
@@ -781,6 +783,7 @@
     "navMarketplaces": "Marketpleyslar",
     "navDelivery": "BTS yetkazish",
     "navLinks": "Marketing havolalar",
+    "navBlog": "Blog / Sahifalar",
     "navCustomers": "Klientlar",
     "navOperators": "Operatorlar",
     "navSettings": "Sayt sozlamalari",

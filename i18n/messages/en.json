@@ -233,7 +233,9 @@
     "shareTitle": "Share:",
     "related": "Related posts",
     "promoLabel": "Promotion",
-    "noPostsInCategory": "No posts in this category yet"
+    "noPostsInCategory": "No posts in this category yet",
+    "notFound": "Article not found.",
+    "backToBlog": "← Back to blog"
   },
   "about": {
     "title": "About us",
@@ -781,6 +783,7 @@
     "navMarketplaces": "Marketplaces",
     "navDelivery": "BTS delivery",
     "navLinks": "Marketing links",
+    "navBlog": "Blog / Pages",
     "navCustomers": "Customers",
     "navOperators": "Operators",
     "navSettings": "Site settings",

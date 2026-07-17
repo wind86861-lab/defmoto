@@ -233,7 +233,9 @@
     "shareTitle": "Поделиться:",
     "related": "Другие посты",
     "promoLabel": "Акция",
-    "noPostsInCategory": "В этой категории пока нет постов"
+    "noPostsInCategory": "В этой категории пока нет постов",
+    "notFound": "Статья не найдена.",
+    "backToBlog": "← Назад к блогу"
   },
   "about": {
     "title": "О нас",
@@ -781,6 +783,7 @@
     "navMarketplaces": "Маркетплейсы",
     "navDelivery": "Доставка BTS",
     "navLinks": "Маркетинг ссылки",
+    "navBlog": "Блог / Страницы",
     "navCustomers": "Клиенты",
     "navOperators": "Операторы",
     "navSettings": "Настройки сайта",

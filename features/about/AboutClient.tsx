@@ -5,12 +5,34 @@ import { Award, ShieldCheck, Wrench, Tag, Check } from 'lucide-react';
 import { Reveal } from '@/components/ui/Reveal';
 import { YouTubeBlock } from '@/components/ui/YouTubeBlock';
 import { ProductImage } from '@/components/ui/ProductImage';
+import { useContentStore } from '@/lib/stores/content';
+import { useMounted } from '@/hooks/useMounted';
 
 const ABOUT_PHOTO =
   'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=900&q=85';
+const ABOUT_VIDEO = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
 
 export function AboutClient() {
   const t = useTranslations('about');
+  const mounted = useMounted();
+  const about = useContentStore((s) => s.about);
+
+  // Admin-editable content with i18n fallback (only after hydration).
+  const a = mounted ? about : {};
+  const videoUrl = a.videoUrl?.trim() || ABOUT_VIDEO;
+  const photo = a.photo?.trim() || ABOUT_PHOTO;
+  const heading = a.title?.trim() || t('aboutHeading');
+  const introParas = a.intro?.trim()
+    ? a.intro.trim().split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean)
+    : [t('aboutIntroP1'), t('aboutIntroP2')];
+  const stats = a.stats?.length
+    ? a.stats
+    : [
+        { value: '5+', label: t('statBranches') },
+        { value: '10K+', label: t('statProducts') },
+        { value: '5K+', label: t('statCustomers') },
+        { value: '24/7', label: t('statSupport') },
+      ];
 
   const values = [
     { icon: Award, title: t('valueQuality'), desc: t('valueQualityDesc') },
@@ -32,10 +54,7 @@ export function AboutClient() {
 
       {/* === Video === */}
       <Reveal direction="up">
-        <YouTubeBlock
-          url="https://www.youtube.com/embed/dQw4w9WgXcQ"
-          title={t('videoTitle')}
-        />
+        <YouTubeBlock url={videoUrl} title={t('videoTitle')} />
       </Reveal>
 
       {/* === About the company === */}
@@ -43,17 +62,20 @@ export function AboutClient() {
         <div className="grid gap-6 sm:gap-8 lg:grid-cols-2 lg:items-center">
           <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-brand-surface-border bg-brand-surface lg:aspect-square">
             <ProductImage
-              src={ABOUT_PHOTO}
-              alt={t('aboutHeading')}
+              src={photo}
+              alt={heading}
               className="absolute inset-0 h-full w-full object-cover"
             />
           </div>
           <div>
             <h2 className="font-display text-display-sm font-extrabold sm:text-display-md">
-              {t('aboutHeading')}
+              {heading}
             </h2>
-            <p className="mt-4 text-base leading-relaxed text-white/65">{t('aboutIntroP1')}</p>
-            <p className="mt-3 text-base leading-relaxed text-white/65">{t('aboutIntroP2')}</p>
+            {introParas.map((para, i) => (
+              <p key={i} className={`${i === 0 ? 'mt-4' : 'mt-3'} text-base leading-relaxed text-white/65`}>
+                {para}
+              </p>
+            ))}
           </div>
         </div>
       </Reveal>
@@ -93,12 +115,7 @@ export function AboutClient() {
       {/* === Stats === */}
       <Reveal direction="right" className="mt-14">
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          {[
-            { value: '5+', label: t('statBranches') },
-            { value: '10K+', label: t('statProducts') },
-            { value: '5K+', label: t('statCustomers') },
-            { value: '24/7', label: t('statSupport') },
-          ].map((s) => (
+          {stats.map((s) => (
             <div
               key={s.label}
               className="relative overflow-hidden rounded-2xl border border-brand-yellow/25 bg-gradient-to-br from-brand-surface to-brand-dark p-6 text-center"

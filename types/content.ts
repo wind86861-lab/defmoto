@@ -76,3 +76,17 @@ export interface BlogPost {
   isPromotion?: boolean;
   promotionBadge?: string;
 }
+
+export interface AboutStat {
+  value: string;
+  label: string;
+}
+
+/** Admin-editable "About company" page content (falls back to i18n when empty). */
+export interface AboutContent {
+  title?: string;
+  intro?: string; // paragraphs separated by blank lines
+  videoUrl?: string;
+  photo?: string;
+  stats?: AboutStat[];
+}

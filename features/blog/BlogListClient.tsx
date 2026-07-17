@@ -9,11 +9,16 @@ import { ProductImage } from '@/components/ui/ProductImage';
 import { Reveal } from '@/components/ui/Reveal';
 import { formatDate } from '@/lib/format';
 import { mockBlogPosts } from '@/mocks/blog';
+import { useContentStore } from '@/lib/stores/content';
+import { useMounted } from '@/hooks/useMounted';
 import type { BlogCategory, BlogPost } from '@/types/content';
 
 export function BlogListClient() {
   const t = useTranslations('blog');
   const [filter, setFilter] = useState<BlogCategory | 'all'>('all');
+  const mounted = useMounted();
+  const storePosts = useContentStore((s) => s.blogPosts);
+  const allPosts = mounted && storePosts.length ? storePosts : mockBlogPosts;
 
   const categories: { key: BlogCategory | 'all'; label: string }[] = [
     { key: 'all', label: t('categoryAll') },
@@ -24,9 +29,9 @@ export function BlogListClient() {
   ];
 
   const posts = useMemo(() => {
-    if (filter === 'all') return mockBlogPosts;
-    return mockBlogPosts.filter((p) => p.category === filter);
-  }, [filter]);
+    if (filter === 'all') return allPosts;
+    return allPosts.filter((p) => p.category === filter);
+  }, [filter, allPosts]);
 
   const promo = mockBlogPosts.find((p) => p.isPromotion);
 

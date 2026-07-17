@@ -6,17 +6,41 @@ import { ArrowLeft, Clock, Tag, Send, ArrowRight } from 'lucide-react';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { YouTubeBlock } from '@/components/ui/YouTubeBlock';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useMounted } from '@/hooks/useMounted';
+import { useContentStore } from '@/lib/stores/content';
 import { formatDate } from '@/lib/format';
 import type { BlogPost } from '@/types/content';
 
 interface Props {
-  post: BlogPost;
-  related: BlogPost[];
+  slug: string;
+  fallbackPost: BlogPost | null;
+  fallbackRelated: BlogPost[];
 }
 
-export function BlogPostClient({ post, related }: Props) {
+export function BlogPostClient({ slug, fallbackPost, fallbackRelated }: Props) {
   const t = useTranslations('blog');
   const { impact } = useHaptic();
+  const mounted = useMounted();
+  const storePosts = useContentStore((s) => s.blogPosts);
+
+  // Prefer the live admin post; fall back to the server-rendered (mock) one.
+  const post = (mounted ? storePosts.find((p) => p.slug === slug) : null) || fallbackPost;
+  const related = post
+    ? mounted && storePosts.length
+      ? storePosts.filter((p) => p.id !== post.id && p.category === post.category).slice(0, 3)
+      : fallbackRelated
+    : [];
+
+  if (!post) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+        <p className="text-sm text-white/55">{t('notFound')}</p>
+        <Link href="/blog" className="mt-4 inline-block text-brand-yellow hover:underline">
+          {t('backToBlog')}
+        </Link>
+      </div>
+    );
+  }
 
   const share = async () => {
     impact('light');
