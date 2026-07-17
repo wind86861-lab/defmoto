@@ -19,6 +19,7 @@ import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { MarketplaceLinks } from '@/components/features/MarketplaceLinks';
 import { useCartStore } from '@/lib/stores/cart';
 import { useWishlistStore } from '@/lib/stores/wishlist';
+import { useSiteSettings } from '@/lib/stores/siteSettings';
 import { useMounted } from '@/hooks/useMounted';
 
 interface NavItem {
@@ -43,6 +44,9 @@ export function Header() {
   const cartCount = useCartStore((s) => (mounted ? s.items.length : 0));
   const wishlistCount = useWishlistStore((s) => (mounted ? s.ids.length : 0));
   const pathname = usePathname();
+  // Admin-set contact phone (Sayt sozlamalari) — i18n value is only a fallback.
+  const storedPhone = useSiteSettings((s) => s.contact?.phone);
+  const phone = (mounted && storedPhone?.trim()) || tContact('phone');
 
   return (
     <header className="sticky top-0 z-40 safe-top border-b border-brand-surface-border/60 bg-brand-dark/90 backdrop-blur-xl">
@@ -164,14 +168,14 @@ export function Header() {
           {/* Phone + socials */}
           <div className="flex shrink-0 items-center gap-3">
             <a
-              href={`tel:${tContact('phone').replace(/\D/g, '')}`}
+              href={`tel:+${phone.replace(/\D/g, '')}`}
               className="group flex items-center gap-2 whitespace-nowrap text-sm font-bold text-white transition-colors hover:text-brand-yellow"
               aria-label={tContact('callUs')}
             >
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-success/15 text-success transition-colors group-hover:bg-brand-yellow/15 group-hover:text-brand-yellow">
                 <Phone className="h-3.5 w-3.5" fill="currentColor" />
               </span>
-              <span>{tContact('phone')}</span>
+              <span>{phone}</span>
             </a>
             <MarketplaceLinks size="sm" />
           </div>
