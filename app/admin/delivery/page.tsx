@@ -187,7 +187,7 @@ export default function AdminDeliveryPage() {
               disabled={!bts?.regionCode}
               onChange={(e) => onCity(e.target.value)}
             >
-              <option value="">Shaharni tanlang</option>
+              <option value="">Shahar / tuman tanlang</option>
               {cities.map((c) => (
                 <option key={c.code} value={c.code}>
                   {c.name}

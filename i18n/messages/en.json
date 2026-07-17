@@ -431,7 +431,7 @@
     "btsRegionLabel": "Region",
     "btsRegionPlaceholder": "Select a region",
     "btsCityLabel": "City / district",
-    "btsCityPlaceholder": "Select a city",
+    "btsCityPlaceholder": "Select city / district",
     "btsChooseBranch": "Choose a branch",
     "btsLoading": "Loading...",
     "btsNoBranches": "No BTS branch found in this city."

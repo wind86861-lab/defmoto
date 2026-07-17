@@ -431,7 +431,7 @@
     "btsRegionLabel": "Область",
     "btsRegionPlaceholder": "Выберите область",
     "btsCityLabel": "Город / район",
-    "btsCityPlaceholder": "Выберите город",
+    "btsCityPlaceholder": "Выберите город / район",
     "btsChooseBranch": "Выберите филиал",
     "btsLoading": "Загрузка...",
     "btsNoBranches": "В этом городе филиал BTS не найден."
