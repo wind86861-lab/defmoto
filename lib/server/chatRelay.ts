@@ -636,15 +636,14 @@ interface InlineBtn {
 }
 
 /**
- * A button that opens the site as a plain URL (opens reliably in Telegram's
- * browser). We deliberately avoid inline `web_app` buttons here: they crash the
- * Telegram Desktop webview ("Webview crashed"). The embedded Mini App is always
- * available via the persistent "Ochish" menu button next to the input.
+ * A button that opens the site as a Telegram Mini App (inside Telegram) so the
+ * user keeps their Telegram session/login. Mini App inline buttons are only
+ * valid over HTTPS and in private chats — both true here.
  */
 function openAppButton(text: string, path = ''): InlineBtn | null {
   const site = process.env.NEXT_PUBLIC_APP_URL || '';
-  if (!site || !site.startsWith('http')) return null;
-  return { text, url: `${site}${path}` };
+  if (!site || !site.startsWith('https')) return null;
+  return { text, web_app: { url: `${site}${path}` } };
 }
 
 /** Inline keyboard for the operator welcome / start message. */
@@ -861,6 +860,23 @@ export async function sendBotMessage(chatId: number | string, text: string): Pro
   if (!BOT_TOKEN) return false;
   try {
     const r = await tg('sendMessage', { chat_id: chatId, text, parse_mode: 'Markdown' });
+    return Boolean(r?.ok);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Send a new-order notification to the admin orders group. Set the group's
+ * chat id in `TELEGRAM_ORDERS_CHAT_ID` (add the bot to the group, then use the
+ * bot's /chatid command there to read it). Plain text — no Markdown — so
+ * product names / addresses can't break the message.
+ */
+export async function notifyOrdersGroup(text: string): Promise<boolean> {
+  const groupId = process.env.TELEGRAM_ORDERS_CHAT_ID || '';
+  if (!BOT_TOKEN || !groupId) return false;
+  try {
+    const r = await tg('sendMessage', { chat_id: groupId, text });
     return Boolean(r?.ok);
   } catch {
     return false;

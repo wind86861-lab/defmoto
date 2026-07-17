@@ -214,20 +214,32 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
         </div>
       </div>
 
-      <div className="flex gap-3">
-        <Button variant="secondary" size="xl" onClick={onBack} className="flex-1" disabled={submitting}>
+      {/* Stack on mobile so the long "To'lash — <amount>" button always fits;
+          side-by-side from sm up. */}
+      <div className="flex flex-col-reverse gap-3 sm:flex-row">
+        <Button
+          variant="secondary"
+          size="xl"
+          onClick={onBack}
+          fullWidth
+          className="sm:flex-1"
+          disabled={submitting}
+        >
           {t('back')}
         </Button>
         <Button
           size="xl"
           glow
+          fullWidth
           onClick={handleSubmit}
-          className="flex-[2]"
+          className="min-w-0 sm:flex-[2]"
           loading={submitting}
         >
-          {state.payment.method === 'cash'
-            ? t('confirmOrder')
-            : t('payButton', { amount: formatPrice(total) })}
+          <span className="truncate">
+            {state.payment.method === 'cash'
+              ? t('confirmOrder')
+              : t('payButton', { amount: formatPrice(total) })}
+          </span>
         </Button>
       </div>
 

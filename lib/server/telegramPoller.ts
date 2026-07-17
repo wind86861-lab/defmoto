@@ -183,6 +183,13 @@ async function handleUpdate(update: TgUpdate) {
   const fromName = msg.from?.first_name || msg.from?.username || 'Mijoz';
   const account = () => (fromId != null ? getUserByTelegramId(fromId) : null);
 
+  // /chatid — reply with this chat's id (works in groups). Use it to read the
+  // admin orders group id for TELEGRAM_ORDERS_CHAT_ID.
+  if (lower === '/chatid' || lower.startsWith('/chatid@') || lower.startsWith('/chatid ')) {
+    await tg('sendMessage', { chat_id: chatId, text: `chat_id: ${chatId}` });
+    return;
+  }
+
   const startPasswordChange = async () => {
     const acc = account();
     if (!acc) {
