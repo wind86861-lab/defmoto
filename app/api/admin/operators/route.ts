@@ -4,11 +4,18 @@ import { isAdminRequest } from '@/lib/server/adminAuth';
 import {
   getOperatorConfig,
   setOperatorConfig,
+  bindOperatorByTelegramId,
   clearOperator,
   isRelayConfigured,
   isOperatorConnected,
   normalizePhone,
+  sendBotMessage,
 } from '@/lib/server/chatRelay';
+
+const OPERATOR_WELCOME =
+  '🎧 Siz DEFT MOTO operatori etib tayinlandingiz.\n\n' +
+  'Mijoz savollari shu yerga keladi. Javob berish uchun xabarga *reply* qiling ' +
+  'yoki "📨 Xabarlar" tugmasidan foydalaning. Matn, rasm yoki video yuborishingiz mumkin.';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -64,8 +71,13 @@ export async function POST(req: Request) {
   updateUser(userId, { isOperator: Boolean(makeOperator) });
 
   if (makeOperator) {
-    // Make them the active relay operator so the bot forwards chats to them.
-    if (user.name && (user.phone || '').replace(/\D/g, '').length >= 9) {
+    if (user.telegramId) {
+      // High-level: bind instantly by their Telegram id (no /start needed) and
+      // notify them so they know customer chats now arrive here.
+      await bindOperatorByTelegramId(user.telegramId, user.name, user.phone);
+      void sendBotMessage(user.telegramId, OPERATOR_WELCOME);
+    } else if (user.name && (user.phone || '').replace(/\D/g, '').length >= 9) {
+      // No Telegram id → set config; they bind by sharing contact in the bot.
       await setOperatorConfig(user.name, user.phone);
     }
   } else {

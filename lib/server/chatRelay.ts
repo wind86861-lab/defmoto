@@ -185,6 +185,28 @@ export async function setOperatorConfig(name: string, phone: string) {
   await persistConfig();
 }
 
+/**
+ * Bind an operator directly by their Telegram id (from the admin panel) — no
+ * /start or contact-sharing needed. Also records name/phone so the contact
+ * flow still recognises them. Then customer messages flow to their Telegram.
+ */
+export async function bindOperatorByTelegramId(
+  telegramId: number | string,
+  name?: string,
+  phone?: string,
+): Promise<boolean> {
+  await ensureLoaded();
+  const id = Number(telegramId);
+  if (!Number.isFinite(id) || id === 0) return false;
+  state.operatorConfig = {
+    name: (name || state.operatorConfig?.name || 'Operator').trim(),
+    phone: normalizePhone(phone || state.operatorConfig?.phone || ''),
+  };
+  state.operatorChatId = id;
+  await persistConfig();
+  return true;
+}
+
 export async function clearOperator() {
   await ensureLoaded();
   state.operatorConfig = null;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Headset, Phone, Send, Trash2, CheckCircle2, Circle } from 'lucide-react';
+import { Headset, Phone, Send, Trash2, CheckCircle2, Circle, Zap } from 'lucide-react';
 import { formatDateTime } from '@/lib/format';
 
 interface Operator {
@@ -51,7 +51,25 @@ export default function AdminOperatorsPage() {
     }
   };
 
+  // (Re)connect an operator — binds them by Telegram id + sends a welcome DM.
+  const activate = async (op: Operator) => {
+    setBusyId(op.id);
+    try {
+      const res = await fetch('/api/admin/operators', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: op.id, makeOperator: true }),
+      });
+      if (res.ok) setData(await res.json());
+    } catch {
+      /* ignore */
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const operators = data?.operators ?? [];
+  const connected = !!data?.operatorConnected;
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -76,14 +94,14 @@ export default function AdminOperatorsPage() {
           />
           <StatusDot
             ok={!!data?.operatorConnected}
-            okText="Operator botga ulangan"
-            offText="Operator hali botga /start bosmagan"
+            okText="Operator ulangan — chatlar unga boradi"
+            offText="Faol operator ulanmagan — «Faollashtirish» ni bosing"
           />
         </div>
         <p className="mt-3 text-xs leading-relaxed text-white/50">
-          Faol operator botga <code className="rounded bg-brand-dark/60 px-1">/start</code> bosib ulanadi.
-          Soʻng mijoz savollari operatorning Telegramiga keladi — u matn, rasm yoki video bilan javob bersa,
-          mijozning chatiga yetkaziladi.
+          Operator qilinganda u <b>avtomatik ulanadi</b> (Telegram id orqali) va unga xabar boradi.
+          Soʻng mijoz savollari operatorning Telegramiga keladi — u xabarga <b>reply</b> qilib matn, rasm
+          yoki video yuborsa, mijozning chatiga yetkaziladi. Ulanmagan boʻlsa «Faollashtirish»ni bosing.
         </p>
       </div>
 
@@ -129,6 +147,20 @@ export default function AdminOperatorsPage() {
                   </span>
                 </p>
               </div>
+              {op.active && connected ? (
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-success/15 px-2.5 py-1.5 text-[11px] font-bold text-success">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Ulangan
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => activate(op)}
+                  disabled={busyId === op.id}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-brand-yellow/40 bg-brand-yellow/10 px-2.5 py-1.5 text-[11px] font-bold text-brand-yellow transition-colors hover:bg-brand-yellow/20 disabled:opacity-50"
+                >
+                  <Zap className="h-3.5 w-3.5" /> {busyId === op.id ? '…' : 'Faollashtirish'}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => remove(op)}

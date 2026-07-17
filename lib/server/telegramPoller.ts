@@ -382,21 +382,31 @@ async function handleUpdate(update: TgUpdate) {
       return;
     }
 
-    // b) Operator binding if explicitly requested via /operator.
-    if (pendingOperatorVerify.has(chatId)) {
-      pendingOperatorVerify.delete(chatId);
+    // b) Operator binding — explicitly via /operator, or automatically when the
+    // shared contact matches the admin-configured operator phone.
+    {
+      const wasPending = pendingOperatorVerify.delete(chatId);
       const outcome = await tryBindOperator(chatId, phone);
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text:
-          outcome === 'bound' || outcome === 'already'
-            ? '✅ Operator sifatida ulandingiz.'
-            : outcome === 'not-configured'
+      if (outcome === 'bound' || outcome === 'already') {
+        await tg('sendMessage', {
+          chat_id: chatId,
+          text: '✅ Operator sifatida ulandingiz. Mijoz savollari shu yerga keladi.',
+          reply_markup: startKeyboard(),
+        });
+        return;
+      }
+      if (wasPending) {
+        await tg('sendMessage', {
+          chat_id: chatId,
+          text:
+            outcome === 'not-configured'
               ? 'ℹ️ Operator hali admin panelida sozlanmagan.'
               : '⛔️ Bu raqam operator sifatida belgilanmagan.',
-        reply_markup: { remove_keyboard: true },
-      });
-      // fall through to registration.
+          reply_markup: { remove_keyboard: true },
+        });
+        return;
+      }
+      // Regular user → fall through to registration.
     }
 
     // c) Register / link the account.
