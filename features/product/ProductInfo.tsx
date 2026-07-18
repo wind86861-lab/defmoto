@@ -1,12 +1,13 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
 import { ProductReviews } from './ProductReviews';
 import type { Product } from '@/types/product';
 import type { useProductReviews } from '@/hooks/useProductReviews';
 import { Truck, Package, RotateCcw, MapPin } from 'lucide-react';
 import { useSiteSettings } from '@/lib/stores/siteSettings';
+import { productDescription } from '@/lib/productLocale';
 import { useMounted } from '@/hooks/useMounted';
 
 const DELIVERY_ICONS = [Truck, MapPin, Package, RotateCcw];
@@ -19,6 +20,7 @@ export function ProductInfo({
   reviews: ReturnType<typeof useProductReviews>;
 }) {
   const t = useTranslations('product');
+  const locale = useLocale();
   const tCategories = useTranslations('categories');
   const summary = reviews.data.summary;
   const mounted = useMounted();
@@ -39,7 +41,7 @@ export function ProductInfo({
       label: t('tabDescription'),
       content: (
         <div className="space-y-3 text-sm leading-relaxed text-white/75">
-          <p>{product.description ?? t('descriptionPlaceholder')}</p>
+          <p>{productDescription(product, locale) ?? t('descriptionPlaceholder')}</p>
         </div>
       ),
     },

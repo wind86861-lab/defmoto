@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { ShoppingBag, Heart } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
 import { formatPrice } from '@/lib/format';
+import { productName } from '@/lib/productLocale';
 import { useWishlistStore } from '@/lib/stores/wishlist';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useMounted } from '@/hooks/useMounted';
@@ -20,6 +21,8 @@ interface StickyCtaProps {
 
 export function StickyCta({ product, onAddToCart, onBuyNow }: StickyCtaProps) {
   const t = useTranslations('product');
+  const locale = useLocale();
+  const name = productName(product, locale);
   const [visible, setVisible] = useState(false);
   const mounted = useMounted();
   const toggleWishlist = useWishlistStore((s) => s.toggle);
@@ -50,8 +53,8 @@ export function StickyCta({ product, onAddToCart, onBuyNow }: StickyCtaProps) {
             impact('light');
             const was = isWishlisted;
             toggleWishlist(product.id);
-            if (was) toast.info(t('removedFromWishlistTitle'), product.name);
-            else toast.wishlist(t('addedToWishlistTitle'), product.name);
+            if (was) toast.info(t('removedFromWishlistTitle'), name);
+            else toast.wishlist(t('addedToWishlistTitle'), name);
           }}
           aria-label={t('wishlistAria')}
           className={cn(

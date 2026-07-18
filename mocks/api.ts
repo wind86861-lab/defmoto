@@ -85,6 +85,8 @@ export function queryProducts(
     items = items.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
+        p.tr?.ru?.name?.toLowerCase().includes(q) ||
+        p.tr?.en?.name?.toLowerCase().includes(q) ||
         p.brand?.toLowerCase().includes(q) ||
         p.category.toLowerCase().includes(q),
     );

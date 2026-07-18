@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/Badge';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { useToast } from '@/components/ui/Toaster';
+import { productName } from '@/lib/productLocale';
 import type { Product } from '@/types/product';
 import type { Locale } from '@/i18n/config';
 
@@ -35,6 +36,7 @@ export function ProductCard({ product, variant = 'grid', className }: ProductCar
   const isWishlisted = useWishlistStore((s) => mounted && s.ids.includes(product.id));
   const { impact, notify } = useHaptic();
   const requireReg = useRequireRegistration();
+  const name = productName(product, locale);
 
   const discountPct =
     product.oldPrice && product.oldPrice > product.price
@@ -47,13 +49,13 @@ export function ProductCard({ product, variant = 'grid', className }: ProductCar
       notify('success');
       addToCart({
         productId: product.id,
-        name: product.name,
+        name,
         image: product.images[0],
         price: product.price,
         oldPrice: product.oldPrice,
         weight: product.weight,
       });
-      toast.cart(tProduct('addedToCartTitle'), product.name, {
+      toast.cart(tProduct('addedToCartTitle'), name, {
         label: tProduct('goToCartAction'),
         onClick: () => router.push('/cart'),
       });
@@ -66,9 +68,9 @@ export function ProductCard({ product, variant = 'grid', className }: ProductCar
     const wasWishlisted = isWishlisted;
     toggleWishlist(product.id);
     if (wasWishlisted) {
-      toast.info(tProduct('removedFromWishlistTitle'), product.name);
+      toast.info(tProduct('removedFromWishlistTitle'), name);
     } else {
-      toast.wishlist(tProduct('addedToWishlistTitle'), product.name);
+      toast.wishlist(tProduct('addedToWishlistTitle'), name);
     }
   };
 
@@ -87,7 +89,7 @@ export function ProductCard({ product, variant = 'grid', className }: ProductCar
       <div className="relative aspect-square overflow-hidden bg-brand-dark">
         <ProductImage
           src={product.images[0]}
-          alt={product.name}
+          alt={name}
           loading="lazy"
           className="h-full w-full object-cover transition-transform duration-500 ease-spring group-hover:scale-105"
           fallbackClassName="h-full w-full"
@@ -150,7 +152,7 @@ export function ProductCard({ product, variant = 'grid', className }: ProductCar
         )}
 
         <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-tight text-white">
-          {product.name}
+          {name}
         </h3>
 
         {typeof product.rating === 'number' && (

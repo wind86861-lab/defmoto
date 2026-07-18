@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Star, ShoppingBag, Heart } from 'lucide-react';
 import { PriceCompare } from '@/components/features/PriceCompare';
 import { MarketplaceDealBanner } from '@/components/features/MarketplaceDealBanner';
@@ -13,6 +13,7 @@ import { SectionHeader } from '@/components/features/SectionHeader';
 import { Reveal } from '@/components/ui/Reveal';
 import { formatPrice } from '@/lib/format';
 import { useCartStore } from '@/lib/stores/cart';
+import { productName } from '@/lib/productLocale';
 import { useWishlistStore } from '@/lib/stores/wishlist';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useMounted } from '@/hooks/useMounted';
@@ -33,6 +34,8 @@ interface Props {
 export function ProductPageClient({ product, similar }: Props) {
   const t = useTranslations('product');
   const tCommon = useTranslations('common');
+  const locale = useLocale();
+  const name = productName(product, locale);
   const router = useRouter();
   const toast = useToast();
   const mounted = useMounted();
@@ -56,7 +59,7 @@ export function ProductPageClient({ product, similar }: Props) {
     addToCart(
       {
         productId: product.id,
-        name: product.name,
+        name,
         image: product.images[0],
         price: product.price,
         oldPrice: product.oldPrice,
@@ -66,7 +69,7 @@ export function ProductPageClient({ product, similar }: Props) {
       qty,
     );
     if (!opts?.silent) {
-      toast.cart(t('addedToCartTitle'), product.name, {
+      toast.cart(t('addedToCartTitle'), name, {
         label: t('goToCartAction'),
         onClick: () => router.push('/cart'),
       });
@@ -91,9 +94,9 @@ export function ProductPageClient({ product, similar }: Props) {
     const wasWishlisted = isWishlisted;
     toggleWishlist(product.id);
     if (wasWishlisted) {
-      toast.info(t('removedFromWishlistTitle'), product.name);
+      toast.info(t('removedFromWishlistTitle'), name);
     } else {
-      toast.wishlist(t('addedToWishlistTitle'), product.name);
+      toast.wishlist(t('addedToWishlistTitle'), name);
     }
   };
 
@@ -115,7 +118,7 @@ export function ProductPageClient({ product, similar }: Props) {
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-10 lg:gap-12">
         {/* Left — Gallery */}
         <div className="min-w-0">
-          <ProductGallery images={product.images} video={product.video} alt={product.name} />
+          <ProductGallery images={product.images} video={product.video} alt={name} />
         </div>
 
         {/* Right — Info */}
@@ -129,7 +132,7 @@ export function ProductPageClient({ product, similar }: Props) {
                 </span>
               )}
               <h1 className="mt-1 font-display text-display-sm font-extrabold leading-tight sm:text-display-md">
-                {product.name}
+                {name}
               </h1>
             </div>
             <div className="flex shrink-0 items-center gap-1">

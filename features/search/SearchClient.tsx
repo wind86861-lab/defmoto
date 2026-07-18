@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { ArrowLeft, Search, X, TrendingUp, Clock } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { formatPrice } from '@/lib/format';
@@ -12,6 +12,7 @@ import { useRecentSearches } from '@/lib/stores/recentSearches';
 import { useHaptic } from '@/hooks/useHaptic';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { useContentStore } from '@/lib/stores/content';
+import { productName } from '@/lib/productLocale';
 import { useMounted } from '@/hooks/useMounted';
 import { categoryName as resolveCategoryName } from '@/lib/categoryName';
 import { mockCategories } from '@/mocks/categories';
@@ -19,6 +20,7 @@ import { mockProducts } from '@/mocks/products';
 
 export function SearchClient() {
   const t = useTranslations('search');
+  const locale = useLocale();
   const tCategories = useTranslations('categories');
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -46,6 +48,8 @@ export function SearchClient() {
       .filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
+          p.tr?.ru?.name?.toLowerCase().includes(q) ||
+          p.tr?.en?.name?.toLowerCase().includes(q) ||
           p.brand?.toLowerCase().includes(q) ||
           p.category?.toLowerCase().includes(q),
       )
@@ -265,7 +269,7 @@ export function SearchClient() {
                             </p>
                           )}
                           <p className="line-clamp-1 text-sm font-semibold">
-                            {p.name}
+                            {productName(p, locale)}
                           </p>
                           <p className="mt-0.5 text-xs text-white/55">{p.category}</p>
                         </div>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Heart, ShoppingBag, Trash2 } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
 import { useWishlistStore } from '@/lib/stores/wishlist';
@@ -13,11 +13,13 @@ import { Button } from '@/components/ui/Button';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { useToast } from '@/components/ui/Toaster';
 import { useContentStore } from '@/lib/stores/content';
+import { productName } from '@/lib/productLocale';
 import { useMounted } from '@/hooks/useMounted';
 import { mockProducts } from '@/mocks/products';
 
 export function WishlistClient() {
   const t = useTranslations('wishlist');
+  const locale = useLocale();
   const router = useRouter();
   const toast = useToast();
   const mounted = useMounted();
@@ -85,7 +87,7 @@ export function WishlistClient() {
             <Link href={`/product/${p.slug}`} className="shrink-0">
               <ProductImage
                 src={p.images[0]}
-                alt={p.name}
+                alt={productName(p, locale)}
                 className="h-24 w-24 rounded-xl object-cover"
                 fallbackClassName="h-24 w-24 rounded-xl"
               />
@@ -96,7 +98,7 @@ export function WishlistClient() {
                 href={`/product/${p.slug}`}
                 className="line-clamp-2 text-sm font-semibold leading-tight transition-colors hover:text-brand-yellow"
               >
-                {p.name}
+                {productName(p, locale)}
               </Link>
               {p.brand && (
                 <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-white/45">
@@ -123,14 +125,14 @@ export function WishlistClient() {
                     notify('success');
                     addToCart({
                       productId: p.id,
-                      name: p.name,
+                      name: productName(p, locale),
                       image: p.images[0],
                       price: p.price,
                       oldPrice: p.oldPrice,
                       weight: p.weight,
                     });
                     toggle(p.id);
-                    toast.cart(t('movedToCartTitle'), p.name, {
+                    toast.cart(t('movedToCartTitle'), productName(p, locale), {
                       label: t('goToCartAction'),
                       onClick: () => router.push('/cart'),
                     });
@@ -144,7 +146,7 @@ export function WishlistClient() {
                   onClick={() => {
                     impact('medium');
                     toggle(p.id);
-                    toast.info(t('removedTitle'), p.name);
+                    toast.info(t('removedTitle'), productName(p, locale));
                   }}
                   aria-label={t('removeAria')}
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-brand-surface-border bg-brand-dark/40 text-white/55 transition-colors hover:border-danger/40 hover:text-danger touch-feedback"

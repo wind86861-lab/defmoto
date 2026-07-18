@@ -299,8 +299,26 @@ function ProductModal({
         </header>
 
         <div className="grid gap-2.5 overflow-y-auto px-5 py-4 sm:grid-cols-2">
-          <PF label={t('fldProdName')} full>
+          <PF label={`${t('fldProdName')} — O'zbekcha 🇺🇿`} full>
             <Input value={draft.name} onChange={(e) => set({ name: e.target.value })} />
+          </PF>
+          <PF label="Русское название 🇷🇺" full>
+            <Input
+              value={draft.tr?.ru?.name ?? ''}
+              placeholder={draft.name}
+              onChange={(e) =>
+                set({ tr: { ...draft.tr, ru: { ...draft.tr?.ru, name: e.target.value } } })
+              }
+            />
+          </PF>
+          <PF label="English name 🇬🇧" full>
+            <Input
+              value={draft.tr?.en?.name ?? ''}
+              placeholder={draft.name}
+              onChange={(e) =>
+                set({ tr: { ...draft.tr, en: { ...draft.tr?.en, name: e.target.value } } })
+              }
+            />
           </PF>
           <PF label={t('fldProdBrand')}>
             <Input value={draft.brand ?? ''} onChange={(e) => set({ brand: e.target.value })} />
@@ -469,10 +487,30 @@ function ProductModal({
               onChange={(e) => set({ badges: e.target.value.split(',').map((x) => x.trim()).filter(Boolean) })}
             />
           </PF>
-          <PF label={t('fldProdDesc')} full>
+          <PF label={`${t('fldProdDesc')} — O'zbekcha 🇺🇿`} full>
             <textarea
               value={draft.description ?? ''}
               onChange={(e) => set({ description: e.target.value })}
+              rows={3}
+              className="w-full rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-2.5 text-base text-white outline-none focus:border-brand-yellow/60"
+            />
+          </PF>
+          <PF label="Описание — Русский 🇷🇺" full>
+            <textarea
+              value={draft.tr?.ru?.description ?? ''}
+              onChange={(e) =>
+                set({ tr: { ...draft.tr, ru: { ...draft.tr?.ru, description: e.target.value } } })
+              }
+              rows={3}
+              className="w-full rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-2.5 text-base text-white outline-none focus:border-brand-yellow/60"
+            />
+          </PF>
+          <PF label="Description — English 🇬🇧" full>
+            <textarea
+              value={draft.tr?.en?.description ?? ''}
+              onChange={(e) =>
+                set({ tr: { ...draft.tr, en: { ...draft.tr?.en, description: e.target.value } } })
+              }
               rows={3}
               className="w-full rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-2.5 text-base text-white outline-none focus:border-brand-yellow/60"
             />

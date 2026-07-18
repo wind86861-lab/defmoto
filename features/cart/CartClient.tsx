@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   Minus,
   Plus,
@@ -23,6 +23,8 @@ import { Input } from '@/components/ui/Input';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { useToast } from '@/components/ui/Toaster';
 import { applyPromo, type PromoResult } from '@/lib/promo';
+import { useContentStore } from '@/lib/stores/content';
+import { productName } from '@/lib/productLocale';
 
 const DELIVERY_FREE_THRESHOLD = 500_000;
 const DELIVERY_FEE = 25_000;
@@ -252,14 +254,18 @@ function CartItemRow({
   onRemove: () => void;
 }) {
   const t = useTranslations('cart');
+  const locale = useLocale();
   const { impact } = useHaptic();
+  // Live localized name (snapshot is the fallback for removed products).
+  const live = useContentStore((s) => s.products.find((p) => p.id === item.productId));
+  const name = live ? productName(live, locale) : item.name;
 
   return (
     <div className="group flex gap-2.5 rounded-2xl border border-brand-surface-border bg-brand-surface p-2.5 transition-colors sm:gap-3 sm:p-4">
       <Link href={`/product/${item.productId}`} className="shrink-0">
         <ProductImage
           src={item.image}
-          alt={item.name}
+          alt={name}
           className="h-16 w-16 rounded-xl object-cover sm:h-24 sm:w-24"
           fallbackClassName="h-16 w-16 rounded-xl sm:h-24 sm:w-24"
         />
@@ -270,7 +276,7 @@ function CartItemRow({
           href={`/product/${item.productId}`}
           className="line-clamp-2 text-sm font-semibold leading-tight transition-colors hover:text-brand-yellow"
         >
-          {item.name}
+          {name}
         </Link>
 
         {item.variant && (
