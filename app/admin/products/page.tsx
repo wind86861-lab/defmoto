@@ -263,6 +263,12 @@ function ProductModal({
   const removeVar = (idx: number) => setVars(vars.filter((_, i) => i !== idx));
 
   const save = () => {
+    // Weight is required — BTS delivery pricing is computed from it.
+    if (!(Number(draft.weight) > 0)) {
+      notify('error');
+      toast.error("Vazn (kg) majburiy", "BTS yetkazish narxi vazndan hisoblanadi — mahsulot vaznini kiriting.");
+      return;
+    }
     const cleanComp = (draft.competitorPrices ?? []).filter((c) => c.price > 0 && c.source);
     // Keep only variants that carry a colour or a size.
     const cleanVars = (draft.variants ?? []).filter((v) => (v.color && v.colorHex) || v.size);
@@ -343,7 +349,7 @@ function ProductModal({
               onChange={(e) => set({ price: Number(e.target.value.replace(/\D/g, '')) || 0 })}
             />
           </PF>
-          <PF label={t('fldProdWeight')}>
+          <PF label={`${t('fldProdWeight')} *`}>
             <Input
               value={draft.weight != null ? String(draft.weight) : ''}
               placeholder="0.5"

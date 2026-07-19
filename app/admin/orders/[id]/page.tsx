@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, User, Phone, Truck, Wallet, Package, Clock } from 'lucide-react';
 import { formatPrice, formatDateTime } from '@/lib/format';
 import { ProductImage } from '@/components/ui/ProductImage';
+import { useContentStore } from '@/lib/stores/content';
 import type { Order } from '@/types/order';
 
 interface ServerOrder {
@@ -47,6 +48,9 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [shipErr, setShipErr] = useState<string | null>(null);
+  // productId → entered kg, for order items that have no stored weight.
+  const [weightAsk, setWeightAsk] = useState<Record<string, string> | null>(null);
+  const updateProduct = useContentStore((s) => s.updateProduct);
 
   useEffect(() => {
     fetch(`/api/orders/${id}`, { cache: 'no-store' })
@@ -56,18 +60,48 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
       .finally(() => setLoading(false));
   }, [id]);
 
-  // Push the order into BTS — one tap creates the shipment (tracking + status).
-  const createShipment = async () => {
-    setCreating(true);
+  const orderItems = (order?.payload as Order | undefined)?.items ?? [];
+  const missingWeight = orderItems.filter((it) => !(Number(it.weight) > 0));
+
+  // Step 1: if some items have no weight, ask the admin for each before sending.
+  const startShipment = () => {
     setShipErr(null);
+    if (missingWeight.length && !weightAsk) {
+      setWeightAsk(Object.fromEntries(missingWeight.map((it) => [it.productId, ''])));
+      return;
+    }
+    void createShipment();
+  };
+
+  // Step 2: push the order into BTS (tracking + barcode come back from BTS).
+  const createShipment = async () => {
+    let weightOverride: number | undefined;
+    if (weightAsk) {
+      const entered = (pid: string) => Number((weightAsk[pid] || '').replace(',', '.'));
+      if (missingWeight.some((it) => !(entered(it.productId) > 0))) {
+        setShipErr('Har bir mahsulot uchun vaznni kiriting (kg).');
+        return;
+      }
+      const total = orderItems.reduce((s, it) => {
+        const w = Number(it.weight) > 0 ? Number(it.weight) : entered(it.productId);
+        return s + w * (Number(it.quantity) || 1);
+      }, 0);
+      weightOverride = Math.max(0.1, Math.round(total * 1000) / 1000);
+      // Remember the entered weights on the products so next orders know them.
+      for (const it of missingWeight) {
+        updateProduct(it.productId, { weight: entered(it.productId) });
+      }
+    }
+    setCreating(true);
     try {
       const res = await fetch('/api/delivery/bts/shipment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: id }),
+        body: JSON.stringify({ orderId: id, weight: weightOverride }),
       });
       const data = await res.json();
       if (res.ok && data?.ok) {
+        setWeightAsk(null);
         const r2 = await fetch(`/api/orders/${id}`, { cache: 'no-store' });
         const d2 = await r2.json();
         setOrder((prev) => d2?.order ?? prev);
@@ -176,15 +210,55 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
               <p className="mb-3 text-xs text-white/55">
                 Buyurtmani BTS tizimiga topshiring — trek-raqam avtomatik olinadi.
               </p>
-              <button
-                type="button"
-                onClick={createShipment}
-                disabled={creating}
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-yellow px-4 py-2.5 text-sm font-bold text-brand-dark shadow-glow-sm transition-all hover:brightness-110 disabled:opacity-50 touch-feedback"
-              >
-                <Truck className="h-4 w-4" />
-                {creating ? 'Yaratilmoqda…' : "🚚 BTS joʻnatma yaratish"}
-              </button>
+
+              {/* Missing weights: ask per product before sending to BTS */}
+              {weightAsk && (
+                <div className="mb-3 space-y-2 rounded-xl border border-brand-yellow/30 bg-brand-yellow/5 p-3">
+                  <p className="text-xs font-bold text-brand-yellow">
+                    ⚖️ Quyidagi mahsulotlarning vazni kiritilmagan — BTS narxi vazndan
+                    hisoblanadi. Har biri uchun vaznni kiriting (kg):
+                  </p>
+                  {missingWeight.map((it) => (
+                    <label key={it.productId} className="flex items-center gap-2">
+                      <span className="min-w-0 flex-1 truncate text-xs text-white/75">{it.name}</span>
+                      <input
+                        value={weightAsk[it.productId] ?? ''}
+                        onChange={(e) =>
+                          setWeightAsk((w) => ({ ...(w ?? {}), [it.productId]: e.target.value }))
+                        }
+                        placeholder="0.5"
+                        inputMode="decimal"
+                        className="w-20 shrink-0 rounded-lg border border-brand-surface-border bg-brand-dark px-2 py-1.5 text-right text-sm text-white outline-none focus:border-brand-yellow/60"
+                      />
+                      <span className="shrink-0 text-xs text-white/45">kg</span>
+                    </label>
+                  ))}
+                  <p className="text-[10px] text-white/40">
+                    Kiritilgan vazn mahsulot kartasiga ham saqlanadi — keyingi buyurtmalarda qayta so‘ralmaydi.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={startShipment}
+                  disabled={creating}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-yellow px-4 py-2.5 text-sm font-bold text-brand-dark shadow-glow-sm transition-all hover:brightness-110 disabled:opacity-50 touch-feedback"
+                >
+                  <Truck className="h-4 w-4" />
+                  {creating ? 'Yaratilmoqda…' : weightAsk ? '✅ Vazn tayyor — BTSga yuborish' : "🚚 BTS joʻnatma yaratish"}
+                </button>
+                {weightAsk && (
+                  <button
+                    type="button"
+                    onClick={() => setWeightAsk(null)}
+                    className="rounded-xl border border-brand-surface-border px-3 py-2.5 text-sm text-white/60 hover:text-white"
+                  >
+                    Bekor
+                  </button>
+                )}
+              </div>
               {shipErr && <p className="mt-2 text-xs text-danger">⚠️ {shipErr}</p>}
             </div>
           )}
