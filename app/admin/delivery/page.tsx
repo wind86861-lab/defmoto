@@ -206,6 +206,8 @@ export default function AdminDeliveryPage() {
   const [newCities, setNewCities] = useState<DirItem[]>([]);
   const [newBranch, setNewBranch] = useState('');
   const [newBranches, setNewBranches] = useState<DirItem[]>([]);
+  const [newAddress, setNewAddress] = useState('');
+  const [newPhone, setNewPhone] = useState('');
   const [available, setAvailable] = useState<boolean | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ branch: number; courier: number } | null>(null);
@@ -295,6 +297,8 @@ export default function AdminDeliveryPage() {
       cityName: city?.name,
       branchCode: newBranch || undefined,
       branchName: branch?.name,
+      senderAddress: newAddress.trim() || undefined,
+      senderPhone: newPhone.trim() || undefined,
       active: true,
     };
     patch({ origins: [...origins, o], defaultOriginId: bts?.defaultOriginId || o.id });
@@ -304,6 +308,8 @@ export default function AdminDeliveryPage() {
     setNewCities([]);
     setNewBranch('');
     setNewBranches([]);
+    setNewAddress('');
+    setNewPhone('');
   };
 
   const toggleOrigin = (id: string) =>
@@ -479,6 +485,11 @@ export default function AdminDeliveryPage() {
                     {[o.regionName, o.cityName].filter(Boolean).join(', ') || '—'}
                     {o.branchName ? ` · 🏢 ${o.branchName} filiali` : ''}
                   </p>
+                  {bts?.dispatch === 'courier' && !o.senderAddress && (
+                    <p className="text-[10px] font-bold text-warning">
+                      ⚠️ Manzil kiritilmagan — kuryer qayerga kelishini bilmaydi
+                    </p>
+                  )}
                 </div>
                 <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-[11px] font-bold text-white/70">
                   <input type="checkbox" checked={o.active} onChange={() => toggleOrigin(o.id)} className="h-4 w-4 accent-brand-yellow" />
@@ -538,6 +549,16 @@ export default function AdminDeliveryPage() {
                 <option key={b.code} value={b.code}>{b.name}</option>
               ))}
             </select>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">
+              Manzil (BTS kuryeri shu yerga keladi)
+            </label>
+            <Input value={newAddress} onChange={(e) => setNewAddress(e.target.value)} placeholder="Ko'cha, uy — do'kon/ombor manzili" />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">Telefon</label>
+            <Input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="+998 ..." inputMode="tel" />
           </div>
           <div className="flex items-end">
             <button

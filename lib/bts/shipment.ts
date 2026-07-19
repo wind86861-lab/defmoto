@@ -78,7 +78,9 @@ export async function createShipmentForOrder(
       phone: sender.senderPhone,
       address: sender.senderAddress,
       city_code: ov.senderCityCode || sender.senderCityCode || undefined,
-      branch_code: sender.senderBranchCode || undefined,
+      // Exact branch matters when WE drop the parcel at a BTS branch;
+      // for courier pickup BTS comes to the sender address instead.
+      branch_code: pickup === 'self' ? sender.senderBranchCode || undefined : undefined,
     },
     receiver: {
       name: contact.name || order.customerName || '',
