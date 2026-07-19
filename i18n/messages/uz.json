@@ -439,7 +439,8 @@
     "btsCityPlaceholder": "Shahar / tuman tanlang",
     "btsChooseBranch": "Filialni tanlang",
     "btsLoading": "Yuklanmoqda...",
-    "btsNoBranches": "Bu shaharda BTS filiali topilmadi."
+    "btsNoBranches": "Bu shaharda BTS filiali topilmadi.",
+    "btsOriginLabel": "Olib ketish nuqtasi (qayerdan jo'natiladi)"
   },
   "orders": {
     "backAria": "Orqaga",

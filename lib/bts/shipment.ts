@@ -45,9 +45,11 @@ export async function createShipmentForOrder(
     regionCode?: string;
     cityCode?: string;
     branchCode?: string;
+    originId?: string;
   };
 
-  const sender = getBtsSender();
+  // Customer-picked origin point (if the shop enabled that) wins.
+  const sender = getBtsSender(btsSel.originId);
 
   const dropoff: BtsDropoffType =
     ov.dropoff_type || (delivery.method === 'bts' ? 'branch' : 'courier');

@@ -11,6 +11,8 @@ export interface CheckoutState {
     method: DeliveryMethod;
     branchId?: string;
     // BTS pickup branch (method === 'bts').
+    btsOriginId?: string;
+    btsOriginName?: string;
     btsRegionCode?: string;
     btsRegionName?: string;
     btsCityCode?: string;

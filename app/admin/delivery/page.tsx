@@ -199,7 +199,11 @@ export default function AdminDeliveryPage() {
   const setBts = useSiteSettings((s) => s.setBts);
 
   const [regions, setRegions] = useState<DirItem[]>([]);
-  const [cities, setCities] = useState<DirItem[]>([]);
+  // "Add origin" form
+  const [newName, setNewName] = useState('');
+  const [newRegion, setNewRegion] = useState('');
+  const [newCity, setNewCity] = useState('');
+  const [newCities, setNewCities] = useState<DirItem[]>([]);
   const [available, setAvailable] = useState<boolean | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ branch: number; courier: number } | null>(null);
@@ -233,36 +237,82 @@ export default function AdminDeliveryPage() {
     };
   }, []);
 
-  // Restore the city list for the persisted region.
+  const origins = bts?.origins || [];
+
+  // One-time: seed the origins list from the legacy single-origin fields so
+  // the shop's existing setup becomes the first (default) origin point.
   useEffect(() => {
-    if (!bts?.regionCode) return;
-    fetchItems(`/api/delivery/bts/directory?type=cities&regionCode=${bts.regionCode}`).then(setCities);
-  }, [bts?.regionCode]);
+    if (!mounted) return;
+    if ((bts?.origins?.length ?? 0) === 0 && bts?.cityCode) {
+      const o = {
+        id: 'org_main',
+        name: bts.cityName || 'Asosiy nuqta',
+        regionCode: bts.regionCode,
+        regionName: bts.regionName,
+        cityCode: bts.cityCode,
+        cityName: bts.cityName,
+        senderName: bts.senderName,
+        senderPhone: bts.senderPhone,
+        senderAddress: bts.senderAddress,
+        active: true,
+      };
+      setBts({ origins: [o], defaultOriginId: 'org_main' });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted]);
 
-  const onRegion = async (code: string) => {
-    const name = regions.find((r) => r.code === code)?.name || '';
-    patch({ regionCode: code || undefined, regionName: name || undefined, cityCode: undefined, cityName: undefined });
-    setCities([]);
-    setPreview(null);
-    if (code) setCities(await fetchItems(`/api/delivery/bts/directory?type=cities&regionCode=${code}`));
+  const onNewRegion = async (code: string) => {
+    setNewRegion(code);
+    setNewCity('');
+    setNewCities(code ? await fetchItems(`/api/delivery/bts/directory?type=cities&regionCode=${code}`) : []);
   };
 
-  const onCity = (code: string) => {
-    const name = cities.find((c) => c.code === code)?.name || '';
-    patch({ cityCode: code || undefined, cityName: name || undefined });
-    setPreview(null);
+  const addOrigin = () => {
+    if (newName.trim().length < 2 || !newCity) return;
+    const region = regions.find((r) => r.code === newRegion);
+    const city = newCities.find((c) => c.code === newCity);
+    const o = {
+      id: `org_${Date.now().toString(36)}`,
+      name: newName.trim(),
+      regionCode: newRegion,
+      regionName: region?.name,
+      cityCode: newCity,
+      cityName: city?.name,
+      active: true,
+    };
+    patch({ origins: [...origins, o], defaultOriginId: bts?.defaultOriginId || o.id });
+    setNewName('');
+    setNewRegion('');
+    setNewCity('');
+    setNewCities([]);
   };
+
+  const toggleOrigin = (id: string) =>
+    patch({ origins: origins.map((o) => (o.id === id ? { ...o, active: !o.active } : o)) });
+
+  const removeOrigin = (id: string) => {
+    const list = origins.filter((o) => o.id !== id);
+    patch({
+      origins: list,
+      defaultOriginId: bts?.defaultOriginId === id ? list.find((o) => o.active)?.id : bts?.defaultOriginId,
+    });
+  };
+
+  const setDefaultOrigin = (id: string) => patch({ defaultOriginId: id });
+
+  const defaultOrigin = origins.find((o) => o.id === bts?.defaultOriginId && o.active) || origins.find((o) => o.active);
 
   // Sample price from the origin to a couple of far cities, so the admin can
   // sanity-check their setup (Jizzax / Arnasoy 2502 as a reference destination).
   const runPreview = async () => {
-    if (!bts?.cityCode) return;
+    const originCity = defaultOrigin?.cityCode || bts?.cityCode;
+    if (!originCity) return;
     notify('success');
     try {
       const r = await fetch('/api/delivery/bts/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ senderCityCode: bts.cityCode, receiverCityCode: '2502' }),
+        body: JSON.stringify({ senderCityCode: originCity, receiverCityCode: '2502' }),
       });
       const j = await r.json();
       const branch = j?.data?.branch_to_branch?.price;
@@ -363,34 +413,112 @@ export default function AdminDeliveryPage() {
 
       {/* Origin */}
       <section className="space-y-3 rounded-2xl border border-brand-surface-border bg-brand-surface p-4">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-white/45">Jo'natuvchi manzil (origin)</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-white/45">
+          Olib ketish / joʻnatish nuqtalari
+        </h2>
+
+        {/* Customer-picks toggle */}
+        <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-brand-surface-border bg-brand-dark/40 px-3 py-3">
+          <div>
+            <p className="text-sm font-bold">Mijoz nuqtani oʻzi tanlaydi</p>
+            <p className="mt-0.5 text-[11px] text-white/50">
+              Yoqilsa, checkoutʼda mijoz FAOL nuqtalardan birini tanlaydi — narx oʻsha nuqtadan hisoblanadi.
+              Oʻchiq boʻlsa, standart nuqta ishlatiladi.
+            </p>
+          </div>
+          <input
+            type="checkbox"
+            checked={!!bts?.customerPicksOrigin}
+            onChange={(e) => patch({ customerPicksOrigin: e.target.checked })}
+            className="h-5 w-5 shrink-0 accent-brand-yellow"
+          />
+        </label>
+
+        {/* Origin list */}
+        {origins.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-brand-surface-border px-3 py-4 text-center text-xs text-white/45">
+            Hali nuqta yoʻq — quyida birinchisini qoʻshing.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {origins.map((o) => (
+              <div
+                key={o.id}
+                className={cn(
+                  'flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border px-3 py-2.5',
+                  o.active ? 'border-brand-surface-border bg-brand-dark/40' : 'border-brand-surface-border/60 bg-brand-dark/20 opacity-60',
+                )}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold">
+                    {o.name}
+                    {bts?.defaultOriginId === o.id && (
+                      <span className="ml-2 rounded-md bg-brand-yellow/15 px-1.5 py-0.5 text-[9px] font-black uppercase text-brand-yellow">Standart</span>
+                    )}
+                  </p>
+                  <p className="truncate text-[11px] text-white/50">
+                    {[o.regionName, o.cityName].filter(Boolean).join(', ') || '—'}
+                  </p>
+                </div>
+                <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-[11px] font-bold text-white/70">
+                  <input type="checkbox" checked={o.active} onChange={() => toggleOrigin(o.id)} className="h-4 w-4 accent-brand-yellow" />
+                  Faol
+                </label>
+                {bts?.defaultOriginId !== o.id && o.active && (
+                  <button
+                    type="button"
+                    onClick={() => setDefaultOrigin(o.id)}
+                    className="shrink-0 rounded-lg border border-brand-surface-border px-2 py-1 text-[11px] font-bold text-white/60 hover:border-brand-yellow/40 hover:text-brand-yellow"
+                  >
+                    Standart qilish
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeOrigin(o.id)}
+                  className="shrink-0 text-white/40 hover:text-danger"
+                  aria-label="Oʻchirish"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add origin */}
+        <div className="grid gap-2.5 rounded-xl border border-dashed border-brand-surface-border p-3 sm:grid-cols-3">
+          <div className="sm:col-span-3">
+            <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">Nuqta nomi</label>
+            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Masalan: Toshkent ombori" />
+          </div>
           <div>
             <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">Viloyat</label>
-            <select className={selectCls} value={bts?.regionCode || ''} onChange={(e) => onRegion(e.target.value)}>
+            <select className={selectCls} value={newRegion} onChange={(e) => onNewRegion(e.target.value)}>
               <option value="">Viloyatni tanlang</option>
               {regions.map((r) => (
-                <option key={r.code} value={r.code}>
-                  {r.name}
-                </option>
+                <option key={r.code} value={r.code}>{r.name}</option>
               ))}
             </select>
           </div>
           <div>
             <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">Shahar / tuman</label>
-            <select
-              className={selectCls}
-              value={bts?.cityCode || ''}
-              disabled={!bts?.regionCode}
-              onChange={(e) => onCity(e.target.value)}
-            >
+            <select className={selectCls} value={newCity} disabled={!newRegion} onChange={(e) => setNewCity(e.target.value)}>
               <option value="">Shahar / tuman tanlang</option>
-              {cities.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.name}
-                </option>
+              {newCities.map((c) => (
+                <option key={c.code} value={c.code}>{c.name}</option>
               ))}
             </select>
+          </div>
+          <div className="flex items-end">
+            <button
+              type="button"
+              onClick={addOrigin}
+              disabled={newName.trim().length < 2 || !newCity}
+              className="w-full rounded-xl bg-gradient-yellow px-3 py-3 text-sm font-bold text-brand-dark shadow-glow-sm hover:brightness-110 disabled:opacity-40"
+            >
+              + Nuqta qoʻshish
+            </button>
           </div>
         </div>
 
@@ -399,7 +527,7 @@ export default function AdminDeliveryPage() {
           <button
             type="button"
             onClick={runPreview}
-            disabled={!bts?.cityCode}
+            disabled={!defaultOrigin?.cityCode && !bts?.cityCode}
             className="inline-flex items-center gap-1.5 rounded-lg border border-brand-surface-border px-3 py-1.5 text-xs font-semibold text-white/70 hover:border-brand-yellow/40 hover:text-brand-yellow disabled:opacity-40"
           >
             <Calculator className="h-3.5 w-3.5 text-brand-yellow" /> Narxni tekshirish (→ Jizzax)

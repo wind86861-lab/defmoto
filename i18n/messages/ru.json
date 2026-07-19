@@ -439,7 +439,8 @@
     "btsCityPlaceholder": "Выберите город / район",
     "btsChooseBranch": "Выберите филиал",
     "btsLoading": "Загрузка...",
-    "btsNoBranches": "В этом городе филиал BTS не найден."
+    "btsNoBranches": "В этом городе филиал BTS не найден.",
+    "btsOriginLabel": "Пункт отправки (откуда отправляется)"
   },
   "orders": {
     "backAria": "Назад",

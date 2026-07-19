@@ -53,7 +53,37 @@ export function BtsBranchPicker({ me }: { me: { lat: number; lng: number } | nul
   const t = useTranslations('checkout');
   const { delivery, setDelivery } = useCheckoutState();
   const dispatch = useSiteSettings((s) => s.bts?.dispatch);
+  const btsCfg = useSiteSettings((s) => s.bts);
   const weight = useCartStore((s) => cartWeightKg(s.items));
+
+  // Shop origin points the customer may choose from (feature-gated by admin).
+  const activeOrigins = useMemo(
+    () => (btsCfg?.origins || []).filter((o) => o.active !== false),
+    [btsCfg?.origins],
+  );
+  const showOriginPicker = Boolean(btsCfg?.customerPicksOrigin) && activeOrigins.length > 0;
+
+  // Default origin: persisted pick → admin default → first active.
+  useEffect(() => {
+    if (!showOriginPicker) return;
+    const valid = activeOrigins.some((o) => o.id === delivery.btsOriginId);
+    if (!valid) {
+      const def =
+        activeOrigins.find((o) => o.id === btsCfg?.defaultOriginId) || activeOrigins[0];
+      setDelivery({ btsOriginId: def.id, btsOriginName: def.name, btsPrice: undefined });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showOriginPicker, activeOrigins.length]);
+
+  const onOrigin = (id: string) => {
+    const o = activeOrigins.find((x) => x.id === id);
+    if (!o) return;
+    setDelivery({ btsOriginId: o.id, btsOriginName: o.name, btsPrice: undefined });
+    // Re-quote the already-selected branch from the new origin.
+    if (delivery.btsBranchCode && delivery.btsCityCode) {
+      void quotePrice(delivery.btsCityCode, o.id);
+    }
+  };
   const [regions, setRegions] = useState<DirItem[]>([]);
   const [cities, setCities] = useState<DirItem[]>([]);
   const [branches, setBranches] = useState<DirItem[]>([]);
@@ -123,14 +153,14 @@ export function BtsBranchPicker({ me }: { me: { lat: number; lng: number } | nul
     setBusy(null);
   };
 
-  const onBranch = async (b: DirItem) => {
-    setDelivery({ btsBranchCode: b.code, btsBranchName: b.name, btsBranchAddress: b.address, btsPrice: undefined });
-    // Live delivery-cost estimate for this destination city (branch pickup).
+  // Live delivery-cost estimate for a destination city (branch pickup), quoted
+  // from the given origin point (server default when originId is undefined).
+  const quotePrice = async (receiverCityCode: string, originId?: string) => {
     try {
       const r = await fetch('/api/delivery/bts/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ receiverCityCode: delivery.btsCityCode, dropoff_type: 'branch', weight }),
+        body: JSON.stringify({ receiverCityCode, dropoff_type: 'branch', weight, originId }),
       });
       const j = await r.json();
       // Match the shop's dispatch mode: courier pickup → courier_to_branch,
@@ -141,6 +171,11 @@ export function BtsBranchPicker({ me }: { me: { lat: number; lng: number } | nul
     } catch {
       /* estimate is best-effort */
     }
+  };
+
+  const onBranch = async (b: DirItem) => {
+    setDelivery({ btsBranchCode: b.code, btsBranchName: b.name, btsBranchAddress: b.address, btsPrice: undefined });
+    if (delivery.btsCityCode) void quotePrice(delivery.btsCityCode, delivery.btsOriginId);
   };
 
   const sortedBranches = useMemo(() => {
@@ -157,6 +192,27 @@ export function BtsBranchPicker({ me }: { me: { lat: number; lng: number } | nul
 
   return (
     <div className="space-y-3 animate-slide-up">
+      {/* Shop origin point — only when the admin enabled customer choice */}
+      {showOriginPicker && (
+        <div>
+          <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/45">
+            {t('btsOriginLabel')}
+          </label>
+          <select
+            className={selectCls}
+            value={delivery.btsOriginId || ''}
+            onChange={(e) => onOrigin(e.target.value)}
+          >
+            {activeOrigins.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.name}
+                {o.cityName ? ` — ${o.cityName}` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Region */}
       <div>
         <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/45">

@@ -32,11 +32,25 @@ export interface Marketplace {
 // BTS delivery — sender (shop origin) config, editable from the admin panel.
 // The server reads this (via the persisted site-settings blob) to calculate
 // delivery price and to build shipments. Falls back to env when unset.
+/** One dispatch/pickup origin point (warehouse/branch the shop ships from). */
+export interface BtsOrigin {
+  id: string;
+  name: string; // display name, e.g. "Toshkent ombori"
+  regionCode?: string;
+  regionName?: string;
+  cityCode?: string;
+  cityName?: string;
+  senderName?: string;
+  senderPhone?: string;
+  senderAddress?: string;
+  active: boolean;
+}
+
 export interface BtsSettings {
   enabled: boolean;
   regionCode?: string;
   regionName?: string;
-  cityCode?: string; // origin city → drives the BTS price (sender → receiver)
+  cityCode?: string; // legacy single origin (fallback when origins is empty)
   cityName?: string;
   senderName?: string;
   senderPhone?: string;
@@ -44,6 +58,11 @@ export interface BtsSettings {
   // How the shop hands parcels to BTS: drops them at a BTS branch ('self',
   // cheaper) or a BTS courier collects from the shop ('courier').
   dispatch?: 'self' | 'courier';
+  // Multiple origin points; the default is used unless the customer picks one.
+  origins?: BtsOrigin[];
+  defaultOriginId?: string;
+  // When true, the checkout lets the customer choose an ACTIVE origin point.
+  customerPicksOrigin?: boolean;
 }
 
 // Footer / contact block — editable from the admin panel.

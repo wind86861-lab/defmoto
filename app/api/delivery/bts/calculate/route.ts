@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   }
   // Sender comes from the admin-managed BTS settings (env fallback); the client
   // only sends the receiver city. Weight defaults to the configured parcel weight.
-  const sender = getBtsSender();
+  const sender = getBtsSender(body?.originId ? String(body.originId) : undefined);
   const senderCityCode = body?.senderCityCode || sender.senderCityCode || '';
   const { receiverCityCode } = body || {};
   const weight = Number(body?.weight || process.env.BTS_DEFAULT_WEIGHT || 1);

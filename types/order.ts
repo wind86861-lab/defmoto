@@ -33,6 +33,8 @@ export interface Order {
     };
     // BTS destination: branch (method 'bts') or just a city (courier 'post').
     bts?: {
+      originId?: string; // shop origin point the parcel ships from
+      originName?: string;
       regionCode?: string;
       cityCode?: string;
       cityName?: string;

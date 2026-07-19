@@ -439,7 +439,8 @@
     "btsCityPlaceholder": "Select city / district",
     "btsChooseBranch": "Choose a branch",
     "btsLoading": "Loading...",
-    "btsNoBranches": "No BTS branch found in this city."
+    "btsNoBranches": "No BTS branch found in this city.",
+    "btsOriginLabel": "Dispatch point (ships from)"
   },
   "orders": {
     "backAria": "Back",

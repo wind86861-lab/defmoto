@@ -91,6 +91,8 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
         // BTS destination — a branch (filial pickup) or just a city (courier).
         bts: state.delivery.btsCityCode
           ? {
+              originId: state.delivery.btsOriginId || undefined,
+              originName: state.delivery.btsOriginName || undefined,
               regionCode: state.delivery.btsRegionCode || '',
               cityCode: state.delivery.btsCityCode,
               cityName: state.delivery.btsCityName || '',
