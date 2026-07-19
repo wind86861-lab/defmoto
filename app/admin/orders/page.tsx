@@ -29,6 +29,22 @@ interface ServerOrder {
   total: number;
   createdAt: number;
   payload: Order;
+  bts?: { barcode?: string; tracking?: string };
+}
+
+/** BTS shipment state chip for an order row. */
+function BtsChip({ o }: { o: ServerOrder }) {
+  const isBts = o.payload?.delivery?.method === 'bts' || o.payload?.delivery?.method === 'post';
+  if (!isBts) return null;
+  return o.bts?.barcode ? (
+    <span className="inline-flex items-center gap-1 rounded-md bg-success/15 px-1.5 py-0.5 text-[10px] font-bold text-success">
+      🚚 BTS: {o.bts.barcode}
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1 rounded-md bg-brand-yellow/15 px-1.5 py-0.5 text-[10px] font-bold text-brand-yellow">
+      🚚 BTS — joʻnatma yaratilmagan
+    </span>
+  );
 }
 
 export default function AdminOrdersPage() {
@@ -141,8 +157,11 @@ export default function AdminOrdersPage() {
             {filtered.map((o) => (
               <tr key={o.id} className="transition-colors hover:bg-white/3">
                 <td className="px-4 py-3">
-                  <div className="font-display text-sm font-bold">#{o.number}</div>
+                  <Link href={`/admin/orders/${o.id}`} className="font-display text-sm font-bold text-white transition-colors hover:text-brand-yellow">
+                    #{o.number}
+                  </Link>
                   <div className="text-[11px] text-white/45">{tAdmin('productCountText', { count: itemsCount(o) })}</div>
+                  <div className="mt-1"><BtsChip o={o} /></div>
                 </td>
                 <td className="px-4 py-3 text-sm">
                   <div className="font-semibold">{name(o)}</div>
@@ -174,9 +193,15 @@ export default function AdminOrdersPage() {
                 </td>
                 <td className="px-4 py-3 text-right">
                   <Link
+                    href={`/admin/orders/${o.id}`}
+                    className="inline-flex h-8 items-center gap-1 rounded-lg border border-brand-yellow/40 bg-brand-yellow/10 px-2.5 text-[11px] font-bold text-brand-yellow transition-colors hover:bg-brand-yellow/20"
+                  >
+                    Ochish
+                  </Link>
+                  <Link
                     href={`/orders/${o.id}`}
                     target="_blank"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/55 transition-colors hover:bg-white/8 hover:text-brand-yellow"
+                    className="ml-1 inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/55 transition-colors hover:bg-white/8 hover:text-brand-yellow"
                     aria-label={tAdmin('viewCustomerSideAria')}
                   >
                     <Eye className="h-3.5 w-3.5" />
@@ -199,11 +224,14 @@ export default function AdminOrdersPage() {
           <div key={o.id} className="rounded-xl border border-brand-surface-border bg-brand-surface p-3">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <div className="font-display text-sm font-bold">#{o.number}</div>
+                <Link href={`/admin/orders/${o.id}`} className="font-display text-sm font-bold text-brand-yellow">
+                  #{o.number} →
+                </Link>
                 <div className="mt-0.5 text-[11px] text-white/45">
                   {formatDateTime(new Date(o.createdAt).toISOString())} · {name(o)}
                 </div>
                 <div className="text-[11px] text-white/45">{phone(o)}</div>
+                <div className="mt-1"><BtsChip o={o} /></div>
               </div>
               <OrderStatusBadge status={o.status} />
             </div>
