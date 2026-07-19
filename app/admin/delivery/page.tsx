@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Truck, Check, AlertTriangle, Building2, Bike, Calculator } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { Truck, Check, AlertTriangle, Building2, Bike, Calculator, Package } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Input } from '@/components/ui/Input';
+import { formatPrice, formatDateTime } from '@/lib/format';
 import { useSiteSettings } from '@/lib/stores/siteSettings';
 import { useMounted } from '@/hooks/useMounted';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -22,6 +24,172 @@ async function fetchItems(url: string): Promise<DirItem[]> {
   } catch {
     return [];
   }
+}
+
+/* ------------------------- BTS shipments section ------------------------- */
+
+interface BtsOrder {
+  id: string;
+  number: string;
+  status: string;
+  customerName?: string;
+  phone?: string;
+  total: number;
+  createdAt: number;
+  payload?: {
+    contact?: { name?: string; phone?: string };
+    items?: Array<{ productId: string; name?: string; weight?: number; quantity?: number }>;
+    delivery?: { method?: string; bts?: { branchName?: string; cityName?: string } };
+  };
+  bts?: { barcode?: string; tracking?: string; cost?: number };
+}
+
+function BtsShipmentsSection() {
+  const [orders, setOrders] = useState<BtsOrder[]>([]);
+  const [tab, setTab] = useState<'pending' | 'shipped'>('pending');
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    fetch('/api/orders', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const all: BtsOrder[] = d?.orders || [];
+        setOrders(
+          all.filter((o) => {
+            const m = o.payload?.delivery?.method;
+            return m === 'bts' || m === 'post';
+          }),
+        );
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(load, [load]);
+
+  const pending = orders.filter((o) => !o.bts?.barcode && o.status !== 'cancelled');
+  const shipped = orders.filter((o) => !!o.bts?.barcode);
+  const list = tab === 'pending' ? pending : shipped;
+
+  // Inline create — only when every item already has a weight; otherwise the
+  // order page asks for the missing weights.
+  const createShipment = async (o: BtsOrder) => {
+    setErr(null);
+    setBusyId(o.id);
+    try {
+      const res = await fetch('/api/delivery/bts/shipment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: o.id }),
+      });
+      const data = await res.json();
+      if (res.ok && data?.ok) load();
+      else setErr(`${o.number}: ${data?.error || 'BTS xatosi'}`);
+    } catch {
+      setErr(`${o.number}: tarmoq xatosi`);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const rowName = (o: BtsOrder) => o.customerName || o.payload?.contact?.name || 'Mijoz';
+
+  return (
+    <section className="space-y-3 rounded-2xl border border-brand-surface-border bg-brand-surface p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white/45">
+          <Package className="h-4 w-4 text-brand-yellow" /> BTS joʻnatmalar
+        </h2>
+        <div className="flex gap-1.5">
+          <button
+            type="button"
+            onClick={() => setTab('pending')}
+            className={cn(
+              'rounded-lg px-2.5 py-1 text-[11px] font-bold transition-colors',
+              tab === 'pending' ? 'bg-brand-yellow/15 text-brand-yellow' : 'text-white/50 hover:text-white',
+            )}
+          >
+            ⏳ Yaratilmagan ({pending.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('shipped')}
+            className={cn(
+              'rounded-lg px-2.5 py-1 text-[11px] font-bold transition-colors',
+              tab === 'shipped' ? 'bg-success/15 text-success' : 'text-white/50 hover:text-white',
+            )}
+          >
+            ✅ Yaratilgan ({shipped.length})
+          </button>
+        </div>
+      </div>
+
+      {err && <p className="text-xs text-danger">⚠️ {err}</p>}
+
+      {list.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-brand-surface-border px-3 py-5 text-center text-xs text-white/45">
+          {tab === 'pending' ? 'Yaratilmagan joʻnatma yoʻq 🎉' : 'Hali joʻnatma yaratilmagan.'}
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {list.map((o) => {
+            const missingW = (o.payload?.items || []).some((it) => !(Number(it.weight) > 0));
+            const dest = o.payload?.delivery?.bts;
+            return (
+              <div
+                key={o.id}
+                className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-brand-surface-border bg-brand-dark/40 px-3 py-2.5"
+              >
+                <div className="min-w-0 flex-1">
+                  <Link href={`/admin/orders/${o.id}`} className="font-display text-sm font-bold text-white hover:text-brand-yellow">
+                    #{o.number}
+                  </Link>
+                  <p className="truncate text-[11px] text-white/50">
+                    {rowName(o)} · {o.phone || o.payload?.contact?.phone || ''} ·{' '}
+                    {formatDateTime(new Date(o.createdAt).toISOString())}
+                  </p>
+                  {dest?.branchName && (
+                    <p className="truncate text-[11px] text-white/40">
+                      📍 {[dest.cityName, dest.branchName].filter(Boolean).join(', ')}
+                    </p>
+                  )}
+                </div>
+                <span className="shrink-0 font-display text-sm font-extrabold text-brand-yellow">
+                  {formatPrice(o.total)}
+                </span>
+                {o.bts?.barcode ? (
+                  <span className="inline-flex shrink-0 items-center gap-2 text-[11px] font-bold">
+                    <span className="rounded-md bg-success/15 px-1.5 py-0.5 font-mono text-success">{o.bts.barcode}</span>
+                    {o.bts.tracking && (
+                      <a href={o.bts.tracking} target="_blank" rel="noopener noreferrer" className="text-brand-yellow hover:underline">
+                        🔍 Kuzatish
+                      </a>
+                    )}
+                  </span>
+                ) : missingW ? (
+                  <Link
+                    href={`/admin/orders/${o.id}`}
+                    className="shrink-0 rounded-lg border border-brand-yellow/40 bg-brand-yellow/10 px-2.5 py-1.5 text-[11px] font-bold text-brand-yellow hover:bg-brand-yellow/20"
+                  >
+                    ⚖️ Vazn kerak — ochish
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => createShipment(o)}
+                    disabled={busyId === o.id}
+                    className="shrink-0 rounded-lg bg-gradient-yellow px-2.5 py-1.5 text-[11px] font-bold text-brand-dark shadow-glow-sm hover:brightness-110 disabled:opacity-50"
+                  >
+                    {busyId === o.id ? '…' : '🚚 Yaratish'}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
 }
 
 export default function AdminDeliveryPage() {
@@ -149,6 +317,9 @@ export default function AdminDeliveryPage() {
           </div>
         </div>
       )}
+
+      {/* BTS shipments — create & track from one place */}
+      <BtsShipmentsSection />
 
       {/* Enable toggle */}
       <label className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-brand-surface-border bg-brand-surface p-4">
