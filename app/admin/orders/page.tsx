@@ -32,6 +32,24 @@ interface ServerOrder {
   bts?: { barcode?: string; tracking?: string };
 }
 
+/**
+ * Steps depend on how the order is paid & delivered:
+ * - online: pending → paid(auto) → [shipping] → delivered  (no "accept" step)
+ * - cash:   confirmed(auto) → [shipping] → delivered (paid auto-set on delivery)
+ * - pickup orders have no shipping step.
+ */
+function allowedStatuses(o: ServerOrder): OrderStatus[] {
+  const cash = o.payload?.payment?.method === 'cash';
+  const dm = o.payload?.delivery?.method;
+  const ships = dm === 'bts' || dm === 'post' || dm === 'courier';
+  const flow = (
+    cash
+      ? ['confirmed', ...(ships ? ['shipping'] : []), 'delivered', 'cancelled']
+      : ['pending', 'paid', ...(ships ? ['shipping'] : []), 'delivered', 'cancelled']
+  ) as OrderStatus[];
+  return flow.includes(o.status) ? flow : [o.status, ...flow];
+}
+
 /** BTS shipment state chip for an order row. */
 function BtsChip({ o }: { o: ServerOrder }) {
   const isBts = o.payload?.delivery?.method === 'bts' || o.payload?.delivery?.method === 'post';
@@ -184,7 +202,7 @@ export default function AdminOrdersPage() {
                           : 'border-brand-yellow/40 text-brand-yellow',
                     )}
                   >
-                    {STATUS_OPTIONS.map((s) => (
+                    {allowedStatuses(o).map((s) => (
                       <option key={s} value={s} className="bg-brand-dark text-white">
                         {statusMeta[s].label}
                       </option>
@@ -241,7 +259,7 @@ export default function AdminOrdersPage() {
                 onChange={(e) => handleStatusChange(o.id, e.target.value as OrderStatus)}
                 className="h-8 rounded-lg border border-brand-surface-border bg-brand-dark px-2 text-[11px] font-bold uppercase tracking-wider text-white outline-none"
               >
-                {STATUS_OPTIONS.map((s) => (
+                {allowedStatuses(o).map((s) => (
                   <option key={s} value={s} className="bg-brand-dark text-white">
                     {statusMeta[s].label}
                   </option>

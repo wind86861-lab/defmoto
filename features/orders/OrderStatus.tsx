@@ -41,8 +41,26 @@ export function OrderStatusBadge({ status }: { status: OrderStatus }) {
   );
 }
 
-export function OrderTimeline({ status }: { status: OrderStatus }) {
+export function OrderTimeline({
+  status,
+  paymentMethod,
+  deliveryMethod,
+}: {
+  status: OrderStatus;
+  paymentMethod?: string;
+  deliveryMethod?: string;
+}) {
   const t = useTranslations('orders');
+
+  // Steps mirror the real flow: cash orders are auto-accepted (no payment
+  // step until delivery); online orders await payment; pickup never ships.
+  const ships = deliveryMethod ? ['bts', 'post', 'courier'].includes(deliveryMethod) : true;
+  const steps = (
+    paymentMethod === 'cash'
+      ? ['confirmed', ...(ships ? ['shipping'] : []), 'delivered']
+      : ['pending', 'paid', ...(ships ? ['shipping'] : []), 'delivered']
+  ) as OrderStatus[];
+  const timeline = steps.includes(status) ? steps : TIMELINE;
 
   if (status === 'cancelled') {
     return (
@@ -57,11 +75,11 @@ export function OrderTimeline({ status }: { status: OrderStatus }) {
   }
 
   const meta = getOrderStatusMeta(t);
-  const currentIdx = TIMELINE.indexOf(status);
+  const currentIdx = timeline.indexOf(status);
 
   return (
     <div className="space-y-3">
-      {TIMELINE.map((s, i) => {
+      {timeline.map((s, i) => {
         const m = meta[s];
         const Icon = m.icon;
         const done = i < currentIdx;
@@ -84,7 +102,7 @@ export function OrderTimeline({ status }: { status: OrderStatus }) {
                   <Icon className="h-4 w-4" />
                 )}
               </div>
-              {i < TIMELINE.length - 1 && (
+              {i < timeline.length - 1 && (
                 <div
                   className={cn(
                     'absolute left-1/2 top-9 h-7 w-0.5 -translate-x-1/2',

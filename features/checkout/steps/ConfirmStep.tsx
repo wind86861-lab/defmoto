@@ -72,7 +72,9 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
       id: `o_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       number: `DM-${String(Date.now()).slice(-6)}`,
       createdAt: new Date().toISOString(),
-      status: 'pending',
+      // Cash orders are auto-accepted on placement (no separate "accept" step);
+      // online orders stay pending until the payment callback marks them paid.
+      status: state.payment.method === 'cash' ? 'confirmed' : 'pending',
       items: [...items],
       subtotal,
       discount,

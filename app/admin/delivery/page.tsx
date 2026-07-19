@@ -203,6 +203,7 @@ export default function AdminDeliveryPage() {
   const [available, setAvailable] = useState<boolean | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ branch: number; courier: number } | null>(null);
+  const [tab, setTab] = useState<'shipments' | 'settings'>('shipments');
 
   const flash = () => {
     setSavedAt(new Date().toLocaleTimeString('en-GB'));
@@ -318,9 +319,34 @@ export default function AdminDeliveryPage() {
         </div>
       )}
 
-      {/* BTS shipments — create & track from one place */}
-      <BtsShipmentsSection />
+      {/* Tabs: shipments (daily work) / settings (rare) */}
+      <div className="flex gap-1.5 rounded-2xl border border-brand-surface-border bg-brand-surface p-1.5">
+        <button
+          type="button"
+          onClick={() => setTab('shipments')}
+          className={cn(
+            'flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors',
+            tab === 'shipments' ? 'bg-gradient-yellow text-brand-dark shadow-glow-sm' : 'text-white/60 hover:text-white',
+          )}
+        >
+          📦 Joʻnatmalar
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('settings')}
+          className={cn(
+            'flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors',
+            tab === 'settings' ? 'bg-gradient-yellow text-brand-dark shadow-glow-sm' : 'text-white/60 hover:text-white',
+          )}
+        >
+          ⚙️ Sozlamalar
+        </button>
+      </div>
 
+      {tab === 'shipments' && <BtsShipmentsSection />}
+
+      {tab === 'settings' && (
+        <>
       {/* Enable toggle */}
       <label className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-brand-surface-border bg-brand-surface p-4">
         <div>
@@ -459,6 +485,8 @@ export default function AdminDeliveryPage() {
           })}
         </div>
       </section>
+        </>
+      )}
     </div>
   );
 }

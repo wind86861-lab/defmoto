@@ -131,7 +131,7 @@ export function OrderDetailClient({ id }: { id: string }) {
             <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-white/45">
               {t('statusSectionTitle')}
             </h2>
-            <OrderTimeline status={order.status} />
+            <OrderTimeline status={order.status} paymentMethod={order.payment?.method} deliveryMethod={order.delivery?.method} />
           </section>
 
           {/* Items */}

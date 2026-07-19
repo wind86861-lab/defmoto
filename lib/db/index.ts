@@ -205,6 +205,11 @@ export function updateOrderStatus(id: string, status: string): boolean {
   const o = store.orders.find((x) => x.id === id);
   if (!o) return false;
   o.status = status;
+  // COD: cash is collected at handover, so delivery completes the payment.
+  if (status === 'delivered') {
+    const p = o.payload as { payment?: { method?: string; paid?: boolean } } | null;
+    if (p?.payment?.method === 'cash' && !p.payment.paid) p.payment.paid = true;
+  }
   atomicWrite(ORDERS_FILE, store.orders);
   return true;
 }
