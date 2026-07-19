@@ -440,7 +440,11 @@
     "btsChooseBranch": "Filialni tanlang",
     "btsLoading": "Yuklanmoqda...",
     "btsNoBranches": "Bu shaharda BTS filiali topilmadi.",
-    "btsOriginLabel": "Olib ketish nuqtasi (qayerdan jo'natiladi)"
+    "btsOriginLabel": "Olib ketish nuqtasi (qayerdan jo'natiladi)",
+    "btsCourierTitle": "BTS kuryer — uyga yetkazish",
+    "btsCourierDesc": "Kuryer buyurtmani manzilingizgacha olib boradi",
+    "btsCourierPrice": "Narx shahringizga qarab",
+    "btsCourierDuration": "1–3 kun"
   },
   "orders": {
     "backAria": "Orqaga",

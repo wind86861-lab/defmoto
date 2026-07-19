@@ -440,7 +440,11 @@
     "btsChooseBranch": "Choose a branch",
     "btsLoading": "Loading...",
     "btsNoBranches": "No BTS branch found in this city.",
-    "btsOriginLabel": "Dispatch point (ships from)"
+    "btsOriginLabel": "Dispatch point (ships from)",
+    "btsCourierTitle": "BTS courier — door delivery",
+    "btsCourierDesc": "A courier brings the order to your address",
+    "btsCourierPrice": "Price depends on your city",
+    "btsCourierDuration": "1–3 days"
   },
   "orders": {
     "backAria": "Back",

@@ -440,7 +440,11 @@
     "btsChooseBranch": "Выберите филиал",
     "btsLoading": "Загрузка...",
     "btsNoBranches": "В этом городе филиал BTS не найден.",
-    "btsOriginLabel": "Пункт отправки (откуда отправляется)"
+    "btsOriginLabel": "Пункт отправки (откуда отправляется)",
+    "btsCourierTitle": "Курьер BTS — доставка до двери",
+    "btsCourierDesc": "Курьер привезёт заказ по вашему адресу",
+    "btsCourierPrice": "Цена зависит от города",
+    "btsCourierDuration": "1–3 дня"
   },
   "orders": {
     "backAria": "Назад",

@@ -80,7 +80,7 @@ export function BtsCityPicker() {
       const r = await fetch('/api/delivery/bts/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ receiverCityCode: code, dropoff_type: 'courier', weight }),
+        body: JSON.stringify({ receiverCityCode: code, dropoff_type: 'courier', weight, originId: delivery.btsOriginId }),
       });
       const j = await r.json();
       const cell = dispatch === 'courier' ? j?.data?.courier_to_courier : j?.data?.branch_to_courier;

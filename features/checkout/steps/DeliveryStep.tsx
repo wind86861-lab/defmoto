@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Store, MapPin, Navigation, Building2 } from 'lucide-react';
+import { Store, MapPin, Navigation, Building2, Bike } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
@@ -11,6 +11,7 @@ import { useSiteSettings } from '@/lib/stores/siteSettings';
 import { useMounted } from '@/hooks/useMounted';
 import { mapsHref, branchLatLng, osmEmbed } from '@/lib/contactLinks';
 import { BtsBranchPicker } from './BtsBranchPicker';
+import { BtsCityPicker } from './BtsCityPicker';
 import type { DeliveryMethod } from '@/types/order';
 
 function distanceKm(
@@ -88,6 +89,14 @@ export function DeliveryStep({ onNext, onBack }: { onNext: () => void; onBack: (
             price: t('btsBranchPrice'),
             duration: t('btsBranchDuration'),
           },
+          {
+            method: 'post' as DeliveryMethod,
+            title: t('btsCourierTitle'),
+            desc: t('btsCourierDesc'),
+            icon: Bike,
+            price: t('btsCourierPrice'),
+            duration: t('btsCourierDuration'),
+          },
         ]
       : []),
   ];
@@ -110,7 +119,9 @@ export function DeliveryStep({ onNext, onBack }: { onNext: () => void; onBack: (
       ? Boolean(delivery.branchId)
       : delivery.method === 'bts'
         ? Boolean(delivery.btsBranchCode)
-        : true;
+        : delivery.method === 'post'
+          ? Boolean(delivery.btsCityCode)
+          : true;
 
   return (
     <div className="space-y-6">
@@ -175,6 +186,9 @@ export function DeliveryStep({ onNext, onBack }: { onNext: () => void; onBack: (
       </div>
 
       {delivery.method === 'bts' && <BtsBranchPicker me={me} />}
+
+      {/* BTS courier-to-door: pick the destination city (address comes next step) */}
+      {delivery.method === 'post' && <BtsCityPicker />}
 
       {delivery.method === 'pickup' && (
         <div className="space-y-2 animate-slide-up">
