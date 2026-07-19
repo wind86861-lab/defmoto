@@ -78,7 +78,7 @@ export async function createShipmentForOrder(
       phone: sender.senderPhone,
       address: sender.senderAddress,
       city_code: ov.senderCityCode || sender.senderCityCode || undefined,
-      branch_code: process.env.BTS_SENDER_BRANCH_CODE || undefined,
+      branch_code: sender.senderBranchCode || undefined,
     },
     receiver: {
       name: contact.name || order.customerName || '',

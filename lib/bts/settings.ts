@@ -13,6 +13,7 @@ import type { BtsPickupType } from './client';
 export interface BtsSender {
   enabled: boolean;
   senderCityCode?: string;
+  senderBranchCode?: string;
   senderName: string;
   senderPhone: string;
   senderAddress: string;
@@ -23,6 +24,7 @@ interface PersistedOrigin {
   id: string;
   name?: string;
   cityCode?: string;
+  branchCode?: string;
   senderName?: string;
   senderPhone?: string;
   senderAddress?: string;
@@ -58,6 +60,7 @@ export function getBtsSender(originId?: string): BtsSender {
     enabled: s.enabled !== false,
     senderCityCode:
       origin?.cityCode || s.cityCode || process.env.BTS_SENDER_CITY_CODE || undefined,
+    senderBranchCode: origin?.branchCode || process.env.BTS_SENDER_BRANCH_CODE || undefined,
     senderName: origin?.senderName || s.senderName || process.env.BTS_SENDER_NAME || 'DEFT MOTO',
     senderPhone: origin?.senderPhone || s.senderPhone || process.env.BTS_SENDER_PHONE || '',
     senderAddress:

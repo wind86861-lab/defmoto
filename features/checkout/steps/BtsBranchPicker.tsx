@@ -203,12 +203,17 @@ export function BtsBranchPicker({ me }: { me: { lat: number; lng: number } | nul
             value={delivery.btsOriginId || ''}
             onChange={(e) => onOrigin(e.target.value)}
           >
-            {activeOrigins.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.name}
-                {o.cityName ? ` — ${o.cityName}` : ''}
-              </option>
-            ))}
+            {activeOrigins.map((o) => {
+              // "Name — City (Branch filiali)", without repeating name == city.
+              const parts = [o.name];
+              if (o.cityName && o.cityName !== o.name) parts.push(`— ${o.cityName}`);
+              if (o.branchName) parts.push(`(${o.branchName} filiali)`);
+              return (
+                <option key={o.id} value={o.id}>
+                  {parts.join(' ')}
+                </option>
+              );
+            })}
           </select>
         </div>
       )}

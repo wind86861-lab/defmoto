@@ -204,6 +204,8 @@ export default function AdminDeliveryPage() {
   const [newRegion, setNewRegion] = useState('');
   const [newCity, setNewCity] = useState('');
   const [newCities, setNewCities] = useState<DirItem[]>([]);
+  const [newBranch, setNewBranch] = useState('');
+  const [newBranches, setNewBranches] = useState<DirItem[]>([]);
   const [available, setAvailable] = useState<boolean | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ branch: number; courier: number } | null>(null);
@@ -264,13 +266,26 @@ export default function AdminDeliveryPage() {
   const onNewRegion = async (code: string) => {
     setNewRegion(code);
     setNewCity('');
+    setNewBranch('');
+    setNewBranches([]);
     setNewCities(code ? await fetchItems(`/api/delivery/bts/directory?type=cities&regionCode=${code}`) : []);
+  };
+
+  const onNewCity = async (code: string) => {
+    setNewCity(code);
+    setNewBranch('');
+    setNewBranches(
+      code && newRegion
+        ? await fetchItems(`/api/delivery/bts/directory?type=branches&regionCode=${newRegion}&cityCode=${code}`)
+        : [],
+    );
   };
 
   const addOrigin = () => {
     if (newName.trim().length < 2 || !newCity) return;
     const region = regions.find((r) => r.code === newRegion);
     const city = newCities.find((c) => c.code === newCity);
+    const branch = newBranches.find((b) => b.code === newBranch);
     const o = {
       id: `org_${Date.now().toString(36)}`,
       name: newName.trim(),
@@ -278,6 +293,8 @@ export default function AdminDeliveryPage() {
       regionName: region?.name,
       cityCode: newCity,
       cityName: city?.name,
+      branchCode: newBranch || undefined,
+      branchName: branch?.name,
       active: true,
     };
     patch({ origins: [...origins, o], defaultOriginId: bts?.defaultOriginId || o.id });
@@ -285,6 +302,8 @@ export default function AdminDeliveryPage() {
     setNewRegion('');
     setNewCity('');
     setNewCities([]);
+    setNewBranch('');
+    setNewBranches([]);
   };
 
   const toggleOrigin = (id: string) =>
@@ -458,6 +477,7 @@ export default function AdminDeliveryPage() {
                   </p>
                   <p className="truncate text-[11px] text-white/50">
                     {[o.regionName, o.cityName].filter(Boolean).join(', ') || '—'}
+                    {o.branchName ? ` · 🏢 ${o.branchName} filiali` : ''}
                   </p>
                 </div>
                 <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-[11px] font-bold text-white/70">
@@ -503,10 +523,19 @@ export default function AdminDeliveryPage() {
           </div>
           <div>
             <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">Shahar / tuman</label>
-            <select className={selectCls} value={newCity} disabled={!newRegion} onChange={(e) => setNewCity(e.target.value)}>
+            <select className={selectCls} value={newCity} disabled={!newRegion} onChange={(e) => onNewCity(e.target.value)}>
               <option value="">Shahar / tuman tanlang</option>
               {newCities.map((c) => (
                 <option key={c.code} value={c.code}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">Aniq BTS filiali (ixtiyoriy)</label>
+            <select className={selectCls} value={newBranch} disabled={!newCity} onChange={(e) => setNewBranch(e.target.value)}>
+              <option value="">Filial tanlanmagan</option>
+              {newBranches.map((b) => (
+                <option key={b.code} value={b.code}>{b.name}</option>
               ))}
             </select>
           </div>

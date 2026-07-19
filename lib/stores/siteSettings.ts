@@ -40,6 +40,9 @@ export interface BtsOrigin {
   regionName?: string;
   cityCode?: string;
   cityName?: string;
+  // Exact BTS branch this point hands parcels to (sender branch).
+  branchCode?: string;
+  branchName?: string;
   senderName?: string;
   senderPhone?: string;
   senderAddress?: string;
