@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { SlidersHorizontal } from 'lucide-react';
@@ -30,7 +30,17 @@ export function CatalogClient() {
   const { query, activeFilterCount, reset } = useCatalogQuery();
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const result = useMemo(() => queryProducts(query, products), [query, products]);
+  const PAGE = 12;
+  const [shown, setShown] = useState(PAGE);
+
+  // Reset the visible count whenever the filters/sort/category/search change.
+  const queryKey = JSON.stringify(query);
+  useEffect(() => setShown(PAGE), [queryKey]);
+
+  const result = useMemo(
+    () => queryProducts({ ...query, page: 1, pageSize: shown }, products),
+    [query, products, shown],
+  );
 
   const category = query.category
     ? categories.find((c) => c.slug === query.category)
@@ -69,7 +79,7 @@ export function CatalogClient() {
 
           {result.hasMore && (
             <div className="mt-8 flex justify-center">
-              <Button variant="secondary" size="lg">
+              <Button variant="secondary" size="lg" onClick={() => setShown((n) => n + PAGE)}>
                 {t('loadMore')}
               </Button>
             </div>
