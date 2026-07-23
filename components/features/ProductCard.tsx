@@ -85,14 +85,15 @@ export function ProductCard({ product, variant = 'grid', className }: ProductCar
         className,
       )}
     >
-      {/* Image */}
-      <div className="relative aspect-square overflow-hidden bg-brand-dark">
+      {/* Image — full product on a clean white canvas (matches product photos) */}
+      <div className="relative aspect-square overflow-hidden bg-white">
         <ProductImage
           src={product.images[0]}
           alt={name}
           loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-500 ease-spring group-hover:scale-105"
-          fallbackClassName="h-full w-full"
+          decoding="async"
+          className="h-full w-full object-contain transition-transform duration-500 ease-spring group-hover:scale-105"
+          fallbackClassName="h-full w-full bg-brand-surface-elevated"
         />
 
         {/* Top-left badges */}

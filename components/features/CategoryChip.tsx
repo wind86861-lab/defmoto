@@ -11,6 +11,7 @@ interface CategoryChipProps {
   category: Category;
   href?: string;
   active?: boolean;
+  className?: string;
 }
 
 /**
@@ -18,7 +19,7 @@ interface CategoryChipProps {
  * image/icon with the name below. Reads as a clean single-row scroller on
  * mobile (wraps on desktop), much lighter than the full CategoryCard.
  */
-export function CategoryChip({ category, href, active }: CategoryChipProps) {
+export function CategoryChip({ category, href, active, className }: CategoryChipProps) {
   const tCategories = useTranslations('categories');
   const label = category.slug
     ? resolveCategoryName(tCategories, category)
@@ -27,7 +28,10 @@ export function CategoryChip({ category, href, active }: CategoryChipProps) {
   return (
     <Link
       href={href ?? `/catalog?category=${category.slug}`}
-      className="group flex w-[68px] shrink-0 flex-col items-center gap-1.5 no-tap-highlight sm:w-[80px]"
+      className={cn(
+        'group flex w-[68px] shrink-0 flex-col items-center gap-1.5 no-tap-highlight sm:w-[80px]',
+        className,
+      )}
     >
       <div
         className={cn(
