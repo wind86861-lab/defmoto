@@ -37,8 +37,12 @@ export function ChatClient() {
 
   const listRef = useRef<HTMLDivElement>(null);
   const [inputHeight, setInputHeight] = useState(0);
-  // Only pull operator replies newer than what we've already shown.
-  const sinceRef = useRef<number>(Date.now());
+  // Cursor for the relay poll — a SERVER-origin timestamp, never the phone
+  // clock. Starts at 0 (the first poll returns the session's operator messages,
+  // which we dedupe by id against what's already shown), then advances only to
+  // the server's `now`. Seeding this from Date.now() would drop every operator
+  // reply whenever the device clock runs ahead of the server.
+  const sinceRef = useRef<number>(0);
 
   const suggestions = [
     t('suggestion1'),
@@ -81,10 +85,20 @@ export function ChatClient() {
           { cache: 'no-store' },
         );
         const data = await res.json();
-        if (!cancelled && data?.ok && Array.isArray(data.messages) && data.messages.length) {
+        if (cancelled || !data?.ok) return;
+        // Advance the cursor to the server clock — never the phone clock.
+        if (typeof data.now === 'number' && data.now > sinceRef.current) {
+          sinceRef.current = data.now;
+        }
+        if (Array.isArray(data.messages) && data.messages.length) {
+          // Dedupe against messages already shown (the first poll uses since=0
+          // and replays the whole operator history, incl. what we persisted).
+          const seen = new Set(useChatStore.getState().messages.map((m) => m.id));
+          let added = false;
           for (const m of data.messages) {
-            const ts = new Date(m.createdAt).getTime();
-            if (ts > sinceRef.current) sinceRef.current = ts;
+            if (seen.has(m.id)) continue;
+            seen.add(m.id);
+            added = true;
             const attachments = [
               ...(m.image ? [{ kind: 'image' as const, url: m.image }] : []),
               ...(m.video ? [{ kind: 'video' as const, url: m.video }] : []),
@@ -99,7 +113,7 @@ export function ChatClient() {
               operatorRole: t('operatorRoleLabel'),
             });
           }
-          setOperatorTyping(false);
+          if (added) setOperatorTyping(false);
         }
       } catch {
         /* offline / relay down — ignore, try again */

@@ -444,7 +444,17 @@ async function handleUpdate(update: TgUpdate) {
 
   /* ------------------------- operator reply-to ---------------------------- */
   if (msg.reply_to_message?.message_id && text) {
-    ingestOperatorReply(msg.reply_to_message.message_id, text);
+    const delivered = ingestOperatorReply(msg.reply_to_message.message_id, text);
+    // A silent no-op here is how replies "vanish": the forwarded-message routing
+    // entry is gone (e.g. server restarted). Tell the operator so they retry via
+    // the inbox instead of assuming the customer got it.
+    if (!delivered && isOperatorChat(chatId)) {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: '⚠️ Bu xabarga javob yeta olmadi (suhbat topilmadi). "📨 Xabarlar" orqali suhbatni oching va "✍️ Javob berish"ni bosing.',
+        reply_markup: startKeyboard(),
+      });
+    }
     return;
   }
 
