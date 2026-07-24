@@ -55,3 +55,45 @@ export function tgApi<T = unknown>(method: string, params: Record<string, unknow
     req.end();
   });
 }
+
+/**
+ * Download a Telegram file (photo/video/document) by its `file_path` as a
+ * Buffer. Uses the same fresh-IPv4-connection strategy as tgApi — the global
+ * `fetch` (undici) picks the host's broken IPv6 and hangs, so operator image /
+ * video replies never downloaded. Follows one redirect just in case.
+ */
+export function tgDownload(filePath: string, _redirects = 0): Promise<Buffer> {
+  return new Promise<Buffer>((resolve, reject) => {
+    const req = https.request(
+      {
+        hostname: 'api.telegram.org',
+        path: `/file/bot${BOT_TOKEN}/${filePath}`,
+        method: 'GET',
+        family: 4, // IPv4 only — the host's IPv6 is broken
+        agent,
+        timeout: 60_000,
+      },
+      (res) => {
+        const status = res.statusCode || 0;
+        // Handle a single redirect (Telegram file host normally doesn't, but be safe).
+        if (status >= 300 && status < 400 && res.headers.location && _redirects < 1) {
+          res.resume();
+          const loc = res.headers.location.replace(/^https?:\/\/api\.telegram\.org\/file\/bot[^/]+\//, '');
+          tgDownload(loc, _redirects + 1).then(resolve, reject);
+          return;
+        }
+        if (status !== 200) {
+          res.resume();
+          reject(new Error(`tgDownload HTTP ${status}`));
+          return;
+        }
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => resolve(Buffer.concat(chunks)));
+      },
+    );
+    req.on('timeout', () => req.destroy(new Error('ETIMEDOUT')));
+    req.on('error', reject);
+    req.end();
+  });
+}

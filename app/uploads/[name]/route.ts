@@ -20,9 +20,15 @@ const MIME: Record<string, string> = {
   webp: 'image/webp',
   gif: 'image/gif',
   svg: 'image/svg+xml',
+  // Video — operator video replies (and admin product videos) are saved here too.
+  mp4: 'video/mp4',
+  mov: 'video/quicktime',
+  webm: 'video/webm',
+  ogg: 'video/ogg',
+  m4v: 'video/mp4',
 };
 
-export async function GET(_req: Request, { params }: { params: { name: string } }) {
+export async function GET(req: Request, { params }: { params: { name: string } }) {
   // Basename only — block any path traversal.
   const name = path.basename(params.name || '');
   if (!name || name.includes('..')) {
@@ -39,12 +45,42 @@ export async function GET(_req: Request, { params }: { params: { name: string } 
   } catch {
     return new Response('Not found', { status: 404 });
   }
+
+  const total = buf.length;
+  const baseHeaders: Record<string, string> = {
+    'Content-Type': type,
+    'Cache-Control': 'public, max-age=31536000, immutable',
+    'Accept-Ranges': 'bytes',
+  };
+
+  // Range support — Safari/iOS refuse to play <video> without a 206 response,
+  // and it lets the browser seek. Harmless for images (they just request 200).
+  const range = req.headers.get('range');
+  const m = range && /^bytes=(\d*)-(\d*)$/.exec(range.trim());
+  if (m) {
+    let start = m[1] ? parseInt(m[1], 10) : 0;
+    let end = m[2] ? parseInt(m[2], 10) : total - 1;
+    if (Number.isNaN(start)) start = 0;
+    if (Number.isNaN(end) || end >= total) end = total - 1;
+    if (start > end || start >= total) {
+      return new Response('Range Not Satisfiable', {
+        status: 416,
+        headers: { 'Content-Range': `bytes */${total}` },
+      });
+    }
+    const slice = buf.subarray(start, end + 1);
+    return new Response(new Uint8Array(slice), {
+      status: 206,
+      headers: {
+        ...baseHeaders,
+        'Content-Range': `bytes ${start}-${end}/${total}`,
+        'Content-Length': String(slice.length),
+      },
+    });
+  }
+
   return new Response(new Uint8Array(buf), {
     status: 200,
-    headers: {
-      'Content-Type': type,
-      'Cache-Control': 'public, max-age=31536000, immutable',
-      'Content-Length': String(buf.length),
-    },
+    headers: { ...baseHeaders, 'Content-Length': String(total) },
   });
 }

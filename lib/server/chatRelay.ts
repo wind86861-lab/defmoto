@@ -17,7 +17,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { listOrders, getOrder, getUserByTelegramId } from '@/lib/db';
-import { tgApi } from './tgFetch';
+import { tgApi, tgDownload } from './tgFetch';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const ENV_OPERATOR = process.env.TELEGRAM_OPERATOR_CHAT_ID || '';
@@ -450,10 +450,8 @@ async function downloadTelegramFile(
     const r = await tg('getFile', { file_id: fileId });
     const filePath: string | undefined = r?.result?.file_path;
     if (!filePath) return undefined;
-    const res = await fetch(`https://api.telegram.org/file/bot${BOT_TOKEN}/${filePath}`, {
-      signal: AbortSignal.timeout(60_000),
-    });
-    const buf = Buffer.from(await res.arrayBuffer());
+    // Fresh IPv4 connection (https module) — plain fetch hangs on this host.
+    const buf = await tgDownload(filePath);
     const ext = (filePath.split('.').pop() || fallbackExt).toLowerCase().replace(/[^a-z0-9]/g, '');
     const name = `op_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}.${ext}`;
     const dir = path.join(process.cwd(), 'public', 'uploads');
@@ -478,7 +476,8 @@ export async function operatorReplyImageToSession(
   session.messages.push({
     id: `op_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     author: 'operator',
-    text: caption || '',
+    // Never leave a blank bubble if a website image couldn't be downloaded.
+    text: caption || (!isTg && !imageUrl ? '🖼 Rasm' : ''),
     image: imageUrl,
     createdAt: new Date().toISOString(),
   });
