@@ -28,7 +28,9 @@
     "maxPriceAria": "Maximum price",
     "copy": "Copy",
     "copied": "Copied",
-    "close": "Close"
+    "close": "Close",
+    "register": "Register",
+    "logout": "Log out"
   },
   "nav": {
     "home": "Home",
@@ -207,7 +209,8 @@
     "franchiseStatBranchesValue": "5+",
     "franchiseFormTitle": "Submit a request",
     "tabBranches": "Branches",
-    "tabFranchise": "Franchise"
+    "tabFranchise": "Franchise",
+    "phoneLabel": "Phone"
   },
   "service": {
     "title": "Service centres",
@@ -234,7 +237,8 @@
     "bookBenefit1": "Quick response within 15 minutes",
     "bookBenefit2": "Free diagnostics",
     "bookBenefit3": "6-month warranty",
-    "bookSuccessDesc": "We'll be in touch about {centerName} soon"
+    "bookSuccessDesc": "We'll be in touch about {centerName} soon",
+    "phoneLabel": "Phone"
   },
   "blog": {
     "title": "DEFT MOTO blog",
@@ -458,7 +462,8 @@
     "btsCourierTitle": "BTS courier — door delivery",
     "btsCourierDesc": "A courier brings the order to your address",
     "btsCourierPrice": "Price depends on your city",
-    "btsCourierDuration": "1–3 days"
+    "btsCourierDuration": "1–3 days",
+    "phoneLabel": "Phone"
   },
   "orders": {
     "backAria": "Back",

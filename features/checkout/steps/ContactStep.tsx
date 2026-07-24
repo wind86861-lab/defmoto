@@ -5,6 +5,7 @@ import { User, Phone, Send } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { sanitizePhoneInput } from '@/lib/phoneInput';
 import { useAuth } from '@/hooks/useAuth';
 import { useTelegram } from '@/components/providers/TelegramProvider';
 import { useCheckoutState } from '../useCheckoutState';
@@ -124,11 +125,11 @@ export function ContactStep({ onNext }: { onNext: () => void }) {
         </div>
 
         <div>
-          <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">Tel</label>
+          <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">{t('phoneLabel')}</label>
           <Input
             value={phone}
             onChange={(e) => {
-              setContact({ phone: e.target.value });
+              setContact({ phone: sanitizePhoneInput(e.target.value) });
               setEdited(true);
             }}
             placeholder={t('contactPhonePlaceholder')}
@@ -136,6 +137,7 @@ export function ContactStep({ onNext }: { onNext: () => void }) {
             inputMode="tel"
             autoComplete="tel"
             type="tel"
+            maxLength={20}
           />
         </div>
 

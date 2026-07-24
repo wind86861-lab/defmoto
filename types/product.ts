@@ -48,10 +48,17 @@ export interface Product {
   badges?: string[];
 }
 
+/** Admin-entered RU/EN translations for a category name (base name is Uzbek). */
+export interface CategoryTranslations {
+  ru?: { name?: string };
+  en?: { name?: string };
+}
+
 export interface Category {
   id: string;
   slug: string;
   name: string;
+  tr?: CategoryTranslations;
   icon?: string;
   image?: string;
   productCount?: number;

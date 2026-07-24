@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { SlidersHorizontal } from 'lucide-react';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
@@ -22,6 +22,7 @@ import { categoryName } from '@/lib/categoryName';
 export function CatalogClient() {
   const t = useTranslations('catalog');
   const tCategories = useTranslations('categories');
+  const locale = useLocale();
   const mounted = useMounted();
   const storeProducts = useContentStore((s) => s.products);
   const storeCategories = useContentStore((s) => s.categories);
@@ -45,7 +46,7 @@ export function CatalogClient() {
   const category = query.category
     ? categories.find((c) => c.slug === query.category)
     : undefined;
-  const title = category ? categoryName(tCategories, category) : t('title');
+  const title = category ? categoryName(tCategories, category, locale) : t('title');
   const subtitle = category
     ? t('subtitleCount', { count: category.productCount ?? result.total })
     : t('subtitleAll');

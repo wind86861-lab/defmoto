@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   Plus,
   Trash2,
@@ -93,6 +93,7 @@ export default function AdminCategoriesPage() {
 function CategoryRow({ category, index, total }: { category: Category; index: number; total: number }) {
   const t = useTranslations('admin');
   const tCategories = useTranslations('categories');
+  const locale = useLocale();
   const { notify } = useHaptic();
   const toast = useToast();
   const update = useContentStore((s) => s.updateCategory);
@@ -147,7 +148,7 @@ function CategoryRow({ category, index, total }: { category: Category; index: nu
           )}
         </span>
         <span className="min-w-0 flex-1 truncate font-display text-sm font-extrabold">
-          {categoryName(tCategories, draft) || t('fldCatName')}
+          {categoryName(tCategories, draft, locale) || t('fldCatName')}
         </span>
         <div className="flex shrink-0 items-center gap-0.5">
           <IconAction onClick={() => reorder(category.id, -1)} disabled={index === 0} aria-label={t('moveUpAria')}>
@@ -163,8 +164,26 @@ function CategoryRow({ category, index, total }: { category: Category; index: nu
       </div>
 
       <div className="grid gap-2.5 sm:grid-cols-2">
-        <CF label={t('fldCatName')}>
+        <CF label={`${t('fldCatName')} — O'zbekcha 🇺🇿`} full>
           <Input value={draft.name} onChange={(e) => set({ name: e.target.value })} />
+        </CF>
+        <CF label="Русское название 🇷🇺" full>
+          <Input
+            value={draft.tr?.ru?.name ?? ''}
+            placeholder={draft.name}
+            onChange={(e) =>
+              set({ tr: { ...draft.tr, ru: { ...draft.tr?.ru, name: e.target.value } } })
+            }
+          />
+        </CF>
+        <CF label="English name 🇬🇧" full>
+          <Input
+            value={draft.tr?.en?.name ?? ''}
+            placeholder={draft.name}
+            onChange={(e) =>
+              set({ tr: { ...draft.tr, en: { ...draft.tr?.en, name: e.target.value } } })
+            }
+          />
         </CF>
         <CF label={t('fldCatCount')}>
           <div className="flex h-12 items-center rounded-xl border border-brand-surface-border bg-brand-surface/50 px-3.5 text-sm font-semibold text-white/70">

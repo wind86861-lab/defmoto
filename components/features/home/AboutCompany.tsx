@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { CountUp } from '@/components/ui/CountUp';
 
 export function AboutCompany() {
   const t = useTranslations('home');
@@ -50,9 +51,10 @@ export function AboutCompany() {
               >
                 <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-brand-yellow/15 blur-2xl" />
                 <div className="relative">
-                  <div className="font-display text-display-lg font-extrabold text-gradient-yellow sm:text-display-xl">
-                    {s.value}
-                  </div>
+                  <CountUp
+                    value={s.value}
+                    className="block font-display text-display-lg font-extrabold text-gradient-yellow sm:text-display-xl"
+                  />
                   <div className="mt-1 text-xs font-bold uppercase tracking-wider text-white/65 sm:text-sm">
                     {s.label}
                   </div>

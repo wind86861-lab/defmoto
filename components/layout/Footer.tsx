@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   Phone,
   MapPin,
@@ -55,6 +55,7 @@ export function Footer() {
   const tNav = useTranslations('nav');
   const tHome = useTranslations('home');
   const tCategories = useTranslations('categories');
+  const locale = useLocale();
   const mounted = useMounted();
   // Catalog links follow the live admin categories (first 6), mock as fallback.
   const storeCategories = useContentStore((s) => s.categories);
@@ -132,7 +133,7 @@ export function Footer() {
             <ul className="space-y-2.5 text-sm">
               {categories.map((c) => (
                 <FooterLink key={c.id} href={`/catalog?category=${c.slug}`}>
-                  {c.slug ? resolveCategoryName(tCategories, c) : c.name}
+                  {c.slug ? resolveCategoryName(tCategories, c, locale) : c.name}
                 </FooterLink>
               ))}
             </ul>

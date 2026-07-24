@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/cn';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { categoryName as resolveCategoryName } from '@/lib/categoryName';
@@ -21,8 +21,9 @@ interface CategoryChipProps {
  */
 export function CategoryChip({ category, href, active, className }: CategoryChipProps) {
   const tCategories = useTranslations('categories');
+  const locale = useLocale();
   const label = category.slug
-    ? resolveCategoryName(tCategories, category)
+    ? resolveCategoryName(tCategories, category, locale)
     : category.name;
 
   return (

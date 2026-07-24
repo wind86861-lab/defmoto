@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   Plus,
   Trash2,
@@ -178,6 +178,7 @@ function ProductModal({
 }) {
   const t = useTranslations('admin');
   const tCategories = useTranslations('categories');
+  const locale = useLocale();
   const { notify } = useHaptic();
   const toast = useToast();
   const addProduct = useContentStore((s) => s.addProduct);
@@ -338,7 +339,7 @@ function ProductModal({
               <option value="">—</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.slug}>
-                  {categoryName(tCategories, c)}
+                  {categoryName(tCategories, c, locale)}
                 </option>
               ))}
             </select>

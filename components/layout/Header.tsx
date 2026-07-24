@@ -9,13 +9,13 @@ import {
   ShoppingBag,
   User,
   Menu,
-  MoreHorizontal,
   Phone,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Logo } from '@/components/ui/Logo';
 import { IconButton } from '@/components/ui/IconButton';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
+import { HeaderMenu } from '@/components/layout/HeaderMenu';
 import { MarketplaceLinks } from '@/components/features/MarketplaceLinks';
 import { useCartStore } from '@/lib/stores/cart';
 import { useWishlistStore } from '@/lib/stores/wishlist';
@@ -127,13 +127,7 @@ export function Header() {
             icon={<User className="h-5 w-5" />}
             label={t('login')}
           />
-          <button
-            type="button"
-            aria-label={t('more')}
-            className="flex h-11 w-11 items-center justify-center rounded-xl text-white/65 transition-colors hover:bg-white/8 hover:text-brand-yellow"
-          >
-            <MoreHorizontal className="h-5 w-5" />
-          </button>
+          <HeaderMenu />
         </nav>
       </div>
 

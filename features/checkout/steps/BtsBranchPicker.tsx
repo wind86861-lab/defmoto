@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Navigation, Loader2, MapPin } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { Select } from '@/components/ui/Select';
 import { useCheckoutState } from '../useCheckoutState';
 import { useSiteSettings } from '@/lib/stores/siteSettings';
 import { useCartStore } from '@/lib/stores/cart';
@@ -187,9 +188,6 @@ export function BtsBranchPicker({ me }: { me: { lat: number; lng: number } | nul
     });
   }, [branches, me]);
 
-  const selectCls =
-    'w-full rounded-xl border-2 border-brand-surface-border bg-brand-surface px-3 py-3 text-sm font-semibold text-white outline-none focus:border-brand-yellow/60 disabled:opacity-40';
-
   return (
     <div className="space-y-3 animate-slide-up">
       {/* Shop origin point — only when the admin enabled customer choice */}
@@ -198,23 +196,17 @@ export function BtsBranchPicker({ me }: { me: { lat: number; lng: number } | nul
           <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/45">
             {t('btsOriginLabel')}
           </label>
-          <select
-            className={selectCls}
+          <Select
             value={delivery.btsOriginId || ''}
-            onChange={(e) => onOrigin(e.target.value)}
-          >
-            {activeOrigins.map((o) => {
+            onChange={onOrigin}
+            options={activeOrigins.map((o) => {
               // "Name — City (Branch filiali)", without repeating name == city.
               const parts = [o.name];
               if (o.cityName && o.cityName !== o.name) parts.push(`— ${o.cityName}`);
               if (o.branchName) parts.push(`(${o.branchName} filiali)`);
-              return (
-                <option key={o.id} value={o.id}>
-                  {parts.join(' ')}
-                </option>
-              );
+              return { value: o.id, label: parts.join(' ') };
             })}
-          </select>
+          />
         </div>
       )}
 
@@ -223,14 +215,12 @@ export function BtsBranchPicker({ me }: { me: { lat: number; lng: number } | nul
         <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/45">
           {t('btsRegionLabel')}
         </label>
-        <select className={selectCls} value={delivery.btsRegionCode || ''} onChange={(e) => onRegion(e.target.value)}>
-          <option value="">{t('btsRegionPlaceholder')}</option>
-          {regions.map((r) => (
-            <option key={r.code} value={r.code}>
-              {r.name}
-            </option>
-          ))}
-        </select>
+        <Select
+          value={delivery.btsRegionCode || ''}
+          onChange={onRegion}
+          placeholder={t('btsRegionPlaceholder')}
+          options={regions.map((r) => ({ value: r.code, label: r.name }))}
+        />
       </div>
 
       {/* City */}
@@ -238,19 +228,13 @@ export function BtsBranchPicker({ me }: { me: { lat: number; lng: number } | nul
         <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/45">
           {t('btsCityLabel')}
         </label>
-        <select
-          className={selectCls}
+        <Select
           value={delivery.btsCityCode || ''}
+          onChange={onCity}
           disabled={!delivery.btsRegionCode || busy === 'cities'}
-          onChange={(e) => onCity(e.target.value)}
-        >
-          <option value="">{busy === 'cities' ? t('btsLoading') : t('btsCityPlaceholder')}</option>
-          {cities.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+          placeholder={busy === 'cities' ? t('btsLoading') : t('btsCityPlaceholder')}
+          options={cities.map((c) => ({ value: c.code, label: c.name }))}
+        />
       </div>
 
       {/* Branches */}

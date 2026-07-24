@@ -14,6 +14,7 @@ import {
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { sanitizePhoneInput } from '@/lib/phoneInput';
 import { Select } from '@/components/ui/Select';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { Reveal } from '@/components/ui/Reveal';
@@ -212,7 +213,7 @@ function CenterDetail({ center }: { center: ServiceCenter }) {
           />
           <ContactRow
             icon={Phone}
-            label="Tel"
+            label={t('phoneLabel')}
             value={center.phone}
             href={`tel:${center.phone.replace(/\s/g, '')}`}
             copyable
@@ -355,9 +356,11 @@ function BookingForm({ centerName }: { centerName: string }) {
         />
         <Input
           type="tel"
+          inputMode="tel"
+          maxLength={20}
           placeholder={t('bookPhone')}
           value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          onChange={(e) => setForm({ ...form, phone: sanitizePhoneInput(e.target.value) })}
           disabled={submitted}
         />
         <Input

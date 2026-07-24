@@ -1,7 +1,7 @@
 'use client';
 
 import { Check } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/cn';
 import { PriceRange } from '@/components/ui/PriceRange';
 import { useCatalogQuery } from './useCatalogQuery';
@@ -19,6 +19,7 @@ interface FilterPanelProps {
 export function FilterPanel({ facets, className }: FilterPanelProps) {
   const t = useTranslations('catalog');
   const tCategories = useTranslations('categories');
+  const locale = useLocale();
   const { query, setMany } = useCatalogQuery();
   const mounted = useMounted();
   const storeCategories = useContentStore((s) => s.categories);
@@ -79,7 +80,7 @@ export function FilterPanel({ facets, className }: FilterPanelProps) {
           {categories.map((c) => (
             <CategoryRow
               key={c.id}
-              label={`${c.icon ? c.icon + ' ' : ''}${useLive ? resolveCategoryName(tCategories, c) : c.name}`}
+              label={`${c.icon ? c.icon + ' ' : ''}${useLive ? resolveCategoryName(tCategories, c, locale) : c.name}`}
               active={query.category === c.slug}
               count={countFor(c.slug)}
               onClick={() => setMany({ category: c.slug })}

@@ -28,7 +28,9 @@
     "maxPriceAria": "Максимальная цена",
     "copy": "Копировать",
     "copied": "Скопировано",
-    "close": "Закрыть"
+    "close": "Закрыть",
+    "register": "Регистрация",
+    "logout": "Выход"
   },
   "nav": {
     "home": "Главная",
@@ -207,7 +209,8 @@
     "franchiseStatBranchesValue": "5+",
     "franchiseFormTitle": "Оставить заявку",
     "tabBranches": "Филиалы",
-    "tabFranchise": "Франшиза"
+    "tabFranchise": "Франшиза",
+    "phoneLabel": "Телефон"
   },
   "service": {
     "title": "Сервисные центры",
@@ -234,7 +237,8 @@
     "bookBenefit1": "Быстрый ответ за 15 минут",
     "bookBenefit2": "Бесплатная диагностика",
     "bookBenefit3": "Гарантия 6 месяцев",
-    "bookSuccessDesc": "Скоро свяжемся с вами по «{centerName}»"
+    "bookSuccessDesc": "Скоро свяжемся с вами по «{centerName}»",
+    "phoneLabel": "Телефон"
   },
   "blog": {
     "title": "Блог DEFT MOTO",
@@ -458,7 +462,8 @@
     "btsCourierTitle": "Курьер BTS — доставка до двери",
     "btsCourierDesc": "Курьер привезёт заказ по вашему адресу",
     "btsCourierPrice": "Цена зависит от города",
-    "btsCourierDuration": "1–3 дня"
+    "btsCourierDuration": "1–3 дня",
+    "phoneLabel": "Телефон"
   },
   "orders": {
     "backAria": "Назад",

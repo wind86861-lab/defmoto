@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Search, Send } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
+import { sanitizePhoneInput } from '@/lib/phoneInput';
 import { useHaptic } from '@/hooks/useHaptic';
 
 /** Real Uzbek phone: 9 local digits, optionally with a 998 prefix. */
@@ -91,9 +92,10 @@ export function NotFoundRequest() {
                 placeholder={t('notFoundPhonePlaceholder')}
                 type="tel"
                 inputMode="tel"
+                maxLength={20}
                 className="bg-brand-dark/90 text-white placeholder:text-white/40"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(sanitizePhoneInput(e.target.value))}
                 disabled={submitting || submitted}
               />
               {error && (

@@ -20,6 +20,7 @@ import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
+import { sanitizePhoneInput } from '@/lib/phoneInput';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { Reveal } from '@/components/ui/Reveal';
 import { YouTubeBlock } from '@/components/ui/YouTubeBlock';
@@ -306,7 +307,7 @@ function BranchDetail({ branch }: { branch: Branch }) {
           />
           <ContactRow
             icon={Phone}
-            label="Tel"
+            label={t('phoneLabel')}
             value={branch.phone}
             href={`tel:${branch.phone.replace(/\s/g, '')}`}
             copyable
@@ -407,9 +408,11 @@ function RequestForm({ branchName }: { branchName: string }) {
         <Field label={t('requestPhoneLabel')}>
           <Input
             type="tel"
+            inputMode="tel"
+            maxLength={20}
             placeholder={t('franchisePhone')}
             value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            onChange={(e) => setForm({ ...form, phone: sanitizePhoneInput(e.target.value) })}
             disabled={submitted}
           />
         </Field>

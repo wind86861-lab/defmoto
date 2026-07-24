@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Select } from '@/components/ui/Select';
 import { useCheckoutState } from '../useCheckoutState';
 import { useSiteSettings } from '@/lib/stores/siteSettings';
 import { useCartStore } from '@/lib/stores/cart';
@@ -91,41 +92,30 @@ export function BtsCityPicker() {
     }
   };
 
-  const selectCls =
-    'w-full rounded-xl border-2 border-brand-surface-border bg-brand-surface px-3 py-3 text-sm font-semibold text-white outline-none focus:border-brand-yellow/60 disabled:opacity-40';
-
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <div>
         <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">
           {t('btsRegionLabel')}
         </label>
-        <select className={selectCls} value={delivery.btsRegionCode || ''} onChange={(e) => onRegion(e.target.value)}>
-          <option value="">{t('btsRegionPlaceholder')}</option>
-          {regions.map((r) => (
-            <option key={r.code} value={r.code}>
-              {r.name}
-            </option>
-          ))}
-        </select>
+        <Select
+          value={delivery.btsRegionCode || ''}
+          onChange={onRegion}
+          placeholder={t('btsRegionPlaceholder')}
+          options={regions.map((r) => ({ value: r.code, label: r.name }))}
+        />
       </div>
       <div>
         <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">
           {t('btsCityLabel')}
         </label>
-        <select
-          className={selectCls}
+        <Select
           value={delivery.btsCityCode || ''}
+          onChange={onCity}
           disabled={!delivery.btsRegionCode || busy}
-          onChange={(e) => onCity(e.target.value)}
-        >
-          <option value="">{busy ? t('btsLoading') : t('btsCityPlaceholder')}</option>
-          {cities.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+          placeholder={busy ? t('btsLoading') : t('btsCityPlaceholder')}
+          options={cities.map((c) => ({ value: c.code, label: c.name }))}
+        />
       </div>
     </div>
   );

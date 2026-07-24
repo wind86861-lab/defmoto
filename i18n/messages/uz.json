@@ -28,7 +28,9 @@
     "maxPriceAria": "Maksimal narx",
     "copy": "Nusxalash",
     "copied": "Nusxalandi",
-    "close": "Yopish"
+    "close": "Yopish",
+    "register": "Ro'yxatdan o'tish",
+    "logout": "Chiqish"
   },
   "nav": {
     "home": "Bosh sahifa",
@@ -207,7 +209,8 @@
     "franchiseStatBranchesValue": "5+",
     "franchiseFormTitle": "Ariza qoldiring",
     "tabBranches": "Filiallar",
-    "tabFranchise": "Franshiza"
+    "tabFranchise": "Franshiza",
+    "phoneLabel": "Telefon"
   },
   "service": {
     "title": "Servis markazlari",
@@ -234,7 +237,8 @@
     "bookBenefit1": "Tezkor javob 15 daqiqada",
     "bookBenefit2": "Bepul diagnostika",
     "bookBenefit3": "6 oy kafolat",
-    "bookSuccessDesc": "{centerName} bilan tez bog'lanamiz"
+    "bookSuccessDesc": "{centerName} bilan tez bog'lanamiz",
+    "phoneLabel": "Telefon"
   },
   "blog": {
     "title": "DEFT MOTO bloggi",
@@ -458,7 +462,8 @@
     "btsCourierTitle": "BTS kuryer — uyga yetkazish",
     "btsCourierDesc": "Kuryer buyurtmani manzilingizgacha olib boradi",
     "btsCourierPrice": "Narx shahringizga qarab",
-    "btsCourierDuration": "1–3 kun"
+    "btsCourierDuration": "1–3 kun",
+    "phoneLabel": "Telefon"
   },
   "orders": {
     "backAria": "Orqaga",
