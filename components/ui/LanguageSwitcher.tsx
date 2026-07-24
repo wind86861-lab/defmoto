@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Check, Globe, ChevronRight } from 'lucide-react';
 import { Sheet } from '@/components/ui/Sheet';
 import { useHaptic } from '@/hooks/useHaptic';
-import { locales, localeNames, localeFlags, type Locale } from '@/i18n/config';
+import { locales, localeNames, type Locale } from '@/i18n/config';
 
 const COOKIE_NAME = 'NEXT_LOCALE';
 
@@ -58,7 +58,7 @@ export function LanguageSwitcher({ variant = 'row' }: { variant?: 'row' | 'icon'
           <Globe className="h-4 w-4 text-white/55 transition-colors group-hover:text-brand-yellow" />
           <span className="flex-1 text-sm font-semibold">{t('languageLabel')}</span>
           <span className="text-xs text-white/45">
-            {localeFlags[locale]} {localeNames[locale]}
+            {locale.toUpperCase()} · {localeNames[locale]}
           </span>
           <ChevronRight className="h-4 w-4 text-white/30 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-yellow" />
         </button>
@@ -77,7 +77,9 @@ export function LanguageSwitcher({ variant = 'row' }: { variant?: 'row' | 'icon'
                 className="flex w-full items-center gap-3 rounded-xl border border-brand-surface-border bg-brand-dark/40 px-4 py-3 text-left transition-colors disabled:opacity-60"
                 style={active ? { borderColor: 'rgba(255,184,0,0.5)' } : undefined}
               >
-                <span className="text-lg">{localeFlags[l]}</span>
+                <span className="flex h-7 w-9 shrink-0 items-center justify-center rounded-md bg-brand-surface text-[11px] font-black uppercase text-brand-yellow">
+                  {l}
+                </span>
                 <span className="flex-1 text-sm font-semibold">{localeNames[l]}</span>
                 {active && <Check className="h-4 w-4 text-brand-yellow" />}
               </button>

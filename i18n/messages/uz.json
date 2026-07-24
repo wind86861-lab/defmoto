@@ -122,7 +122,21 @@
     "notFoundSent": "Yuborildi!",
     "notFoundErrProduct": "Qidirayotgan tovaringizni yozing (kamida 3 belgi).",
     "notFoundErrPhone": "To'g'ri telefon raqam kiriting (masalan: 90 123 45 67).",
-    "notFoundErrGeneric": "Yuborilmadi. Qayta urinib ko'ring."
+    "notFoundErrGeneric": "Yuborilmadi. Qayta urinib ko'ring.",
+    "advantagesSubtitle": "Nega bizni tanlashadi",
+    "faqSubtitle": "Eng ko'p so'raladigan savollarga javoblar",
+    "faqQ1": "Buyurtmani qanday qilaman?",
+    "faqA1": "Tovarni savatga qo'shing, \"Buyurtma berish\" tugmasini bosing, Telegram orqali telefon raqamingizni ulashing va to'lov usulini tanlang. Tasdiqlangan buyurtma haqida Telegram orqali xabar olasiz.",
+    "faqQ2": "To'lov qanday amalga oshiriladi?",
+    "faqA2": "Click, Payme, BTS yoki kuryerga naqd to'lash mumkin. Onlayn to'lovlar shifrlangan va xavfsiz.",
+    "faqQ3": "Yetkazib berish qancha vaqt oladi?",
+    "faqA3": "Toshkent ichida 1-2 ish kuni, viloyatlarga 3-5 ish kuni. Filialdan olib ketish — darhol.",
+    "faqQ4": "Tovarni qaytarib berish mumkinmi?",
+    "faqA4": "Ha, qabul qilingandan keyin 14 kun ichida (tovar yangi va asl qadog'ida bo'lsa).",
+    "faqQ5": "Kafolat shartlari qanday?",
+    "faqA5": "Barcha rasmiy tovarlarga ishlab chiqaruvchining kafolati (mototsikllar — 1 yildan 3 yilgacha, ehtiyot qismlar — 3-6 oy).",
+    "faqQ6": "Servisga qanday yozilaman?",
+    "faqA6": "Servis sahifasiga o'ting yoki bevosita servis chati orqali murojaat qiling. Operator 15 daqiqada javob beradi."
   },
   "priceCompare": {
     "title": "Narxlarni solishtiring",

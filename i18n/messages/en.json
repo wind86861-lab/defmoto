@@ -122,7 +122,21 @@
     "notFoundSent": "Sent!",
     "notFoundErrProduct": "Describe the product you need (min 3 characters).",
     "notFoundErrPhone": "Enter a valid phone number (e.g. 90 123 45 67).",
-    "notFoundErrGeneric": "Not sent. Please try again."
+    "notFoundErrGeneric": "Not sent. Please try again.",
+    "advantagesSubtitle": "Why customers choose us",
+    "faqSubtitle": "Answers to the most common questions",
+    "faqQ1": "How do I place an order?",
+    "faqA1": "Add the item to your cart, tap \"Place order\", share your phone number via Telegram and choose a payment method. You'll be notified about the confirmed order via Telegram.",
+    "faqQ2": "How is payment made?",
+    "faqA2": "You can pay via Click, Payme, BTS or cash to the courier. Online payments are encrypted and secure.",
+    "faqQ3": "How long does delivery take?",
+    "faqA3": "Within Tashkent 1–2 business days, to regions 3–5 business days. Branch pickup — right away.",
+    "faqQ4": "Can I return an item?",
+    "faqA4": "Yes, within 14 days of receipt (if the item is new and in its original packaging).",
+    "faqQ5": "What are the warranty terms?",
+    "faqA5": "All official items carry the manufacturer's warranty (motorcycles — 1 to 3 years, parts — 3–6 months).",
+    "faqQ6": "How do I book a service?",
+    "faqA6": "Go to the Service page or message us directly in the service chat. An operator replies within 15 minutes."
   },
   "priceCompare": {
     "title": "Compare prices",

@@ -37,7 +37,7 @@ export function Advantages() {
             {t('advantages')}
           </h2>
           <p className="mt-2 text-sm text-white/55 sm:text-base">
-            Nega bizni tanlashadi
+            {t('advantagesSubtitle')}
           </p>
         </header>
 

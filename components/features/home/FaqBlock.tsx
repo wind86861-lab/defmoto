@@ -5,36 +5,12 @@ import { useTranslations } from 'next-intl';
 import { Plus, Minus } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
-const faqs = [
-  {
-    q: 'Buyurtmani qanday qilaman?',
-    a: 'Tovarni savatga qo\'shing, "Buyurtma berish" tugmasini bosing, Telegram orqali telefon raqamingizni ulashing va to\'lov usulini tanlang. Tasdiqlangan buyurtma haqida Telegram orqali xabar olasiz.',
-  },
-  {
-    q: "To'lov qanday amalga oshiriladi?",
-    a: 'Click, Payme, BTS yoki kuryerga naqd to\'lash mumkin. Onlayn to\'lovlar shifrlangan va xavfsiz.',
-  },
-  {
-    q: 'Yetkazib berish qancha vaqt oladi?',
-    a: 'Toshkent ichida 1-2 ish kuni, viloyatlarga 3-5 ish kuni. Filialdan olib ketish — darhol.',
-  },
-  {
-    q: 'Tovarni qaytarib berish mumkinmi?',
-    a: 'Ha, qabul qilingandan keyin 14 kun ichida (tovar yangi va asl qadog\'ida bo\'lsa).',
-  },
-  {
-    q: 'Kafolat shartlari qanday?',
-    a: "Barcha rasmiy tovarlarga ishlab chiqaruvchining kafolati (mototsikllar — 1 yildan 3 yilgacha, ehtiyot qismlar — 3-6 oy).",
-  },
-  {
-    q: "Servisga qanday yozilaman?",
-    a: "Servis sahifasiga o'ting yoki bevosita servis chati orqali murojaat qiling. Operator 15 daqiqada javob beradi.",
-  },
-];
+const FAQ_KEYS = ['1', '2', '3', '4', '5', '6'] as const;
 
 export function FaqBlock() {
   const t = useTranslations('home');
   const [openIdx, setOpenIdx] = useState<number | null>(0);
+  const faqs = FAQ_KEYS.map((n) => ({ q: t(`faqQ${n}`), a: t(`faqA${n}`) }));
 
   return (
     <section className="py-10 sm:py-14">
@@ -44,7 +20,7 @@ export function FaqBlock() {
             {t('faq')}
           </h2>
           <p className="mt-2 text-sm text-white/55 sm:text-base">
-            Eng ko&apos;p so&apos;raladigan savollarga javoblar
+            {t('faqSubtitle')}
           </p>
         </header>
 

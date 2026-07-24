@@ -14,6 +14,7 @@ import {
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { Reveal } from '@/components/ui/Reveal';
 import { YouTubeBlock } from '@/components/ui/YouTubeBlock';
@@ -65,21 +66,16 @@ export function ServiceClient() {
 
       {/* === Region (viloyat) select === */}
       {regions.length > 0 && (
-        <div className="mx-auto mb-3 flex max-w-2xl justify-center">
-          <div className="relative w-full">
-            <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-yellow" />
-            <select
-              value={region}
-              onChange={(e) => pickRegion(e.target.value)}
-              className="w-full appearance-none rounded-2xl border border-brand-surface-border bg-brand-surface py-3.5 pl-11 pr-10 text-sm font-bold text-white outline-none transition-colors focus:border-brand-yellow/60"
-            >
-              <option value="">{t('regionAll')}</option>
-              {regions.map((r) => (
-                <option key={r} value={r}>{r}</option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50" />
-          </div>
+        <div className="mx-auto mb-3 max-w-2xl">
+          <Select
+            value={region}
+            onChange={pickRegion}
+            icon={<MapPin className="h-4 w-4" />}
+            options={[
+              { value: '', label: t('regionAll') },
+              ...regions.map((r) => ({ value: r, label: r })),
+            ]}
+          />
         </div>
       )}
 
