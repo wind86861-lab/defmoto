@@ -3,6 +3,8 @@
 import { useRef, useState } from 'react';
 import { Settings, Check, Plus, Trash2, Phone, MapPin, Clock, Send, Truck, Upload, Award, X } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
+import { TrInput } from '@/components/admin/TrInput';
+import type { DeliveryTerm } from '@/lib/stores/siteSettings';
 import { Button } from '@/components/ui/Button';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { useSiteSettings } from '@/lib/stores/siteSettings';
@@ -47,7 +49,7 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const updateTerm = (i: number, patch: Partial<{ title: string; text: string }>) => {
+  const updateTerm = (i: number, patch: Partial<DeliveryTerm>) => {
     setDeliveryTerms(deliveryTerms.map((d, idx) => (idx === i ? { ...d, ...patch } : d)));
   };
   const addTerm = () => setDeliveryTerms([...deliveryTerms, { title: '', text: '' }]);
@@ -146,6 +148,8 @@ export default function AdminSettingsPage() {
               <div className="min-w-0 flex-1 space-y-1.5">
                 <Input value={d.title} placeholder="Sarlavha (masalan: Toshkent ichida)" onChange={(e) => updateTerm(i, { title: e.target.value })} onBlur={flash} />
                 <Input value={d.text} placeholder="Matn (masalan: 1-2 ish kuni • Bepul)" onChange={(e) => updateTerm(i, { text: e.target.value })} onBlur={flash} />
+                <TrInput tr={d.tr} field="title" base={d.title} onChange={(tr) => updateTerm(i, { tr })} />
+                <TrInput tr={d.tr} field="text" base={d.text} onChange={(tr) => updateTerm(i, { tr })} />
               </div>
               <button
                 type="button"
@@ -194,6 +198,7 @@ export default function AdminSettingsPage() {
               <div className="min-w-0 flex-1 space-y-1.5">
                 <Input value={p.name} placeholder="Brend nomi (masalan: Yamaha)" onChange={(e) => updatePartner(p.id, { name: e.target.value })} onBlur={flash} />
                 <Input value={p.tagline ?? ''} placeholder="Shior (ixtiyoriy)" onChange={(e) => updatePartner(p.id, { tagline: e.target.value })} onBlur={flash} />
+                <TrInput tr={p.tr} field="tagline" base={p.tagline ?? ''} onChange={(tr) => updatePartner(p.id, { tr })} />
               </div>
               <button
                 type="button"

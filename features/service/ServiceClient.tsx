@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   Wrench,
   Phone,
@@ -15,6 +15,7 @@ import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { sanitizePhoneInput } from '@/lib/phoneInput';
+import { trOf } from '@/lib/i18nField';
 import { Select } from '@/components/ui/Select';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { Reveal } from '@/components/ui/Reveal';
@@ -100,6 +101,7 @@ function CenterSelector({
   activeId: string;
   onChange: (id: string) => void;
 }) {
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const active = centers.find((s) => s.id === activeId);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -121,7 +123,9 @@ function CenterSelector({
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-yellow text-brand-dark">
             <Wrench className="h-3.5 w-3.5" strokeWidth={2.5} />
           </span>
-          <span className="truncate">{active?.shortName ?? active?.name}</span>
+          <span className="truncate">
+            {active ? trOf(active, 'shortName', locale) || trOf(active, 'name', locale) : ''}
+          </span>
         </span>
         <ChevronDown
           className={cn(
@@ -154,7 +158,7 @@ function CenterSelector({
                     s.id === activeId ? 'text-brand-yellow' : 'text-white/55',
                   )}
                 />
-                <span className="truncate font-semibold">{s.name}</span>
+                <span className="truncate font-semibold">{trOf(s, 'name', locale)}</span>
               </button>
             </li>
           ))}
@@ -166,6 +170,7 @@ function CenterSelector({
 
 function CenterDetail({ center }: { center: ServiceCenter }) {
   const t = useTranslations('service');
+  const locale = useLocale();
   const tCommon = useTranslations('common');
   return (
     <div className="space-y-6">
@@ -178,7 +183,7 @@ function CenterDetail({ center }: { center: ServiceCenter }) {
               <Wrench className="h-6 w-6" strokeWidth={2.5} />
             </div>
             <h2 className="min-w-0 font-display text-lg font-extrabold sm:text-xl">
-              {center.name}
+              {trOf(center, 'name', locale)}
             </h2>
           </div>
 
@@ -187,7 +192,7 @@ function CenterDetail({ center }: { center: ServiceCenter }) {
             <div className="relative aspect-[16/10] w-full overflow-hidden rounded-3xl border border-brand-surface-border bg-brand-surface lg:aspect-auto lg:min-h-[220px] lg:flex-1">
               <ProductImage
                 src={center.image}
-                alt={center.name}
+                alt={trOf(center, 'name', locale)}
                 className="absolute inset-0 h-full w-full object-cover"
               />
             </div>
@@ -196,7 +201,7 @@ function CenterDetail({ center }: { center: ServiceCenter }) {
 
         {/* RIGHT — booking form */}
         <div className="lg:sticky lg:top-24 lg:self-start">
-          <BookingForm centerName={center.name} />
+          <BookingForm centerName={trOf(center, 'name', locale)} />
         </div>
       </div>
 
@@ -208,7 +213,7 @@ function CenterDetail({ center }: { center: ServiceCenter }) {
           <ContactRow
             icon={Clock}
             label={t('workingHours')}
-            value={center.workingHours}
+            value={trOf(center, 'workingHours', locale)}
             extra={<OpenStatusBadge workingHours={center.workingHours} />}
           />
           <ContactRow
@@ -254,7 +259,7 @@ function CenterDetail({ center }: { center: ServiceCenter }) {
       {center.about && (
         <section className="rounded-2xl border border-brand-surface-border bg-brand-surface p-5">
           <h3 className="mb-2 font-display text-lg font-extrabold">{t('aboutTitle')}</h3>
-          <p className="text-sm leading-relaxed text-white/75">{center.about}</p>
+          <p className="text-sm leading-relaxed text-white/75">{trOf(center, 'about', locale)}</p>
         </section>
       )}
 
@@ -266,14 +271,15 @@ function CenterDetail({ center }: { center: ServiceCenter }) {
 
 function ServiceListItem({ item }: { item: ServiceItem }) {
   const t = useTranslations('service');
+  const locale = useLocale();
   return (
     <li className="group rounded-xl border border-brand-surface-border bg-brand-surface p-4 transition-all hover:border-brand-yellow/30">
       <div className="flex items-start gap-2">
         <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-yellow" strokeWidth={3} />
-        <h4 className="min-w-0 flex-1 break-words text-sm font-bold leading-tight">{item.title}</h4>
+        <h4 className="min-w-0 flex-1 break-words text-sm font-bold leading-tight">{trOf(item, 'title', locale)}</h4>
       </div>
       {item.description && (
-        <p className="mt-1 pl-5 text-xs text-white/55">{item.description}</p>
+        <p className="mt-1 pl-5 text-xs text-white/55">{trOf(item, 'description', locale)}</p>
       )}
       {(item.priceFrom || item.duration) && (
         <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 pl-5">
@@ -283,7 +289,7 @@ function ServiceListItem({ item }: { item: ServiceItem }) {
             </span>
           )}
           {item.duration && (
-            <span className="text-[11px] text-white/45">· {item.duration}</span>
+            <span className="text-[11px] text-white/45">· {trOf(item, 'duration', locale)}</span>
           )}
         </div>
       )}

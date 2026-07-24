@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Clock, ArrowRight, Tag } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ProductImage } from '@/components/ui/ProductImage';
@@ -11,6 +11,7 @@ import { formatDate } from '@/lib/format';
 import { mockBlogPosts } from '@/mocks/blog';
 import { useContentStore } from '@/lib/stores/content';
 import { useMounted } from '@/hooks/useMounted';
+import { trOf } from '@/lib/i18nField';
 import type { BlogCategory, BlogPost } from '@/types/content';
 
 export function BlogListClient() {
@@ -95,6 +96,7 @@ export function BlogListClient() {
 
 function PromoBanner({ post }: { post: BlogPost }) {
   const t = useTranslations('blog');
+  const locale = useLocale();
 
   return (
     <Link
@@ -105,13 +107,13 @@ function PromoBanner({ post }: { post: BlogPost }) {
         <div className="relative h-56 overflow-hidden sm:h-auto">
           <ProductImage
             src={post.cover}
-            alt={post.title}
+            alt={trOf(post, 'title', locale)}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             fallbackClassName="h-full w-full"
           />
           {post.promotionBadge && (
             <span className="absolute left-4 top-4 rounded-full bg-gradient-yellow px-3 py-1 font-display text-base font-extrabold text-brand-dark shadow-glow">
-              {post.promotionBadge}
+              {trOf(post, 'promotionBadge', locale)}
             </span>
           )}
         </div>
@@ -120,10 +122,10 @@ function PromoBanner({ post }: { post: BlogPost }) {
             {t('promoLabel')}
           </span>
           <h2 className="mt-2 font-display text-2xl font-extrabold leading-tight sm:text-3xl">
-            {post.title}
+            {trOf(post, 'title', locale)}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-white/65 sm:text-base">
-            {post.excerpt}
+            {trOf(post, 'excerpt', locale)}
           </p>
           <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-brand-yellow">
             {t('readMore')}
@@ -137,6 +139,7 @@ function PromoBanner({ post }: { post: BlogPost }) {
 
 function PostCard({ post }: { post: BlogPost }) {
   const t = useTranslations('blog');
+  const locale = useLocale();
 
   return (
     <Link
@@ -146,13 +149,13 @@ function PostCard({ post }: { post: BlogPost }) {
       <div className="relative aspect-[16/10] overflow-hidden bg-brand-dark">
         <ProductImage
           src={post.cover}
-          alt={post.title}
+          alt={trOf(post, 'title', locale)}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           fallbackClassName="h-full w-full"
         />
         {post.isPromotion && post.promotionBadge && (
           <span className="absolute left-3 top-3 rounded-md bg-gradient-yellow px-2 py-1 text-xs font-bold text-brand-dark shadow-glow-sm">
-            {post.promotionBadge}
+            {trOf(post, 'promotionBadge', locale)}
           </span>
         )}
       </div>
@@ -165,9 +168,9 @@ function PostCard({ post }: { post: BlogPost }) {
           <span>{formatDate(post.publishedAt)}</span>
         </div>
         <h3 className="mt-2 line-clamp-2 font-display text-base font-extrabold leading-tight sm:text-lg">
-          {post.title}
+          {trOf(post, 'title', locale)}
         </h3>
-        <p className="mt-2 line-clamp-3 text-sm text-white/55">{post.excerpt}</p>
+        <p className="mt-2 line-clamp-3 text-sm text-white/55">{trOf(post, 'excerpt', locale)}</p>
 
         <div className="mt-auto flex items-center justify-between gap-2 pt-4 text-xs">
           <span className="flex items-center gap-1 text-white/45">

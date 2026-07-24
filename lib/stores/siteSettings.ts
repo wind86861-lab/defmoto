@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createServerPersist } from '@/lib/serverPersist';
+import type { TrMap } from '@/lib/i18nField';
 
 export interface HeroSlide {
   id: string;
@@ -17,6 +18,8 @@ export interface PromoBanner {
   enabled: boolean;
   message: string;
   href?: string;
+  /** RU/EN translations of this record's text fields. */
+  tr?: TrMap;
 }
 
 export interface Marketplace {
@@ -84,6 +87,8 @@ export interface SiteContact {
 export interface DeliveryTerm {
   title: string;
   text: string;
+  /** RU/EN translations of this record's text fields. */
+  tr?: TrMap;
 }
 
 // A partner brand shown on the home page (admin-managed).
@@ -92,6 +97,8 @@ export interface PartnerBrand {
   name: string;
   tagline?: string;
   logo?: string; // uploaded logo image (data URL / /uploads/...)
+  /** RU/EN translations of this record's text fields. */
+  tr?: TrMap;
 }
 
 interface SiteSettingsState {

@@ -1,3 +1,5 @@
+import type { TrMap } from '@/lib/i18nField';
+
 export interface Branch {
   id: string;
   number: number;
@@ -18,6 +20,8 @@ export interface Branch {
   image?: string;
   videoUrl?: string;
   isHeadOffice?: boolean;
+  /** RU/EN translations of this record's text fields. */
+  tr?: TrMap;
 }
 
 export interface ServiceCenter {
@@ -35,6 +39,8 @@ export interface ServiceCenter {
   image?: string;
   videoUrl?: string; // YouTube URL — conditional
   services: ServiceItem[];
+  /** RU/EN translations of this record's text fields. */
+  tr?: TrMap;
 }
 
 export interface ServiceItem {
@@ -43,6 +49,8 @@ export interface ServiceItem {
   description?: string;
   priceFrom?: number;
   duration?: string;
+  /** RU/EN translations of this record's text fields. */
+  tr?: TrMap;
 }
 
 // A franchise location, shown like a branch (with a region filter).
@@ -57,6 +65,8 @@ export interface FranchiseLocation {
   workingHours?: string;
   mapUrl?: string;
   image?: string;
+  /** RU/EN translations of this record's text fields. */
+  tr?: TrMap;
 }
 
 export type BlogCategory = 'news' | 'tips' | 'reviews' | 'promotion';
@@ -75,11 +85,15 @@ export interface BlogPost {
   readMinutes: number;
   isPromotion?: boolean;
   promotionBadge?: string;
+  /** RU/EN translations of this record's text fields. */
+  tr?: TrMap;
 }
 
 export interface AboutStat {
   value: string;
   label: string;
+  /** RU/EN translations of this stat's label. */
+  tr?: TrMap;
 }
 
 /** Admin-editable "About company" page content (falls back to i18n when empty). */
@@ -89,4 +103,6 @@ export interface AboutContent {
   videoUrl?: string;
   photo?: string;
   stats?: AboutStat[];
+  /** RU/EN translations of this record's text fields. */
+  tr?: TrMap;
 }

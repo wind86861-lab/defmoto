@@ -1,6 +1,8 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
+import { trOf } from '@/lib/i18nField';
+import type { DeliveryTerm } from '@/lib/stores/siteSettings';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
 import { ProductReviews } from './ProductReviews';
 import type { Product } from '@/types/product';
@@ -27,7 +29,7 @@ export function ProductInfo({
   const storedTerms = useSiteSettings((s) => s.deliveryTerms);
   // Localized defaults — used unless the admin has set custom delivery terms,
   // so the tab stays translated in all 3 languages.
-  const i18nTerms = [
+  const i18nTerms: DeliveryTerm[] = [
     { title: t('deliveryTashkentTitle'), text: t('deliveryTashkentText') },
     { title: t('deliveryRegionsTitle'), text: t('deliveryRegionsText') },
     { title: t('deliveryPickupTitle'), text: t('deliveryPickupText') },
@@ -84,8 +86,8 @@ export function ProductInfo({
                   <Icon className="h-5 w-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold">{d.title}</h4>
-                  <p className="mt-0.5 text-xs text-white/55">{d.text}</p>
+                  <h4 className="text-sm font-bold">{trOf(d, 'title', locale)}</h4>
+                  <p className="mt-0.5 text-xs text-white/55">{trOf(d, 'text', locale)}</p>
                 </div>
               </div>
             );

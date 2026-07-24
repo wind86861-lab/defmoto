@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { ArrowLeft, Clock, Tag, Send, ArrowRight } from 'lucide-react';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { YouTubeBlock } from '@/components/ui/YouTubeBlock';
@@ -9,6 +9,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { useMounted } from '@/hooks/useMounted';
 import { useContentStore } from '@/lib/stores/content';
 import { formatDate } from '@/lib/format';
+import { trOf } from '@/lib/i18nField';
 import type { BlogPost } from '@/types/content';
 
 interface Props {
@@ -19,6 +20,7 @@ interface Props {
 
 export function BlogPostClient({ slug, fallbackPost, fallbackRelated }: Props) {
   const t = useTranslations('blog');
+  const locale = useLocale();
   const { impact } = useHaptic();
   const mounted = useMounted();
   const storePosts = useContentStore((s) => s.blogPosts);
@@ -47,8 +49,8 @@ export function BlogPostClient({ slug, fallbackPost, fallbackRelated }: Props) {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: post.title,
-          text: post.excerpt,
+          title: trOf(post, 'title', locale),
+          text: trOf(post, 'excerpt', locale),
           url: window.location.href,
         });
       } catch {
@@ -59,8 +61,8 @@ export function BlogPostClient({ slug, fallbackPost, fallbackRelated }: Props) {
 
   // Long-form mock body if not provided
   const body =
-    post.body ||
-    `${post.excerpt}\n\nDEFT MOTO sizning ishonchli hamkoringizdir. Bizning mutaxassislarimiz har bir mijoz uchun individual yondashuvni qo'llaydi va eng yaxshi yechimni taklif qiladi.\n\nQo'shimcha ma'lumot uchun servis chat orqali murojaat qiling yoki eng yaqin filialga tashrif buyuring.`;
+    trOf(post, 'body', locale) ||
+    `${trOf(post, 'excerpt', locale)}\n\nDEFT MOTO sizning ishonchli hamkoringizdir. Bizning mutaxassislarimiz har bir mijoz uchun individual yondashuvni qo'llaydi va eng yaxshi yechimni taklif qiladi.\n\nQo'shimcha ma'lumot uchun servis chat orqali murojaat qiling yoki eng yaqin filialga tashrif buyuring.`;
 
   return (
     <article className="mx-auto max-w-3xl px-4 pb-16 pt-6 sm:px-6 sm:py-10">
@@ -88,7 +90,7 @@ export function BlogPostClient({ slug, fallbackPost, fallbackRelated }: Props) {
 
       {/* Title */}
       <h1 className="font-display text-display-md font-extrabold leading-tight sm:text-display-lg">
-        {post.title}
+        {trOf(post, 'title', locale)}
       </h1>
 
       {/* Author */}
@@ -106,7 +108,7 @@ export function BlogPostClient({ slug, fallbackPost, fallbackRelated }: Props) {
       <div className="mt-6 aspect-[16/9] overflow-hidden rounded-3xl border border-brand-surface-border bg-brand-surface">
         <ProductImage
           src={post.cover}
-          alt={post.title}
+          alt={trOf(post, 'title', locale)}
           className="h-full w-full object-cover"
           fallbackClassName="h-full w-full"
         />
@@ -159,7 +161,7 @@ export function BlogPostClient({ slug, fallbackPost, fallbackRelated }: Props) {
                     fallbackClassName="h-16 w-24 shrink-0 rounded-xl"
                   />
                   <div className="min-w-0 flex-1">
-                    <h3 className="line-clamp-2 text-sm font-bold">{p.title}</h3>
+                    <h3 className="line-clamp-2 text-sm font-bold">{trOf(p, 'title', locale)}</h3>
                     <p className="mt-1 text-[11px] text-white/45">
                       {p.readMinutes} {t('minRead')}
                     </p>

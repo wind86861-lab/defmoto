@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   MapPin,
   Phone,
@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
 import { sanitizePhoneInput } from '@/lib/phoneInput';
+import { trOf } from '@/lib/i18nField';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { Reveal } from '@/components/ui/Reveal';
 import { YouTubeBlock } from '@/components/ui/YouTubeBlock';
@@ -156,6 +157,7 @@ function BranchSelector({
   activeId: string;
   onChange: (id: string) => void;
 }) {
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const active = branches.find((b) => b.id === activeId);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -177,7 +179,9 @@ function BranchSelector({
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-yellow text-xs text-brand-dark">
             №{active?.number}
           </span>
-          <span className="truncate">{active?.name.replace(/^Filial №\d+\s*—\s*/, '')}</span>
+          <span className="truncate">
+            {active ? trOf(active, 'name', locale).replace(/^Filial №\d+\s*—\s*/, '') : ''}
+          </span>
         </span>
         <ChevronDown
           className={cn(
@@ -214,7 +218,7 @@ function BranchSelector({
                 >
                   №{b.number}
                 </span>
-                <span className="truncate font-semibold">{b.name}</span>
+                <span className="truncate font-semibold">{trOf(b, 'name', locale)}</span>
               </button>
             </li>
           ))}
@@ -226,6 +230,7 @@ function BranchSelector({
 
 function BranchDetail({ branch }: { branch: Branch }) {
   const t = useTranslations('branches');
+  const locale = useLocale();
   const tCommon = useTranslations('common');
   const mapUrl = mapsHref(branch);
   const tgHref = telegramHref(branch.telegram);
@@ -254,7 +259,7 @@ function BranchDetail({ branch }: { branch: Branch }) {
                 )}
               </div>
               <h2 className="mt-3 font-display text-xl font-extrabold leading-tight sm:text-2xl">
-                {branch.legalName ?? branch.name}
+                {branch.legalName ?? trOf(branch, 'name', locale)}
               </h2>
               {branch.director && (
                 <p className="mt-1.5 text-xs text-white/55">
@@ -270,7 +275,7 @@ function BranchDetail({ branch }: { branch: Branch }) {
             {branch.image && (
               <ProductImage
                 src={branch.image}
-                alt={branch.name}
+                alt={trOf(branch, 'name', locale)}
                 className="absolute inset-0 h-full w-full object-cover"
               />
             )}
@@ -290,7 +295,7 @@ function BranchDetail({ branch }: { branch: Branch }) {
 
         {/* RIGHT — request form */}
         <div className="lg:sticky lg:top-24 lg:self-start">
-          <RequestForm branchName={branch.name} />
+          <RequestForm branchName={trOf(branch, 'name', locale)} />
         </div>
       </div>
 
@@ -302,7 +307,7 @@ function BranchDetail({ branch }: { branch: Branch }) {
           <ContactRow
             icon={Clock}
             label={t('workingHours')}
-            value={branch.workingHours}
+            value={trOf(branch, 'workingHours', locale)}
             extra={<OpenStatusBadge workingHours={branch.workingHours} />}
           />
           <ContactRow
@@ -534,6 +539,7 @@ function FranchiseSection() {
 }
 
 function FranchiseCard({ f }: { f: FranchiseLocation }) {
+  const locale = useLocale();
   const location = [f.city, f.address].filter(Boolean).join(', ');
   const map =
     f.mapUrl || (location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}` : null);
@@ -542,12 +548,12 @@ function FranchiseCard({ f }: { f: FranchiseLocation }) {
     <div className="overflow-hidden rounded-2xl border border-brand-surface-border bg-brand-surface">
       {f.image && (
         <div className="relative h-36 w-full overflow-hidden bg-brand-dark">
-          <ProductImage src={f.image} alt={f.name} className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
+          <ProductImage src={f.image} alt={trOf(f, 'name', locale)} className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
         </div>
       )}
       <div className="space-y-2.5 p-4">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-display text-base font-extrabold leading-tight">{f.name}</h3>
+          <h3 className="font-display text-base font-extrabold leading-tight">{trOf(f, 'name', locale)}</h3>
           {f.region && (
             <span className="shrink-0 rounded-md bg-brand-yellow/15 px-2 py-0.5 text-[10px] font-bold text-brand-yellow">
               {f.region}
@@ -580,7 +586,7 @@ function FranchiseCard({ f }: { f: FranchiseLocation }) {
           {f.workingHours && (
             <li className="flex items-start gap-2">
               <Clock className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
-              <span>{f.workingHours}</span>
+              <span>{trOf(f, 'workingHours', locale)}</span>
             </li>
           )}
         </ul>

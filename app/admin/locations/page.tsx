@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Input } from '@/components/ui/Input';
+import { TrInput } from '@/components/admin/TrInput';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { useMounted } from '@/hooks/useMounted';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -171,6 +172,7 @@ function BranchCard({ branch, index, total }: { branch: Branch; index: number; t
       </div>
       <div className="grid gap-2.5 sm:grid-cols-2">
         <F label={t('fldName')}><Input value={draft.name} onChange={(e) => set({ name: e.target.value })} /></F>
+        <F label={`${t('fldName')} — RU / EN`} full><TrInput tr={draft.tr} field="name" base={draft.name} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldNumber')}><Input type="number" value={String(draft.number)} onChange={(e) => set({ number: Number(e.target.value) || 0 })} /></F>
         <F label={t('fldLegalName')}><Input value={draft.legalName ?? ''} onChange={(e) => set({ legalName: e.target.value })} /></F>
         <F label={t('fldDirector')}><Input value={draft.director ?? ''} onChange={(e) => set({ director: e.target.value })} /></F>
@@ -181,6 +183,7 @@ function BranchCard({ branch, index, total }: { branch: Branch; index: number; t
         <F label={t('fldSecondaryPhone')}><Input value={draft.secondaryPhone ?? ''} onChange={(e) => set({ secondaryPhone: e.target.value })} /></F>
         <F label={t('fldTelegram')}><Input value={draft.telegram ?? ''} placeholder="@username" onChange={(e) => set({ telegram: e.target.value })} /></F>
         <F label={t('fldHours')}><Input value={draft.workingHours} onChange={(e) => set({ workingHours: e.target.value })} /></F>
+        <F label={`${t('fldHours')} — RU / EN`} full><TrInput tr={draft.tr} field="workingHours" base={draft.workingHours} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldMapUrl')} full><Input value={draft.mapUrl ?? ''} placeholder="https://maps.google.com/..." onChange={(e) => set({ mapUrl: e.target.value })} /></F>
         <ImageUpload value={draft.image} onChange={(url) => set({ image: url })} label={t('fldImage')} />
         <F label={t('fldVideo')} full><Input value={draft.videoUrl ?? ''} placeholder="https://youtube.com/..." onChange={(e) => set({ videoUrl: e.target.value })} /></F>
@@ -255,16 +258,20 @@ function ServiceCard({ center, index, total }: { center: ServiceCenter; index: n
       </div>
       <div className="grid gap-2.5 sm:grid-cols-2">
         <F label={t('fldName')}><Input value={draft.name} onChange={(e) => set({ name: e.target.value })} /></F>
+        <F label={`${t('fldName')} — RU / EN`} full><TrInput tr={draft.tr} field="name" base={draft.name} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldRegion')}><Input value={draft.region ?? ''} placeholder="Toshkent viloyati" onChange={(e) => set({ region: e.target.value })} /></F>
         <F label={t('fldShortName')}><Input value={draft.shortName ?? ''} onChange={(e) => set({ shortName: e.target.value })} /></F>
+        <F label={`${t('fldShortName')} — RU / EN`} full><TrInput tr={draft.tr} field="shortName" base={draft.shortName ?? ''} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldAddress')}><Input value={draft.address} onChange={(e) => set({ address: e.target.value })} /></F>
         <F label={t('fldHours')}><Input value={draft.workingHours} onChange={(e) => set({ workingHours: e.target.value })} /></F>
+        <F label={`${t('fldHours')} — RU / EN`} full><TrInput tr={draft.tr} field="workingHours" base={draft.workingHours} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldPhone')}><Input value={draft.phone} onChange={(e) => set({ phone: e.target.value })} /></F>
         <F label={t('fldSecondaryPhone')}><Input value={draft.secondaryPhone ?? ''} onChange={(e) => set({ secondaryPhone: e.target.value })} /></F>
         <F label={t('fldTelegram')}><Input value={draft.telegram ?? ''} placeholder="@username" onChange={(e) => set({ telegram: e.target.value })} /></F>
         <F label={t('fldAbout')} full>
           <textarea value={draft.about ?? ''} onChange={(e) => set({ about: e.target.value })} rows={2} className="w-full rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-2.5 text-base text-white outline-none focus:border-brand-yellow/60" />
         </F>
+        <F label={`${t('fldAbout')} — RU / EN`} full><TrInput tr={draft.tr} field="about" base={draft.about ?? ''} onChange={(tr) => set({ tr })} textarea /></F>
         <ImageUpload value={draft.image} onChange={(url) => set({ image: url })} label={t('fldImage')} />
         <F label={t('fldVideo')} full><Input value={draft.videoUrl ?? ''} placeholder="https://youtube.com/..." onChange={(e) => set({ videoUrl: e.target.value })} /></F>
       </div>
@@ -282,14 +289,17 @@ function ServiceCard({ center, index, total }: { center: ServiceCenter; index: n
             <div key={it.id} className="rounded-xl border border-brand-surface-border bg-brand-dark/40 p-3">
               <div className="mb-2 flex items-center justify-between">
                 <Input value={it.title} placeholder={t('svcItemTitle')} onChange={(e) => setItem(it.id, { title: e.target.value })} />
+                <TrInput tr={it.tr} field="title" base={it.title} onChange={(tr) => setItem(it.id, { tr })} />
                 <button type="button" onClick={() => rmItem(it.id)} className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/55 hover:bg-danger/15 hover:text-danger">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
               <div className="grid gap-2 sm:grid-cols-3">
                 <Input value={it.description ?? ''} placeholder={t('svcItemDesc')} onChange={(e) => setItem(it.id, { description: e.target.value })} />
+                <TrInput tr={it.tr} field="description" base={it.description ?? ''} onChange={(tr) => setItem(it.id, { tr })} />
                 <Input value={it.priceFrom != null ? String(it.priceFrom) : ''} placeholder={t('svcItemPrice')} onChange={(e) => setItem(it.id, { priceFrom: e.target.value ? Number(e.target.value.replace(/\D/g, '')) : undefined })} />
                 <Input value={it.duration ?? ''} placeholder={t('svcItemDuration')} onChange={(e) => setItem(it.id, { duration: e.target.value })} />
+                <TrInput tr={it.tr} field="duration" base={it.duration ?? ''} onChange={(tr) => setItem(it.id, { tr })} />
               </div>
             </div>
           ))}
@@ -377,12 +387,14 @@ function FranchiseLocCard({ f, index, total }: { f: import('@/types/content').Fr
       </div>
       <div className="grid gap-2.5 sm:grid-cols-2">
         <F label={t('fldName')}><Input value={draft.name} onChange={(e) => set({ name: e.target.value })} /></F>
+        <F label={`${t('fldName')} — RU / EN`} full><TrInput tr={draft.tr} field="name" base={draft.name} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldRegion')}><Input value={draft.region ?? ''} placeholder="Toshkent viloyati" onChange={(e) => set({ region: e.target.value })} /></F>
         <F label={t('fldCity')}><Input value={draft.city ?? ''} onChange={(e) => set({ city: e.target.value })} /></F>
         <F label={t('fldAddress')}><Input value={draft.address ?? ''} onChange={(e) => set({ address: e.target.value })} /></F>
         <F label={t('fldPhone')}><Input value={draft.phone ?? ''} onChange={(e) => set({ phone: e.target.value })} /></F>
         <F label={t('fldTelegram')}><Input value={draft.telegram ?? ''} placeholder="@username" onChange={(e) => set({ telegram: e.target.value })} /></F>
         <F label={t('fldHours')}><Input value={draft.workingHours ?? ''} onChange={(e) => set({ workingHours: e.target.value })} /></F>
+        <F label={`${t('fldHours')} — RU / EN`} full><TrInput tr={draft.tr} field="workingHours" base={draft.workingHours ?? ''} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldMapUrl')}><Input value={draft.mapUrl ?? ''} placeholder="https://maps.google.com/..." onChange={(e) => set({ mapUrl: e.target.value })} /></F>
         <ImageUpload value={draft.image} onChange={(url) => set({ image: url })} label={t('fldImage')} />
       </div>

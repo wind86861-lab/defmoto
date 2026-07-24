@@ -1,6 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { trOf } from '@/lib/i18nField';
 import { useSiteSettings } from '@/lib/stores/siteSettings';
 import { useMounted } from '@/hooks/useMounted';
 
@@ -86,6 +87,7 @@ const partners: Partner[] = [
 
 export function Partners() {
   const t = useTranslations('home');
+  const locale = useLocale();
   const mounted = useMounted();
   const adminPartners = useSiteSettings((s) => s.partners);
   const useAdmin = mounted && adminPartners.length > 0;
@@ -124,7 +126,7 @@ export function Partners() {
                       {p.name}
                     </div>
                     {p.tagline && (
-                      <div className="mt-0.5 text-[10px] uppercase tracking-wider text-white/35">{p.tagline}</div>
+                      <div className="mt-0.5 text-[10px] uppercase tracking-wider text-white/35">{trOf(p, 'tagline', locale)}</div>
                     )}
                   </div>
                 </div>

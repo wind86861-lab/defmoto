@@ -1,6 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { trText, trOf } from '@/lib/i18nField';
 import { Award, ShieldCheck, Wrench, Tag, Check } from 'lucide-react';
 import { Reveal } from '@/components/ui/Reveal';
 import { YouTubeBlock } from '@/components/ui/YouTubeBlock';
@@ -14,6 +15,7 @@ const ABOUT_VIDEO = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
 
 export function AboutClient() {
   const t = useTranslations('about');
+  const locale = useLocale();
   const mounted = useMounted();
   const about = useContentStore((s) => s.about);
 
@@ -21,9 +23,10 @@ export function AboutClient() {
   const a = mounted ? about : {};
   const videoUrl = a.videoUrl?.trim() || ABOUT_VIDEO;
   const photo = a.photo?.trim() || ABOUT_PHOTO;
-  const heading = a.title?.trim() || t('aboutHeading');
-  const introParas = a.intro?.trim()
-    ? a.intro.trim().split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean)
+  const heading = trText(a.title, a.tr, 'title', locale).trim() || t('aboutHeading');
+  const introText = trText(a.intro, a.tr, 'intro', locale);
+  const introParas = introText.trim()
+    ? introText.trim().split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean)
     : [t('aboutIntroP1'), t('aboutIntroP2')];
   const stats = a.stats?.length
     ? a.stats
@@ -126,7 +129,7 @@ export function AboutClient() {
                   {s.value}
                 </div>
                 <div className="mt-1 text-xs font-bold uppercase tracking-wider text-white/60">
-                  {s.label}
+                  {trOf(s, 'label', locale)}
                 </div>
               </div>
             </div>

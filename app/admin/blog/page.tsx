@@ -7,6 +7,8 @@ import { useMounted } from '@/hooks/useMounted';
 import { uploadImage } from '@/lib/uploadImage';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { formatDate } from '@/lib/format';
+import { setTr } from '@/lib/i18nField';
+import { TrInput } from '@/components/admin/TrInput';
 import type { BlogPost, BlogCategory, AboutStat } from '@/types/content';
 
 const CATEGORIES: { v: BlogCategory; label: string }[] = [
@@ -133,10 +135,12 @@ export default function AdminBlogPage() {
           <label className="sm:col-span-2">
             <span className={labelCls}>Sarlavha</span>
             <input className={inputCls} value={about.title ?? ''} onChange={(e) => setAbout({ title: e.target.value })} placeholder="DEFT MOTO — biz haqimizda" />
+            <TrInput tr={about.tr} field="title" base={about.title ?? ''} onChange={(tr) => setAbout({ tr })} />
           </label>
           <label className="sm:col-span-2">
             <span className={labelCls}>Matn (paragraflar boʻsh qator bilan ajratiladi)</span>
             <textarea className={`${inputCls} min-h-[120px] resize-y`} value={about.intro ?? ''} onChange={(e) => setAbout({ intro: e.target.value })} placeholder={'Birinchi paragraf...\n\nIkkinchi paragraf...'} />
+            <TrInput tr={about.tr} field="intro" base={about.intro ?? ''} onChange={(tr) => setAbout({ tr })} textarea rows={5} />
           </label>
           <label>
             <span className={labelCls}>Video (YouTube havola)</span>
@@ -152,9 +156,12 @@ export default function AdminBlogPage() {
             <span className={labelCls}>Statistika (4 ta)</span>
             <div className="grid grid-cols-2 gap-2">
               {stats.map((s, i) => (
-                <div key={i} className="flex gap-2">
-                  <input className={`${inputCls} w-20`} value={s.value} onChange={(e) => setStat(i, { value: e.target.value })} placeholder="5+" />
-                  <input className={inputCls} value={s.label} onChange={(e) => setStat(i, { label: e.target.value })} placeholder="Filial" />
+                <div key={i} className="space-y-2">
+                  <div className="flex gap-2">
+                    <input className={`${inputCls} w-20`} value={s.value} onChange={(e) => setStat(i, { value: e.target.value })} placeholder="5+" />
+                    <input className={inputCls} value={s.label} onChange={(e) => setStat(i, { label: e.target.value })} placeholder="Filial 🇺🇿" />
+                  </div>
+                  <TrInput tr={s.tr} field="label" base={s.label} onChange={(tr) => setStat(i, { tr })} />
                 </div>
               ))}
             </div>
@@ -183,8 +190,16 @@ export default function AdminBlogPage() {
         {draft && (
           <div className="grid gap-4 rounded-2xl border border-brand-yellow/30 bg-brand-surface p-4 sm:grid-cols-2">
             <label className="sm:col-span-2">
-              <span className={labelCls}>Sarlavha *</span>
+              <span className={labelCls}>Sarlavha * — Oʻzbekcha 🇺🇿</span>
               <input className={inputCls} value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="Maqola sarlavhasi" />
+            </label>
+            <label className="sm:col-span-2">
+              <span className={labelCls}>Заголовок 🇷🇺</span>
+              <input className={inputCls} value={draft.tr?.ru?.title ?? ''} placeholder={draft.title} onChange={(e) => setDraft({ ...draft, tr: setTr(draft.tr, 'ru', 'title', e.target.value) })} />
+            </label>
+            <label className="sm:col-span-2">
+              <span className={labelCls}>Title 🇬🇧</span>
+              <input className={inputCls} value={draft.tr?.en?.title ?? ''} placeholder={draft.title} onChange={(e) => setDraft({ ...draft, tr: setTr(draft.tr, 'en', 'title', e.target.value) })} />
             </label>
             <label>
               <span className={labelCls}>Slug (havola, boʻsh = avto)</span>
@@ -199,12 +214,28 @@ export default function AdminBlogPage() {
               </select>
             </label>
             <label className="sm:col-span-2">
-              <span className={labelCls}>Qisqa matn (excerpt)</span>
+              <span className={labelCls}>Qisqa matn (excerpt) — Oʻzbekcha 🇺🇿</span>
               <textarea className={`${inputCls} min-h-[70px] resize-y`} value={draft.excerpt} onChange={(e) => setDraft({ ...draft, excerpt: e.target.value })} />
             </label>
             <label className="sm:col-span-2">
-              <span className={labelCls}>Toʻliq matn</span>
+              <span className={labelCls}>Краткий текст 🇷🇺</span>
+              <textarea className={`${inputCls} min-h-[70px] resize-y`} value={draft.tr?.ru?.excerpt ?? ''} placeholder={draft.excerpt} onChange={(e) => setDraft({ ...draft, tr: setTr(draft.tr, 'ru', 'excerpt', e.target.value) })} />
+            </label>
+            <label className="sm:col-span-2">
+              <span className={labelCls}>Excerpt 🇬🇧</span>
+              <textarea className={`${inputCls} min-h-[70px] resize-y`} value={draft.tr?.en?.excerpt ?? ''} placeholder={draft.excerpt} onChange={(e) => setDraft({ ...draft, tr: setTr(draft.tr, 'en', 'excerpt', e.target.value) })} />
+            </label>
+            <label className="sm:col-span-2">
+              <span className={labelCls}>Toʻliq matn — Oʻzbekcha 🇺🇿</span>
               <textarea className={`${inputCls} min-h-[160px] resize-y`} value={draft.body} onChange={(e) => setDraft({ ...draft, body: e.target.value })} placeholder="Maqola matni (paragraflar boʻsh qator bilan)" />
+            </label>
+            <label className="sm:col-span-2">
+              <span className={labelCls}>Полный текст 🇷🇺</span>
+              <textarea className={`${inputCls} min-h-[160px] resize-y`} value={draft.tr?.ru?.body ?? ''} placeholder={draft.body} onChange={(e) => setDraft({ ...draft, tr: setTr(draft.tr, 'ru', 'body', e.target.value) })} />
+            </label>
+            <label className="sm:col-span-2">
+              <span className={labelCls}>Full text 🇬🇧</span>
+              <textarea className={`${inputCls} min-h-[160px] resize-y`} value={draft.tr?.en?.body ?? ''} placeholder={draft.body} onChange={(e) => setDraft({ ...draft, tr: setTr(draft.tr, 'en', 'body', e.target.value) })} />
             </label>
             <div className="sm:col-span-2">
               <ImageUpload label="Muqova rasm" value={draft.cover} onChange={(url) => setDraft({ ...draft, cover: url })} />
@@ -229,7 +260,11 @@ export default function AdminBlogPage() {
               <input type="checkbox" checked={!!draft.isPromotion} onChange={(e) => setDraft({ ...draft, isPromotion: e.target.checked })} />
               <span className="text-sm">Aksiya maqolasi</span>
               {draft.isPromotion && (
-                <input className={`${inputCls} ml-2 w-28`} value={draft.promotionBadge ?? ''} onChange={(e) => setDraft({ ...draft, promotionBadge: e.target.value })} placeholder="−30%" />
+                <>
+                  <input className={`${inputCls} ml-2 w-28`} value={draft.promotionBadge ?? ''} onChange={(e) => setDraft({ ...draft, promotionBadge: e.target.value })} placeholder="−30% 🇺🇿" />
+                  <input className={`${inputCls} w-28`} value={draft.tr?.ru?.promotionBadge ?? ''} placeholder={draft.promotionBadge || '🇷🇺'} onChange={(e) => setDraft({ ...draft, tr: setTr(draft.tr, 'ru', 'promotionBadge', e.target.value) })} />
+                  <input className={`${inputCls} w-28`} value={draft.tr?.en?.promotionBadge ?? ''} placeholder={draft.promotionBadge || '🇬🇧'} onChange={(e) => setDraft({ ...draft, tr: setTr(draft.tr, 'en', 'promotionBadge', e.target.value) })} />
+                </>
               )}
             </label>
 
