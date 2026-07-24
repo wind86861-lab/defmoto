@@ -162,7 +162,7 @@ function CategoriesStrip({
           fill the row (auto-fit) and center, so a few categories don't leave a
           big empty gap on the right. */}
       <div className="-mx-4 overflow-x-auto px-4 scrollbar-hide sm:mx-0 sm:overflow-visible sm:px-0">
-        <div className="flex gap-3 pb-1 sm:grid sm:grid-cols-[repeat(auto-fit,minmax(96px,132px))] sm:justify-center sm:gap-4">
+        <div className="flex gap-[clamp(0.875rem,3.5vw,2rem)] pb-1 sm:grid sm:grid-cols-[repeat(auto-fit,minmax(96px,132px))] sm:justify-center">
           <CategoryChip
             category={{ id: 'all', slug: '', name: t('allCategory'), icon: '🗂️' }}
             href="/catalog"
