@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Navigation, Loader2, MapPin } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Select } from '@/components/ui/Select';
+import { trOf } from '@/lib/i18nField';
 import { useCheckoutState } from '../useCheckoutState';
 import { useSiteSettings } from '@/lib/stores/siteSettings';
 import { useCartStore } from '@/lib/stores/cart';
@@ -52,6 +53,7 @@ async function fetchItems(url: string): Promise<DirItem[]> {
  */
 export function BtsBranchPicker({ me }: { me: { lat: number; lng: number } | null }) {
   const t = useTranslations('checkout');
+  const locale = useLocale();
   const { delivery, setDelivery } = useCheckoutState();
   const dispatch = useSiteSettings((s) => s.bts?.dispatch);
   const btsCfg = useSiteSettings((s) => s.bts);
@@ -201,7 +203,7 @@ export function BtsBranchPicker({ me }: { me: { lat: number; lng: number } | nul
             onChange={onOrigin}
             options={activeOrigins.map((o) => {
               // "Name — City (Branch filiali)", without repeating name == city.
-              const parts = [o.name];
+              const parts = [trOf(o, 'name', locale)];
               if (o.cityName && o.cityName !== o.name) parts.push(`— ${o.cityName}`);
               if (o.branchName) parts.push(`(${o.branchName} filiali)`);
               return { value: o.id, label: parts.join(' ') };

@@ -38,6 +38,7 @@ import type { Branch, FranchiseLocation } from '@/types/content';
 
 export function BranchesClient() {
   const t = useTranslations('branches');
+  const locale = useLocale();
   const mounted = useMounted();
   const storeBranches = useContentStore((s) => s.branches);
   const branches = mounted && storeBranches.length > 0 ? storeBranches : mockBranches;
@@ -54,6 +55,14 @@ export function BranchesClient() {
     : branches;
   const active =
     filteredBranches.find((b) => b.id === activeId) ?? filteredBranches[0] ?? branches[0] ?? mockBranches[0];
+
+  // The filter VALUE stays the base (uz) string so filtering keeps working;
+  // only the visible label is localized.
+  const regionLabel = (r: string) => {
+    const b = branches.find((x) => (x.region || x.city) === r);
+    if (!b) return r;
+    return b.region ? trOf(b, 'region', locale) : trOf(b, 'city', locale);
+  };
 
   const pickBranchRegion = (r: string) => {
     setBranchRegion(r);
@@ -97,7 +106,7 @@ export function BranchesClient() {
                 icon={<MapPin className="h-4 w-4" />}
                 options={[
                   { value: '', label: t('allRegions') },
-                  ...branchRegions.map((r) => ({ value: r, label: r })),
+                  ...branchRegions.map((r) => ({ value: r, label: regionLabel(r) })),
                 ]}
               />
             </div>
@@ -234,9 +243,11 @@ function BranchDetail({ branch }: { branch: Branch }) {
   const tCommon = useTranslations('common');
   const mapUrl = mapsHref(branch);
   const tgHref = telegramHref(branch.telegram);
-  const fullAddress = branch.address.startsWith(branch.city)
-    ? branch.address
-    : `${branch.city}, ${branch.address}`;
+  const cityText = trOf(branch, 'city', locale);
+  const addressText = trOf(branch, 'address', locale);
+  const fullAddress = addressText.startsWith(cityText)
+    ? addressText
+    : `${cityText}, ${addressText}`;
 
   return (
     <div className="space-y-6">
@@ -259,12 +270,12 @@ function BranchDetail({ branch }: { branch: Branch }) {
                 )}
               </div>
               <h2 className="mt-3 font-display text-xl font-extrabold leading-tight sm:text-2xl">
-                {branch.legalName ?? trOf(branch, 'name', locale)}
+                {trOf(branch, 'legalName', locale) || trOf(branch, 'name', locale)}
               </h2>
               {branch.director && (
                 <p className="mt-1.5 text-xs text-white/55">
                   <span className="font-bold text-white/85">{t('directorLabel')}: </span>
-                  {branch.director}
+                  {trOf(branch, 'director', locale)}
                 </p>
               )}
             </div>
@@ -492,6 +503,7 @@ function FranchiseSection() {
   const mounted = useMounted();
   const list = useContentStore((s) => s.franchises);
   const franchises = mounted ? list : [];
+  const locale = useLocale();
   const [region, setRegion] = useState('');
 
   const regions = useMemo(
@@ -519,7 +531,13 @@ function FranchiseSection() {
             icon={<MapPin className="h-4 w-4" />}
             options={[
               { value: '', label: t('allRegions') },
-              ...regions.map((r) => ({ value: r, label: r })),
+              ...regions.map((r) => ({
+                value: r,
+                label: (() => {
+                  const f = franchises.find((x) => x.region === r);
+                  return f ? trOf(f, 'region', locale) : r;
+                })(),
+              })),
             ]}
           />
         </div>
@@ -540,7 +558,7 @@ function FranchiseSection() {
 
 function FranchiseCard({ f }: { f: FranchiseLocation }) {
   const locale = useLocale();
-  const location = [f.city, f.address].filter(Boolean).join(', ');
+  const location = [trOf(f, 'city', locale), trOf(f, 'address', locale)].filter(Boolean).join(', ');
   const map =
     f.mapUrl || (location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}` : null);
   const tg = telegramHref(f.telegram);
@@ -556,7 +574,7 @@ function FranchiseCard({ f }: { f: FranchiseLocation }) {
           <h3 className="font-display text-base font-extrabold leading-tight">{trOf(f, 'name', locale)}</h3>
           {f.region && (
             <span className="shrink-0 rounded-md bg-brand-yellow/15 px-2 py-0.5 text-[10px] font-bold text-brand-yellow">
-              {f.region}
+              {trOf(f, 'region', locale)}
             </span>
           )}
         </div>

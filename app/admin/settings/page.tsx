@@ -104,12 +104,23 @@ export default function AdminSettingsPage() {
             rows={2}
             className="w-full rounded-xl border border-brand-surface-border bg-brand-surface px-3.5 py-2.5 text-sm text-white outline-none focus:border-brand-yellow/60"
           />
+          <div className="mt-2">
+            <TrInput tr={contact.tr} field="tagline" base={contact.tagline ?? ''} onChange={(tr) => setContact({ tr })} textarea />
+          </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {field('Telefon', 'phone', '+998 99 810-70-90', <Phone className="h-4 w-4" />)}
           {field('Ish vaqti', 'workingHours', 'Du-Sh: 09:00 — 20:00', <Clock className="h-4 w-4" />)}
         </div>
+        <div>
+          <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">Ish vaqti — RU / EN</label>
+          <TrInput tr={contact.tr} field="workingHours" base={contact.workingHours ?? ''} onChange={(tr) => setContact({ tr })} />
+        </div>
         {field('Manzil', 'address', "Toshkent, ... ko'chasi", <MapPin className="h-4 w-4" />)}
+        <div>
+          <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">Manzil — RU / EN</label>
+          <TrInput tr={contact.tr} field="address" base={contact.address ?? ''} onChange={(tr) => setContact({ tr })} />
+        </div>
       </section>
 
       {/* Socials */}

@@ -175,10 +175,15 @@ function BranchCard({ branch, index, total }: { branch: Branch; index: number; t
         <F label={`${t('fldName')} — RU / EN`} full><TrInput tr={draft.tr} field="name" base={draft.name} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldNumber')}><Input type="number" value={String(draft.number)} onChange={(e) => set({ number: Number(e.target.value) || 0 })} /></F>
         <F label={t('fldLegalName')}><Input value={draft.legalName ?? ''} onChange={(e) => set({ legalName: e.target.value })} /></F>
+        <F label={`${t('fldLegalName')} — RU / EN`} full><TrInput tr={draft.tr} field="legalName" base={draft.legalName ?? ''} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldDirector')}><Input value={draft.director ?? ''} onChange={(e) => set({ director: e.target.value })} /></F>
+        <F label={`${t('fldDirector')} — RU / EN`} full><TrInput tr={draft.tr} field="director" base={draft.director ?? ''} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldRegion')}><Input value={draft.region ?? ''} placeholder="Toshkent viloyati" onChange={(e) => set({ region: e.target.value })} /></F>
+        <F label={`${t('fldRegion')} — RU / EN`} full><TrInput tr={draft.tr} field="region" base={draft.region ?? ''} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldCity')}><Input value={draft.city} onChange={(e) => set({ city: e.target.value })} /></F>
+        <F label={`${t('fldCity')} — RU / EN`} full><TrInput tr={draft.tr} field="city" base={draft.city} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldAddress')}><Input value={draft.address} onChange={(e) => set({ address: e.target.value })} /></F>
+        <F label={`${t('fldAddress')} — RU / EN`} full><TrInput tr={draft.tr} field="address" base={draft.address} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldPhone')}><Input value={draft.phone} onChange={(e) => set({ phone: e.target.value })} /></F>
         <F label={t('fldSecondaryPhone')}><Input value={draft.secondaryPhone ?? ''} onChange={(e) => set({ secondaryPhone: e.target.value })} /></F>
         <F label={t('fldTelegram')}><Input value={draft.telegram ?? ''} placeholder="@username" onChange={(e) => set({ telegram: e.target.value })} /></F>
@@ -260,9 +265,11 @@ function ServiceCard({ center, index, total }: { center: ServiceCenter; index: n
         <F label={t('fldName')}><Input value={draft.name} onChange={(e) => set({ name: e.target.value })} /></F>
         <F label={`${t('fldName')} — RU / EN`} full><TrInput tr={draft.tr} field="name" base={draft.name} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldRegion')}><Input value={draft.region ?? ''} placeholder="Toshkent viloyati" onChange={(e) => set({ region: e.target.value })} /></F>
+        <F label={`${t('fldRegion')} — RU / EN`} full><TrInput tr={draft.tr} field="region" base={draft.region ?? ''} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldShortName')}><Input value={draft.shortName ?? ''} onChange={(e) => set({ shortName: e.target.value })} /></F>
         <F label={`${t('fldShortName')} — RU / EN`} full><TrInput tr={draft.tr} field="shortName" base={draft.shortName ?? ''} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldAddress')}><Input value={draft.address} onChange={(e) => set({ address: e.target.value })} /></F>
+        <F label={`${t('fldAddress')} — RU / EN`} full><TrInput tr={draft.tr} field="address" base={draft.address} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldHours')}><Input value={draft.workingHours} onChange={(e) => set({ workingHours: e.target.value })} /></F>
         <F label={`${t('fldHours')} — RU / EN`} full><TrInput tr={draft.tr} field="workingHours" base={draft.workingHours} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldPhone')}><Input value={draft.phone} onChange={(e) => set({ phone: e.target.value })} /></F>
@@ -389,8 +396,11 @@ function FranchiseLocCard({ f, index, total }: { f: import('@/types/content').Fr
         <F label={t('fldName')}><Input value={draft.name} onChange={(e) => set({ name: e.target.value })} /></F>
         <F label={`${t('fldName')} — RU / EN`} full><TrInput tr={draft.tr} field="name" base={draft.name} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldRegion')}><Input value={draft.region ?? ''} placeholder="Toshkent viloyati" onChange={(e) => set({ region: e.target.value })} /></F>
+        <F label={`${t('fldRegion')} — RU / EN`} full><TrInput tr={draft.tr} field="region" base={draft.region ?? ''} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldCity')}><Input value={draft.city ?? ''} onChange={(e) => set({ city: e.target.value })} /></F>
+        <F label={`${t('fldCity')} — RU / EN`} full><TrInput tr={draft.tr} field="city" base={draft.city ?? ''} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldAddress')}><Input value={draft.address ?? ''} onChange={(e) => set({ address: e.target.value })} /></F>
+        <F label={`${t('fldAddress')} — RU / EN`} full><TrInput tr={draft.tr} field="address" base={draft.address ?? ''} onChange={(tr) => set({ tr })} /></F>
         <F label={t('fldPhone')}><Input value={draft.phone ?? ''} onChange={(e) => set({ phone: e.target.value })} /></F>
         <F label={t('fldTelegram')}><Input value={draft.telegram ?? ''} placeholder="@username" onChange={(e) => set({ telegram: e.target.value })} /></F>
         <F label={t('fldHours')}><Input value={draft.workingHours ?? ''} onChange={(e) => set({ workingHours: e.target.value })} /></F>

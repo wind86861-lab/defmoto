@@ -34,6 +34,7 @@ import type { ServiceCenter, ServiceItem } from '@/types/content';
 
 export function ServiceClient() {
   const t = useTranslations('service');
+  const locale = useLocale();
   const mounted = useMounted();
   const storeCenters = useContentStore((s) => s.serviceCenters);
   const centers = mounted && storeCenters.length > 0 ? storeCenters : mockServiceCenters;
@@ -47,6 +48,12 @@ export function ServiceClient() {
   const filtered = region ? centers.filter((c) => c.region === region) : centers;
   const active =
     filtered.find((s) => s.id === activeId) ?? filtered[0] ?? centers[0] ?? mockServiceCenters[0];
+
+  // Filter value stays the base (uz) string; only the label is localized.
+  const regionLabel = (r: string) => {
+    const c = centers.find((x) => x.region === r);
+    return c ? trOf(c, 'region', locale) : r;
+  };
 
   const pickRegion = (r: string) => {
     setRegion(r);
@@ -75,7 +82,7 @@ export function ServiceClient() {
             icon={<MapPin className="h-4 w-4" />}
             options={[
               { value: '', label: t('regionAll') },
-              ...regions.map((r) => ({ value: r, label: r })),
+              ...regions.map((r) => ({ value: r, label: regionLabel(r) })),
             ]}
           />
         </div>
@@ -209,7 +216,7 @@ function CenterDetail({ center }: { center: ServiceCenter }) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.05fr_1fr] lg:gap-8">
         {/* LEFT — Contacts */}
         <ul className="space-y-2.5 rounded-2xl border border-brand-surface-border bg-brand-surface p-5">
-          <ContactRow icon={MapPin} label={t('address')} value={center.address} />
+          <ContactRow icon={MapPin} label={t('address')} value={trOf(center, 'address', locale)} />
           <ContactRow
             icon={Clock}
             label={t('workingHours')}

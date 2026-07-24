@@ -50,6 +50,8 @@ export interface BtsOrigin {
   senderPhone?: string;
   senderAddress?: string;
   active: boolean;
+  /** RU/EN translations of this record's text fields. */
+  tr?: TrMap;
 }
 
 export interface BtsSettings {
@@ -81,6 +83,8 @@ export interface SiteContact {
   whatsapp?: string;
   instagram?: string;
   viber?: string;
+  /** RU/EN translations of this record's text fields. */
+  tr?: TrMap;
 }
 
 // One delivery-terms row (same for every product), shown on the product page.

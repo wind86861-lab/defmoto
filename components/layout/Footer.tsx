@@ -20,6 +20,7 @@ import { FooterSmoke } from '@/components/ui/FooterSmoke';
 import { useSiteSettings, DEFAULT_CONTACT } from '@/lib/stores/siteSettings';
 import { useContentStore } from '@/lib/stores/content';
 import { categoryName as resolveCategoryName } from '@/lib/categoryName';
+import { trText } from '@/lib/i18nField';
 import { mockCategories } from '@/mocks/categories';
 import { useMounted } from '@/hooks/useMounted';
 
@@ -65,9 +66,10 @@ export function Footer() {
   // Translatable prose (tagline / address / hours) falls back to the localized
   // i18n string when the admin hasn't set a custom value — so it stays correct
   // in all 3 languages. Phone & socials are universal → admin single-value.
-  const tagline = contact.tagline?.trim() || t('tagline');
-  const address = contact.address?.trim() || t('addressText');
-  const workingHours = contact.workingHours?.trim() || t('hoursText');
+  const tagline = trText(contact.tagline, contact.tr, 'tagline', locale).trim() || t('tagline');
+  const address = trText(contact.address, contact.tr, 'address', locale).trim() || t('addressText');
+  const workingHours =
+    trText(contact.workingHours, contact.tr, 'workingHours', locale).trim() || t('hoursText');
   const socials = [
     { kind: 'telegram' as const, color: '#229ED9', label: 'Telegram', href: socialHref('telegram', contact.telegram), icon: <Send className="h-4 w-4" fill="currentColor" /> },
     { kind: 'whatsapp' as const, color: '#25D366', label: 'WhatsApp', href: socialHref('whatsapp', contact.whatsapp), icon: <WhatsAppIcon className="h-4 w-4" /> },
