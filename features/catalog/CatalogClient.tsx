@@ -158,23 +158,23 @@ function CategoriesStrip({
         )}
       </div>
 
-      {/* Compact tiles: horizontal scroll on mobile; on desktop they grow to
-          fill the row (auto-fit) and center, so a few categories don't leave a
-          big empty gap on the right. */}
+      {/* Compact tiles: horizontal scroll on mobile; on desktop they wrap and
+          spread evenly (justify-around) so a few categories don't leave a big
+          empty gap on the right. Tile width and gap are both fluid. */}
       <div className="-mx-4 overflow-x-auto px-4 scrollbar-hide sm:mx-0 sm:overflow-visible sm:px-0">
-        <div className="flex gap-[clamp(0.875rem,3.5vw,2rem)] pb-1 sm:grid sm:grid-cols-[repeat(auto-fit,minmax(96px,132px))] sm:justify-center">
+        <div className="flex gap-[clamp(0.875rem,3.5vw,2rem)] pb-1 sm:flex-wrap sm:justify-around sm:gap-y-7">
           <CategoryChip
             category={{ id: 'all', slug: '', name: t('allCategory'), icon: '🗂️' }}
             href="/catalog"
             active={!activeSlug}
-            className="sm:w-full"
+            className="sm:w-[clamp(96px,12vw,140px)]"
           />
           {categories.map((c) => (
             <CategoryChip
               key={c.id}
               category={c}
               active={activeSlug === c.slug}
-              className="sm:w-full"
+              className="sm:w-[clamp(96px,12vw,140px)]"
             />
           ))}
         </div>

@@ -413,6 +413,9 @@ function RequestForm({ branchName }: { branchName: string }) {
       <p className="mt-1 text-xs text-white/55 sm:text-sm">{t('requestDesc')}</p>
 
       <form onSubmit={handleSubmit} className="mt-5 space-y-3">
+        {/* Name + phone share a row when there's width, and become two
+            equal-width rows once the form narrows. */}
+        <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
         <Field label={t('requestNameLabel')}>
           <Input
             placeholder={t('franchiseName')}
@@ -432,6 +435,7 @@ function RequestForm({ branchName }: { branchName: string }) {
             disabled={submitted}
           />
         </Field>
+        </div>
         <Field label={t('requestMessageLabel')}>
           <textarea
             rows={3}

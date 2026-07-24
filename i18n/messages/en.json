@@ -30,7 +30,8 @@
     "copied": "Copied",
     "close": "Close",
     "register": "Register",
-    "logout": "Log out"
+    "logout": "Log out",
+    "account": "Account"
   },
   "nav": {
     "home": "Home",

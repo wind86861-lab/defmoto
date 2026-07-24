@@ -361,35 +361,41 @@ function BookingForm({ centerName }: { centerName: string }) {
       </ul>
 
       <form onSubmit={handleSubmit} className="mt-5 space-y-3">
-        <Input
-          placeholder={t('bookName')}
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          disabled={submitted}
-        />
-        <Input
-          type="tel"
-          inputMode="tel"
-          maxLength={20}
-          placeholder={t('bookPhone')}
-          value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: sanitizePhoneInput(e.target.value) })}
-          disabled={submitted}
-        />
-        <Input
-          placeholder={t('bookService')}
-          value={form.service}
-          onChange={(e) => setForm({ ...form, service: e.target.value })}
-          disabled={submitted}
-        />
-        <Input
-          type="date"
-          style={{ colorScheme: 'dark' }}
-          placeholder={t('bookDate')}
-          value={form.date}
-          onChange={(e) => setForm({ ...form, date: e.target.value })}
-          disabled={submitted}
-        />
+        {/* Paired fields: one row when there's width, two equal-width rows
+            when the form narrows. */}
+        <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
+          <Input
+            placeholder={t('bookName')}
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            disabled={submitted}
+          />
+          <Input
+            type="tel"
+            inputMode="tel"
+            maxLength={20}
+            placeholder={t('bookPhone')}
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: sanitizePhoneInput(e.target.value) })}
+            disabled={submitted}
+          />
+        </div>
+        <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
+          <Input
+            placeholder={t('bookService')}
+            value={form.service}
+            onChange={(e) => setForm({ ...form, service: e.target.value })}
+            disabled={submitted}
+          />
+          <Input
+            type="date"
+            style={{ colorScheme: 'dark' }}
+            placeholder={t('bookDate')}
+            value={form.date}
+            onChange={(e) => setForm({ ...form, date: e.target.value })}
+            disabled={submitted}
+          />
+        </div>
         <textarea
           rows={3}
           placeholder={t('bookComment')}

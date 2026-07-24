@@ -9,6 +9,7 @@ import {
   MessageCircle,
   Send,
   LogOut,
+  LogIn,
   ChevronRight,
   Phone,
   Mail,
@@ -19,8 +20,12 @@ import { useOrdersStore } from '@/lib/stores/orders';
 import { useWishlistStore } from '@/lib/stores/wishlist';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 
+const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'ajndspuntnjqpiuuerbot';
+const REGISTER_LINK = `https://t.me/${BOT_USERNAME}?start=register`;
+
 export function ProfileClient() {
   const t = useTranslations('profile');
+  const tCommon = useTranslations('common');
   const { user, isInTelegram, webApp } = useTelegram();
   const { user: account, logout } = useAuth();
   const orderCount = useOrdersStore((s) => s.orders.length);
@@ -76,6 +81,25 @@ export function ProfileClient() {
           />
         </div>
       </section>
+
+      {/* Account — only while signed out. Registration is bot-only, so the
+          Register row hands off to the Telegram bot's /start register flow. */}
+      {!account && (
+        <section className="mt-6 space-y-1.5">
+          <SectionTitle>{tCommon('account')}</SectionTitle>
+          <MenuLink href="/login" icon={LogIn} label={tCommon('login')} />
+          <a
+            href={REGISTER_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 rounded-2xl bg-[#229ED9] p-4 text-white transition-transform hover:brightness-110 active:scale-[0.99] touch-feedback"
+          >
+            <Send className="h-5 w-5 shrink-0" />
+            <span className="flex-1 text-sm font-bold">{tCommon('register')}</span>
+            <ChevronRight className="h-4 w-4 opacity-70" />
+          </a>
+        </section>
+      )}
 
       {/* Menu sections */}
       <section className="mt-6 space-y-1.5">

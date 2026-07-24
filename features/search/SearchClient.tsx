@@ -214,7 +214,7 @@ export function SearchClient() {
                     >
                       <span className="text-lg">{c.icon}</span>
                       <span className="truncate">
-                        {c.slug ? resolveCategoryName(tCategories, c) : c.name}
+                        {c.slug ? resolveCategoryName(tCategories, c, locale) : c.name}
                       </span>
                     </Link>
                   ))}

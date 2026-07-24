@@ -33,13 +33,18 @@ export function PopularCategories({ categories }: { categories: Category[] }) {
           </Link>
         </header>
 
-        {/* Compact tiles: scroll on mobile; on desktop they grow to fill the
-            row (auto-fit). The gap is fluid — it scales with the viewport on
-            mobile AND desktop instead of a fixed step. */}
+        {/* Compact tiles: horizontal scroll on mobile; on desktop they wrap
+            and spread evenly across the full row
+            (justify-around), so a few categories never leave a dead gap on the
+            right. Tile width and gap are both fluid. */}
         <div className="-mx-4 overflow-x-auto px-4 scrollbar-hide sm:mx-0 sm:overflow-visible sm:px-0">
-          <div className="flex gap-[clamp(0.875rem,3.5vw,2rem)] pb-1 sm:grid sm:grid-cols-[repeat(auto-fit,minmax(96px,132px))]">
+          <div className="flex gap-[clamp(0.875rem,3.5vw,2rem)] pb-1 sm:flex-wrap sm:justify-around sm:gap-y-7">
             {list.map((cat) => (
-              <CategoryChip key={cat.id} category={cat} className="sm:w-full" />
+              <CategoryChip
+                key={cat.id}
+                category={cat}
+                className="sm:w-[clamp(96px,12vw,140px)]"
+              />
             ))}
           </div>
         </div>

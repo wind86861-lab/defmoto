@@ -108,6 +108,9 @@ export function ContactStep({ onNext }: { onNext: () => void }) {
       </header>
 
       <div className="space-y-3">
+        {/* Name + phone: one row when there's width, two equal-width rows once
+            the screen narrows. */}
+        <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
         <div>
           <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">
             {t('contactLabel')}
@@ -139,6 +142,7 @@ export function ContactStep({ onNext }: { onNext: () => void }) {
             type="tel"
             maxLength={20}
           />
+        </div>
         </div>
 
         {/* One-tap phone share inside the mini app (Telegram shares it via the bot). */}

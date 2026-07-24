@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ProductImage } from '@/components/ui/ProductImage';
@@ -17,8 +17,9 @@ interface CategoryCardProps {
 export function CategoryCard({ category, href, active }: CategoryCardProps) {
   const t = useTranslations('common');
   const tCategories = useTranslations('categories');
+  const locale = useLocale();
   const categoryName = category.slug
-    ? resolveCategoryName(tCategories, category)
+    ? resolveCategoryName(tCategories, category, locale)
     : category.name;
 
   return (

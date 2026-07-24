@@ -9,8 +9,5 @@ export const localeNames: Record<Locale, string> = {
   en: 'English',
 };
 
-export const localeFlags: Record<Locale, string> = {
-  uz: '🇺🇿',
-  ru: '🇷🇺',
-  en: '🇬🇧',
-};
+// NOTE: no flag emojis — a flag is a country, not a language (🇬🇧 renders as
+// "GB" and misrepresents English). The UI shows the locale CODE instead.
