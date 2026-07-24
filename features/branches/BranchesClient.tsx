@@ -99,7 +99,7 @@ export function BranchesClient() {
         <div className="animate-fade-in">
           {/* === Region (viloyat) select === */}
           {branchRegions.length > 0 && (
-            <div className="mx-auto mb-5 max-w-2xl">
+            <div className="mx-auto mb-4 max-w-2xl">
               <Select
                 value={branchRegion}
                 onChange={pickBranchRegion}
@@ -173,7 +173,7 @@ function BranchSelector({
   useClickOutside(containerRef, () => setOpen(false), open);
 
   return (
-    <div ref={containerRef} className="relative mx-auto mb-8 max-w-md">
+    <div ref={containerRef} className="relative mx-auto mb-8 max-w-2xl">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}

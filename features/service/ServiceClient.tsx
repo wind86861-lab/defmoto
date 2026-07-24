@@ -75,7 +75,7 @@ export function ServiceClient() {
 
       {/* === Region (viloyat) select === */}
       {regions.length > 0 && (
-        <div className="mx-auto mb-3 max-w-2xl">
+        <div className="mx-auto mb-4 max-w-2xl">
           <Select
             value={region}
             onChange={pickRegion}
@@ -115,7 +115,7 @@ function CenterSelector({
   useClickOutside(containerRef, () => setOpen(false), open);
 
   return (
-    <div ref={containerRef} className="relative mx-auto mb-8 max-w-md">
+    <div ref={containerRef} className="relative mx-auto mb-8 max-w-2xl">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
