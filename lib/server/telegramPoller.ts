@@ -121,8 +121,24 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // Uses the https-module caller (fresh IPv4 connection per call) — the global
 // fetch/undici pool went stale behind the NAT and hung the bot forever.
+// Telegram REJECTS malformed Markdown ("can't parse entities") and the message
+// is then silently lost. User-supplied text routinely trips this: a customer
+// writing "narx 5*3", a name like "ali_bek", a product name with [brackets],
+// or an operator reply containing an underscore. Retry once as plain text so a
+// stray character can never swallow a message.
+function isParseError(r: any): boolean {
+  return Boolean(
+    r && r.ok === false && /can't parse entities|can't find end/i.test(String(r.description || '')),
+  );
+}
+
 async function tg(method: string, params: Record<string, unknown> = {}): Promise<any> {
-  return tgApi(method, params);
+  const r = await tgApi<any>(method, params);
+  if (params.parse_mode && isParseError(r)) {
+    const { parse_mode: _drop, ...plain } = params;
+    return tgApi<any>(method, plain);
+  }
+  return r;
 }
 
 interface TgUpdate {
@@ -443,18 +459,21 @@ async function handleUpdate(update: TgUpdate) {
   }
 
   /* ------------------------- operator reply-to ---------------------------- */
-  if (msg.reply_to_message?.message_id && text) {
+  // Gated on isOperatorChat: a *customer* who happens to reply-to a bot message
+  // must NOT be swallowed here — they fall through to the normal customer path
+  // so their message still reaches the operator.
+  if (msg.reply_to_message?.message_id && text && isOperatorChat(chatId)) {
     const delivered = ingestOperatorReply(msg.reply_to_message.message_id, text);
-    // A silent no-op here is how replies "vanish": the forwarded-message routing
-    // entry is gone (e.g. server restarted). Tell the operator so they retry via
-    // the inbox instead of assuming the customer got it.
-    if (!delivered && isOperatorChat(chatId)) {
-      await tg('sendMessage', {
-        chat_id: chatId,
-        text: '⚠️ Bu xabarga javob yeta olmadi (suhbat topilmadi). "📨 Xabarlar" orqali suhbatni oching va "✍️ Javob berish"ni bosing.',
-        reply_markup: startKeyboard(),
-      });
-    }
+    // Always confirm. A silent no-op is how replies "vanish": the forwarded
+    // routing entry is gone (e.g. server restarted), and the operator would
+    // otherwise assume the customer got it.
+    await tg('sendMessage', {
+      chat_id: chatId,
+      text: delivered
+        ? '✅ Javob mijozga yuborildi.'
+        : '⚠️ Bu xabarga javob yeta olmadi (suhbat topilmadi). "📨 Xabarlar" orqali suhbatni oching va "✍️ Javob berish"ni bosing.',
+      ...(delivered ? {} : { reply_markup: startKeyboard() }),
+    });
     return;
   }
 

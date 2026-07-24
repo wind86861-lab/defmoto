@@ -252,8 +252,24 @@ export async function tryBindOperator(
 
 // Fresh IPv4 connection per call (see tgFetch) — the pooled global fetch went
 // stale behind the host NAT and hung, breaking operator delivery.
+// Telegram REJECTS malformed Markdown ("can't parse entities") and the message
+// is then silently lost. User-supplied text routinely trips this: a customer
+// writing "narx 5*3", a name like "ali_bek", a product name with [brackets],
+// or an operator reply containing an underscore. Retry once as plain text so a
+// stray character can never swallow a message.
+function isParseError(r: any): boolean {
+  return Boolean(
+    r && r.ok === false && /can't parse entities|can't find end/i.test(String(r.description || '')),
+  );
+}
+
 async function tg(method: string, body: Record<string, unknown>): Promise<any> {
-  return tgApi(method, body);
+  const r = await tgApi<any>(method, body);
+  if (body.parse_mode && isParseError(r)) {
+    const { parse_mode: _drop, ...plain } = body;
+    return tgApi<any>(method, plain);
+  }
+  return r;
 }
 
 function getSession(id: string): Session {
@@ -263,6 +279,20 @@ function getSession(id: string): Session {
     state.sessions.set(id, s);
   }
   return s;
+}
+
+// The reply-to routing map grows with every forwarded message and is persisted
+// to disk, so it must be bounded. Keep the most recent entries — older ones can
+// no longer be replied to in practice (the operator answers recent messages).
+const MAX_FORWARDED = 800;
+function pruneForwarded() {
+  if (state.forwarded.size <= MAX_FORWARDED) return;
+  const excess = state.forwarded.size - MAX_FORWARDED;
+  let i = 0;
+  for (const k of state.forwarded.keys()) {
+    if (i++ >= excess) break;
+    state.forwarded.delete(k); // Map preserves insertion order → drops oldest
+  }
 }
 
 /** Customer → operator. Stores the message and tries to relay to Telegram. */
@@ -301,6 +331,7 @@ export async function forwardToOperator(
     });
     if (r?.ok && r.result?.message_id) {
       state.forwarded.set(r.result.message_id, sessionId);
+      pruneForwarded();
       persistSessions();
       return { relayed: true };
     }
