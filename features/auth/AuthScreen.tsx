@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Phone, Lock, Send, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Logo } from '@/components/ui/Logo';
-import { sanitizePhoneInput, digitsOnly } from '@/lib/phoneInput';
+import { formatUzPhone, digitsOnly } from '@/lib/phoneInput';
 import { useHaptic } from '@/hooks/useHaptic';
 
 type Mode = 'login' | 'forgot';
@@ -91,7 +91,7 @@ export function AuthScreen({ onDone }: { onDone: () => void }) {
             forgotStep === 'phone' ? (
               <>
                 <Field icon={Phone}>
-                  <input {...inp} type="tel" inputMode="tel" maxLength={20} placeholder="+998 90 000 00 00" value={phone} onChange={(e) => setPhone(sanitizePhoneInput(e.target.value))} />
+                  <input {...inp} type="tel" inputMode="tel" maxLength={17} placeholder="+998 90 000 00 00" value={phone} onChange={(e) => setPhone(formatUzPhone(e.target.value))} />
                 </Field>
                 {error && <ErrorText>{error}</ErrorText>}
                 <Button glow fullWidth size="lg" loading={busy} onClick={startForgot} disabled={phone.replace(/\D/g, '').length < 9}>
@@ -123,7 +123,7 @@ export function AuthScreen({ onDone }: { onDone: () => void }) {
           ) : (
             <>
               <Field icon={Phone}>
-                <input {...inp} type="tel" inputMode="tel" maxLength={20} placeholder="+998 90 000 00 00" value={phone} onChange={(e) => setPhone(sanitizePhoneInput(e.target.value))} />
+                <input {...inp} type="tel" inputMode="tel" maxLength={17} placeholder="+998 90 000 00 00" value={phone} onChange={(e) => setPhone(formatUzPhone(e.target.value))} />
               </Field>
               <Field icon={Lock}>
                 <input {...inp} type="password" placeholder="Parol" value={password} onChange={(e) => setPassword(e.target.value)} />

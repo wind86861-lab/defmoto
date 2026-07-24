@@ -20,7 +20,7 @@ import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
-import { sanitizePhoneInput } from '@/lib/phoneInput';
+import { formatUzPhone } from '@/lib/phoneInput';
 import { trOf } from '@/lib/i18nField';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { Reveal } from '@/components/ui/Reveal';
@@ -428,10 +428,10 @@ function RequestForm({ branchName }: { branchName: string }) {
           <Input
             type="tel"
             inputMode="tel"
-            maxLength={20}
+            maxLength={17}
             placeholder={t('franchisePhone')}
             value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: sanitizePhoneInput(e.target.value) })}
+            onChange={(e) => setForm({ ...form, phone: formatUzPhone(e.target.value) })}
             disabled={submitted}
           />
         </Field>

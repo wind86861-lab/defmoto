@@ -14,7 +14,7 @@ import {
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { sanitizePhoneInput } from '@/lib/phoneInput';
+import { formatUzPhone } from '@/lib/phoneInput';
 import { trOf } from '@/lib/i18nField';
 import { Select } from '@/components/ui/Select';
 import { ProductImage } from '@/components/ui/ProductImage';
@@ -373,10 +373,10 @@ function BookingForm({ centerName }: { centerName: string }) {
           <Input
             type="tel"
             inputMode="tel"
-            maxLength={20}
+            maxLength={17}
             placeholder={t('bookPhone')}
             value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: sanitizePhoneInput(e.target.value) })}
+            onChange={(e) => setForm({ ...form, phone: formatUzPhone(e.target.value) })}
             disabled={submitted}
           />
         </div>
