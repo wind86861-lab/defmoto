@@ -7,6 +7,7 @@ import { User, MapPin, Truck, Wallet, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { formatPrice } from '@/lib/format';
 import { useCartStore } from '@/lib/stores/cart';
+import { useContentStore } from '@/lib/stores/content';
 import { useOrdersStore } from '@/lib/stores/orders';
 import { useTelegram } from '@/components/providers/TelegramProvider';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -48,8 +49,9 @@ export function ConfirmStep({ onBack }: { onBack: () => void }) {
     cash: t('cashTitle'),
   };
 
+  const promoCodes = useContentStore((s) => s.promoCodes);
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
-  const promoResult = state.promoCode ? applyPromo(state.promoCode, subtotal) : null;
+  const promoResult = state.promoCode ? applyPromo(state.promoCode, subtotal, promoCodes) : null;
   const discount = promoResult?.ok ? promoResult.discount : 0;
   const afterDiscount = Math.max(0, subtotal - discount);
   const deliveryFee =

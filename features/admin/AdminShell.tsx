@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import {
+  BadgePercent,
   LayoutDashboard,
   Image,
   Package,
@@ -70,6 +71,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     { href: '/admin/customers', label: t('navCustomers'), icon: Users },
     { href: '/admin/operators', label: t('navOperators'), icon: Headset },
     { href: '/admin/categories', label: t('navCategories'), icon: Tag },
+    { href: '/admin/promos', label: t('navPromos'), icon: BadgePercent },
     { href: '/admin/locations', label: t('navLocations'), icon: MapPin },
     { href: '/admin/marketplaces', label: t('navMarketplaces'), icon: Store },
     { href: '/admin/delivery', label: t('navDelivery'), icon: Truck },

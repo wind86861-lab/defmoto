@@ -954,7 +954,8 @@
     "fldProdVariantDerive": "Each row = colour + size + stock. Sizes appear under the selected colour.",
     "fldTelegram": "Telegram",
     "fldMapUrl": "Google Maps link",
-    "fldProdMarketLink": "Marketplace product link (optional)"
+    "fldProdMarketLink": "Marketplace product link (optional)",
+    "navPromos": "Promo codes"
   },
   "categories": {
     "motorcycles": "Motorcycles",

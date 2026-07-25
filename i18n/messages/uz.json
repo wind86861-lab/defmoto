@@ -954,7 +954,8 @@
     "fldProdVariantDerive": "Har bir qator = rang + o'lcham + zaxira. O'lchamlar tanlangan rang ostida chiqadi.",
     "fldTelegram": "Telegram",
     "fldMapUrl": "Google Maps havolasi",
-    "fldProdMarketLink": "Marketplace mahsulot linki (ixtiyoriy)"
+    "fldProdMarketLink": "Marketplace mahsulot linki (ixtiyoriy)",
+    "navPromos": "Promokodlar"
   },
   "categories": {
     "motorcycles": "Mototsikllar",

@@ -41,6 +41,7 @@ export function CartClient() {
 
   const [promoInput, setPromoInput] = useState('');
   const [promo, setPromo] = useState<PromoResult | null>(null);
+  const promoCodes = useContentStore((s) => s.promoCodes);
 
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
   const discount = promo?.ok ? promo.discount : 0;
@@ -49,7 +50,7 @@ export function CartClient() {
   const total = afterDiscount + deliveryFee;
 
   const handleApplyPromo = () => {
-    const result = applyPromo(promoInput, subtotal);
+    const result = applyPromo(promoInput, subtotal, promoCodes);
     setPromo(result);
     if (result.ok && result.code) {
       notify('success');
@@ -129,18 +130,6 @@ export function CartClient() {
                   {promo?.error && (
                     <p className="mt-1.5 text-xs text-danger">{promo.error}</p>
                   )}
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {['DEFT10', 'WELCOME'].map((code) => (
-                      <button
-                        key={code}
-                        type="button"
-                        onClick={() => setPromoInput(code)}
-                        className="rounded-full border border-brand-surface-border bg-brand-dark/40 px-2.5 py-1 text-[11px] font-bold text-white/65 hover:border-brand-yellow/40 hover:text-brand-yellow"
-                      >
-                        {code}
-                      </button>
-                    ))}
-                  </div>
                 </>
               )}
               {promo?.ok && promo.code && (

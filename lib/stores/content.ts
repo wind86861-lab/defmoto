@@ -15,6 +15,7 @@ import type {
   AboutContent,
 } from '@/types/content';
 import type { Product, Category } from '@/types/product';
+import type { PromoCode } from '@/lib/promo';
 
 /**
  * Admin-managed site content: branches, service centres and the franchise
@@ -45,6 +46,7 @@ interface ContentState {
   categories: Category[];
   blogPosts: BlogPost[];
   about: AboutContent;
+  promoCodes: PromoCode[];
 
   // Branches
   addBranch: (b: Branch) => void;
@@ -96,6 +98,11 @@ interface ContentState {
   // About page
   setAbout: (patch: Partial<AboutContent>) => void;
   resetAbout: () => void;
+
+  // Promo codes (admin-managed; no demo defaults — only these ever apply)
+  addPromoCode: (p: PromoCode) => void;
+  updatePromoCode: (code: string, patch: Partial<PromoCode>) => void;
+  removePromoCode: (code: string) => void;
 }
 
 function move<T extends { id: string }>(list: T[], id: string, dir: -1 | 1): T[] {
@@ -119,6 +126,7 @@ export const useContentStore = create<ContentState>()(
       categories: mockCategories,
       blogPosts: mockBlogPosts,
       about: {},
+      promoCodes: [],
 
       addBranch: (b) => set((s) => ({ branches: [...s.branches, b] })),
       updateBranch: (id, patch) =>
@@ -209,14 +217,27 @@ export const useContentStore = create<ContentState>()(
 
       setAbout: (patch) => set((s) => ({ about: { ...s.about, ...patch } })),
       resetAbout: () => set({ about: {} }),
+
+      addPromoCode: (p) =>
+        set((s) => ({ promoCodes: [{ ...p, code: p.code.trim().toUpperCase() }, ...s.promoCodes] })),
+      updatePromoCode: (code, patch) =>
+        set((s) => ({
+          promoCodes: s.promoCodes.map((p) =>
+            p.code === code
+              ? { ...p, ...patch, code: (patch.code ?? p.code).trim().toUpperCase() }
+              : p,
+          ),
+        })),
+      removePromoCode: (code) =>
+        set((s) => ({ promoCodes: s.promoCodes.filter((p) => p.code !== code) })),
     }),
     {
       name: 'deftmoto-content',
-      version: 4,
+      version: 5,
       // Persist to the server (global) instead of localStorage.
       storage: createServerPersist('content-store'),
       // v2 adds products + categories; v3 adds franchise locations;
-      // v4 adds blog posts + the About page content.
+      // v4 adds blog posts + the About page content; v5 adds promo codes.
       migrate: (persisted) => {
         const s = persisted as ContentState;
         if (!s.products || s.products.length === 0) s.products = mockProducts;
@@ -224,6 +245,7 @@ export const useContentStore = create<ContentState>()(
         if (!s.franchises) s.franchises = [];
         if (!s.blogPosts || s.blogPosts.length === 0) s.blogPosts = mockBlogPosts;
         if (!s.about) s.about = {};
+        if (!Array.isArray(s.promoCodes)) s.promoCodes = [];
         return s;
       },
     },
