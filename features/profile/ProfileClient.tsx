@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Package,
@@ -30,7 +31,24 @@ export function ProfileClient() {
   const tCommon = useTranslations('common');
   const { user, isInTelegram, webApp } = useTelegram();
   const { user: account, logout } = useAuth();
-  const orderCount = useOrdersStore((s) => s.orders.length);
+  // Orders count must match the Orders page: prefer the server history (real,
+  // cross-device) and fall back to this device's local orders — otherwise the
+  // profile could show 0 while /orders lists 4.
+  const localOrderCount = useOrdersStore((s) => s.orders.length);
+  const [serverOrderCount, setServerOrderCount] = useState<number | null>(null);
+  useEffect(() => {
+    let active = true;
+    fetch('/api/orders/mine', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((j) => {
+        if (active) setServerOrderCount(Array.isArray(j.orders) ? j.orders.length : 0);
+      })
+      .catch(() => active && setServerOrderCount(null));
+    return () => {
+      active = false;
+    };
+  }, []);
+  const orderCount = serverOrderCount && serverOrderCount > 0 ? serverOrderCount : localOrderCount;
   const wishlistCount = useWishlistStore((s) => s.ids.length);
   const mounted = useMounted();
   // Same source as the header/navbar phone: the admin-set contact number, with

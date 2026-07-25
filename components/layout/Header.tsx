@@ -41,7 +41,10 @@ export function Header() {
   const tNav = useTranslations('nav');
   const tContact = useTranslations('contact');
   const mounted = useMounted();
-  const cartCount = useCartStore((s) => (mounted ? s.items.length : 0));
+  // Total item quantity (matches the bottom nav) — not the count of distinct
+  // products, so a single product with qty 2 shows "2" everywhere, not 1 here
+  // and 2 there.
+  const cartCount = useCartStore((s) => (mounted ? s.totalCount() : 0));
   const wishlistCount = useWishlistStore((s) => (mounted ? s.ids.length : 0));
   const pathname = usePathname();
   // Admin-set contact phone (Sayt sozlamalari) — i18n value is only a fallback.
