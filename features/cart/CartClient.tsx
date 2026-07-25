@@ -26,9 +26,6 @@ import { applyPromo, type PromoResult } from '@/lib/promo';
 import { useContentStore } from '@/lib/stores/content';
 import { productName } from '@/lib/productLocale';
 
-const DELIVERY_FREE_THRESHOLD = 500_000;
-const DELIVERY_FEE = 25_000;
-
 export function CartClient() {
   const t = useTranslations('cart');
   const router = useRouter();
@@ -46,8 +43,9 @@ export function CartClient() {
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
   const discount = promo?.ok ? promo.discount : 0;
   const afterDiscount = Math.max(0, subtotal - discount);
-  const deliveryFee = afterDiscount >= DELIVERY_FREE_THRESHOLD ? 0 : DELIVERY_FEE;
-  const total = afterDiscount + deliveryFee;
+  // Delivery is NOT priced here: the real cost depends on the method / BTS
+  // destination chosen at checkout. The cart total is products − discount only.
+  const total = afterDiscount;
 
   const handleApplyPromo = () => {
     const result = applyPromo(promoInput, subtotal, promoCodes);
@@ -169,21 +167,8 @@ export function CartClient() {
               )}
               <Row
                 label={t('delivery')}
-                value={
-                  deliveryFee === 0 ? (
-                    <span className="text-success font-bold">{t('free')}</span>
-                  ) : (
-                    formatPrice(deliveryFee)
-                  )
-                }
+                value={<span className="text-white/50">{t('deliveryAtCheckout')}</span>}
               />
-              {deliveryFee > 0 && (
-                <p className="text-[11px] text-white/45">
-                  {t('freeDeliveryRemaining', {
-                    amount: formatPrice(DELIVERY_FREE_THRESHOLD - afterDiscount),
-                  })}
-                </p>
-              )}
             </div>
 
             <div className="flex items-baseline justify-between border-t border-brand-surface-border pt-4">

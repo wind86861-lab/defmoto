@@ -360,7 +360,8 @@
     "removeItem": "O'chirish",
     "emptyTitle": "Savatcha bo'sh",
     "emptyDesc": "Tovarlarni qo'shing va sevimli mototsikllaringizni topish boshlansin",
-    "emptyCta": "Katalogga o'tish"
+    "emptyCta": "Katalogga o'tish",
+    "deliveryAtCheckout": "Checkoutda hisoblanadi"
   },
   "checkout": {
     "stepContact": "Kontakt",

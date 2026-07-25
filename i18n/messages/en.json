@@ -360,7 +360,8 @@
     "removeItem": "Remove",
     "emptyTitle": "Your cart is empty",
     "emptyDesc": "Add products and start finding your favorite motorcycle",
-    "emptyCta": "Go to catalog"
+    "emptyCta": "Go to catalog",
+    "deliveryAtCheckout": "Calculated at checkout"
   },
   "checkout": {
     "stepContact": "Contact",
