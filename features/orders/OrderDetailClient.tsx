@@ -265,7 +265,7 @@ export function OrderDetailClient({ id }: { id: string }) {
             size="lg"
             fullWidth
             leftIcon={<Send className="h-4 w-4" />}
-            onClick={() => window.open('https://t.me/DeftMotoBot', '_blank')}
+            onClick={() => window.open('https://t.me/deftmotobot', '_blank')}
           >
             {t('telegramBotButton')}
           </Button>

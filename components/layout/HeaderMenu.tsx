@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { useHaptic } from '@/hooks/useHaptic';
 
-const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'ajndspuntnjqpiuuerbot';
+const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'deftmotobot';
 const REGISTER_LINK = `https://t.me/${BOT_USERNAME}?start=register`;
 
 /**

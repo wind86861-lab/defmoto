@@ -20,7 +20,7 @@ import { useOrdersStore } from '@/lib/stores/orders';
 import { useWishlistStore } from '@/lib/stores/wishlist';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 
-const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'ajndspuntnjqpiuuerbot';
+const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'deftmotobot';
 const REGISTER_LINK = `https://t.me/${BOT_USERNAME}?start=register`;
 
 export function ProfileClient() {
@@ -134,7 +134,7 @@ export function ProfileClient() {
           external
         />
         <MenuLink
-          href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'ajndspuntnjqpiuuerbot'}`}
+          href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'deftmotobot'}`}
           icon={Send}
           label={t('telegramBotLabel')}
           external
