@@ -18,6 +18,8 @@ import { useTelegram } from '@/components/providers/TelegramProvider';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrdersStore } from '@/lib/stores/orders';
 import { useWishlistStore } from '@/lib/stores/wishlist';
+import { useSiteSettings, DEFAULT_CONTACT } from '@/lib/stores/siteSettings';
+import { useMounted } from '@/hooks/useMounted';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 
 const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'deftmotobot';
@@ -30,6 +32,11 @@ export function ProfileClient() {
   const { user: account, logout } = useAuth();
   const orderCount = useOrdersStore((s) => s.orders.length);
   const wishlistCount = useWishlistStore((s) => s.ids.length);
+  const mounted = useMounted();
+  // Same source as the header/navbar phone: the admin-set contact number, with
+  // the shared default as fallback — so the number is identical everywhere.
+  const storedPhone = useSiteSettings((s) => s.contact?.phone);
+  const phone = (mounted && storedPhone?.trim()) || DEFAULT_CONTACT.phone || '';
 
   return (
     <div className="mx-auto max-w-2xl px-4 pb-20 pt-6 sm:px-6 sm:py-10">
@@ -122,9 +129,9 @@ export function ProfileClient() {
       <section className="mt-6 space-y-1.5">
         <SectionTitle>{t('helpSectionTitle')}</SectionTitle>
         <MenuLink
-          href="tel:+998998107090"
+          href={`tel:${phone.replace(/[^\d+]/g, '')}`}
           icon={Phone}
-          label={t('contactPhone')}
+          label={phone}
           external
         />
         <MenuLink

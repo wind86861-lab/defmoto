@@ -16,7 +16,7 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
-import { listOrders, getOrder, getUserByTelegramId } from '@/lib/db';
+import { listOrders, getOrder, getUserByTelegramId, getContent } from '@/lib/db';
 import { tgApi, tgDownload } from './tgFetch';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
@@ -718,7 +718,26 @@ export function customerKeyboard() {
 
 /* --------------------------- customer bottom menu ------------------------- */
 
-const CONTACT_PHONE = '+998 (99) 810-70-90';
+const DEFAULT_CONTACT_PHONE = '+998 99 810-70-90';
+
+/**
+ * The admin-set contact phone (same value the website navbar/footer shows), read
+ * from the persisted site-settings blob so the bot never drifts from the site.
+ * Falls back to the shared default when unset.
+ */
+function contactPhone(): string {
+  try {
+    const blob = getContent<{ state?: { contact?: { phone?: string } } } | null>(
+      'site-settings',
+      null,
+    );
+    const phone = blob?.state?.contact?.phone?.trim();
+    if (phone) return phone;
+  } catch {
+    /* fall through to default */
+  }
+  return DEFAULT_CONTACT_PHONE;
+}
 export const MENU = {
   catalog: '🛍 Katalog',
   contact: '📞 Aloqa',
@@ -858,7 +877,7 @@ export async function handleCustomerMenu(chatId: number, text: string): Promise<
       await tg('sendMessage', {
         chat_id: chatId,
         text:
-          `📞 Telefon: ${CONTACT_PHONE}\n` +
+          `📞 Telefon: ${contactPhone()}\n` +
           '🕒 Har kuni 9:00–21:00\n\n' +
           'Savolingiz boʻlsa shu yerga yozing — operatorimiz javob beradi.',
       });
