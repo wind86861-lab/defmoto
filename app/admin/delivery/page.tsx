@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Truck, Check, AlertTriangle, Building2, Bike, Calculator, Package } from 'lucide-react';
+import { Truck, Check, AlertTriangle, Calculator, Package } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Input } from '@/components/ui/Input';
 import { formatPrice, formatDateTime } from '@/lib/format';
@@ -352,14 +352,13 @@ export default function AdminDeliveryPage() {
   const selectCls =
     'w-full rounded-xl border-2 border-brand-surface-border bg-brand-surface px-3 py-3 text-sm font-semibold text-white outline-none focus:border-brand-yellow/60 disabled:opacity-40';
 
-  const dispatchOptions = useMemo(
-    () =>
-      [
-        { key: 'self' as const, icon: Building2, title: "O'zim filialga eltaman", desc: 'Arzonroq (branch → branch)' },
-        { key: 'courier' as const, icon: Bike, title: 'BTS kuryeri oladi', desc: "Do'kondan olib ketadi (courier → branch)" },
-      ],
-    [],
-  );
+  // Only one dispatch mode is offered now (shop drops parcels at a BTS branch —
+  // branch → branch, the cheaper route). Clean up any old "courier" setting so
+  // pricing stays on the branch→branch cells everywhere.
+  useEffect(() => {
+    if (bts?.dispatch === 'courier') patch({ dispatch: 'self' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bts?.dispatch]);
 
   if (!mounted) return null;
 
@@ -627,42 +626,6 @@ export default function AdminDeliveryPage() {
         </div>
       </section>
 
-      {/* Dispatch mode */}
-      <section className="space-y-3 rounded-2xl border border-brand-surface-border bg-brand-surface p-4">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-white/45">BTS'ga qanday topshiriladi</h2>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {dispatchOptions.map((o) => {
-            const active = (bts?.dispatch || 'self') === o.key;
-            const Icon = o.icon;
-            return (
-              <button
-                key={o.key}
-                type="button"
-                onClick={() => patch({ dispatch: o.key })}
-                className={cn(
-                  'flex items-start gap-3 rounded-xl border-2 p-3 text-left transition-all',
-                  active
-                    ? 'border-brand-yellow bg-brand-yellow/8 shadow-glow-sm'
-                    : 'border-brand-surface-border hover:border-brand-yellow/40',
-                )}
-              >
-                <div
-                  className={cn(
-                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-                    active ? 'bg-gradient-yellow text-brand-dark' : 'bg-brand-surface-elevated text-white/70',
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-bold">{o.title}</p>
-                  <p className="mt-0.5 text-[11px] text-white/55">{o.desc}</p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </section>
         </>
       )}
     </div>
