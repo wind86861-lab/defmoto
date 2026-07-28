@@ -27,7 +27,6 @@ export const mockBlogPosts: BlogPost[] = [
       "2026-yilning kutilayotgan sport-bayki Yamaha R6 endi DEFT MOTO'da. Birinchi sinov, xususiyatlar va narxlar.",
     body: '',
     cover: u('1609630875171-b1321377ee65'),
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
     category: 'reviews',
     author: 'Sardor Karimov',
     publishedAt: '2026-05-20',

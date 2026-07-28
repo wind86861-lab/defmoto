@@ -17,7 +17,6 @@ export const mockBranches: Branch[] = [
     lng: 69.2884,
     image:
       'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=1200&q=85',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
     isHeadOffice: true,
   },
   {
@@ -36,7 +35,6 @@ export const mockBranches: Branch[] = [
     lng: 69.2099,
     image:
       'https://images.unsplash.com/photo-1547549082-6bc09f2049ae?w=1200&q=85',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
   },
   {
     id: 'b3',
@@ -54,7 +52,6 @@ export const mockBranches: Branch[] = [
     lng: 69.3344,
     image:
       'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=1200&q=85',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
   },
   {
     id: 'b4',
@@ -71,7 +68,6 @@ export const mockBranches: Branch[] = [
     lng: 66.9597,
     image:
       'https://images.unsplash.com/photo-1622185135505-2d795003994a?w=1200&q=85',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
   },
   {
     id: 'b5',
@@ -88,6 +84,5 @@ export const mockBranches: Branch[] = [
     lng: 71.7864,
     image:
       'https://images.unsplash.com/photo-1558981852-426c6c22a060?w=1200&q=85',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
   },
 ];

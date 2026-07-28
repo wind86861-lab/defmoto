@@ -14,7 +14,6 @@ export const mockServiceCenters: ServiceCenter[] = [
     workingHours: 'Du-Sh: 09:00 — 20:00',
     image:
       'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=1200&q=85',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
     services: [
       {
         id: 'sv1',
@@ -59,7 +58,6 @@ export const mockServiceCenters: ServiceCenter[] = [
     workingHours: 'Du-Sh: 09:00 — 20:00',
     image:
       'https://images.unsplash.com/photo-1547549082-6bc09f2049ae?w=1200&q=85',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
     services: [
       {
         id: 'sv5',
@@ -96,7 +94,6 @@ export const mockServiceCenters: ServiceCenter[] = [
     workingHours: 'Du-Sh: 09:00 — 19:00',
     image:
       'https://images.unsplash.com/photo-1622185135505-2d795003994a?w=1200&q=85',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
     services: [
       {
         id: 'sv8',

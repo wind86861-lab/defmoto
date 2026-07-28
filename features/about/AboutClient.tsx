@@ -11,7 +11,6 @@ import { useMounted } from '@/hooks/useMounted';
 
 const ABOUT_PHOTO =
   'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=900&q=85';
-const ABOUT_VIDEO = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
 
 export function AboutClient() {
   const t = useTranslations('about');
@@ -21,7 +20,8 @@ export function AboutClient() {
 
   // Admin-editable content with i18n fallback (only after hydration).
   const a = mounted ? about : {};
-  const videoUrl = a.videoUrl?.trim() || ABOUT_VIDEO;
+  // Only show the video when the admin has actually entered a link.
+  const videoUrl = a.videoUrl?.trim() || '';
   const photo = a.photo?.trim() || ABOUT_PHOTO;
   const heading = trText(a.title, a.tr, 'title', locale).trim() || t('aboutHeading');
   const introText = trText(a.intro, a.tr, 'intro', locale);
