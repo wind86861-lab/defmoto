@@ -4,7 +4,7 @@
  * account users are skipped (they see the status in their order history).
  */
 import { getOrder } from '@/lib/db';
-import { sendBotMessage, notifyOrdersGroup } from './chatRelay';
+import { sendBotMessage, notifyOrdersGroup, sendReviewRequest } from './chatRelay';
 
 const STATUS_LABEL: Record<string, string> = {
   received: 'Qabul qilindi',
@@ -36,4 +36,10 @@ export async function notifyOrderStatus(orderId: string, status: string): Promis
     `📦 *Buyurtma ${o.number}*\nHolat: *${label}*` +
       (o.bts?.tracking ? `\n[Kuzatish](${o.bts.tracking})` : ''),
   );
+
+  // On delivery, follow up with a rating/review request (Mini App buttons per
+  // product) so reviews are built from real, delivered purchases.
+  if (status === 'delivered') {
+    void sendReviewRequest(uid, o.id);
+  }
 }

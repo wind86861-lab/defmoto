@@ -364,11 +364,27 @@ export function saveReview(input: {
 }
 
 /** Has this Telegram user purchased this product (in any of their orders)? */
+/**
+ * All ids that identify the same person: their account id and its linked
+ * Telegram id (in either direction). Orders may be stored under either identity
+ * depending on how the customer checked out, so purchase checks must consider
+ * all of them.
+ */
+export function linkedUserIds(userId: string): string[] {
+  load();
+  const ids = new Set<string>([String(userId)]);
+  const asAccount = store.users.find((u) => u.id === String(userId));
+  if (asAccount?.telegramId) ids.add(String(asAccount.telegramId));
+  const asTg = store.users.find((u) => u.telegramId === String(userId));
+  if (asTg) ids.add(asTg.id);
+  return Array.from(ids);
+}
+
 export function userPurchasedProduct(userId: string, productId: string): boolean {
   load();
-  const uid = String(userId);
+  const ids = new Set(linkedUserIds(userId));
   return store.orders.some((o) => {
-    if (String(o.userId ?? '') !== uid) return false;
+    if (!ids.has(String(o.userId ?? ''))) return false;
     const items = (o.payload as { items?: { productId?: string }[] } | null)?.items;
     return Array.isArray(items) && items.some((it) => String(it?.productId) === productId);
   });

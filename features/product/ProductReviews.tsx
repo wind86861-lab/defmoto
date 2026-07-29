@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Star, MessageSquarePlus, Lock, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -16,6 +17,14 @@ export function ProductReviews({ reviews }: { reviews: ReviewsHook }) {
   const { data, submit, submitting, isInTelegram, userId } = reviews;
   const { summary, reviews: list, canReview, alreadyReviewed, purchased, myReview } = data;
 
+  // The delivery bot links here with ?review=1 — scroll to the section and
+  // pre-open the form so leaving a review is one tap from Telegram.
+  const wantReview = useSearchParams().get('review') === '1';
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (wantReview) rootRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [wantReview]);
+
   const total = summary.count || 0;
   const distribution = [5, 4, 3, 2, 1].map((star) => {
     const c = summary.distribution[star - 1] ?? 0;
@@ -23,7 +32,7 @@ export function ProductReviews({ reviews }: { reviews: ReviewsHook }) {
   });
 
   return (
-    <div className="space-y-6">
+    <div ref={rootRef} className="space-y-6 scroll-mt-24">
       {/* Summary */}
       <div className="grid grid-cols-1 gap-5 rounded-2xl border border-brand-surface-border bg-brand-surface p-5 sm:grid-cols-[200px_1fr]">
         <div className="flex flex-col items-center justify-center text-center sm:items-start sm:text-left">
@@ -73,6 +82,7 @@ export function ProductReviews({ reviews }: { reviews: ReviewsHook }) {
         initial={myReview}
         submitting={submitting}
         onSubmit={submit}
+        autoOpen={wantReview}
       />
 
       {/* List */}
@@ -130,6 +140,7 @@ function ReviewForm({
   initial,
   submitting,
   onSubmit,
+  autoOpen,
 }: {
   canReview: boolean;
   purchased: boolean;
@@ -138,11 +149,12 @@ function ReviewForm({
   initial: { rating: number; text: string } | null;
   submitting: boolean;
   onSubmit: (rating: number, text: string) => Promise<{ ok: boolean; error?: string }>;
+  autoOpen?: boolean;
 }) {
   const t = useTranslations('product');
   const toast = useToast();
   const { notify } = useHaptic();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(Boolean(autoOpen));
   const [rating, setRating] = useState(initial?.rating ?? 0);
   const [hover, setHover] = useState(0);
   const [text, setText] = useState(initial?.text ?? '');

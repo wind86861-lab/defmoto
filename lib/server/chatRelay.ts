@@ -926,6 +926,58 @@ export async function getBotUsername(): Promise<string> {
   return envName;
 }
 
+/**
+ * After an order is delivered, ask the customer on Telegram to rate + review
+ * each product, with a Mini App button that opens the product's review form.
+ * Product slugs are resolved from the admin content store. No-op when the site
+ * isn't HTTPS (Mini App buttons require it) or the order has no items.
+ */
+export async function sendReviewRequest(
+  chatId: number | string,
+  orderId: string,
+): Promise<boolean> {
+  if (!BOT_TOKEN) return false;
+  const rec = getOrder(orderId);
+  const items = (rec?.payload as { items?: Array<{ productId?: string; name?: string }> } | null)
+    ?.items;
+  if (!rec || !items?.length) return false;
+
+  const blob = getContent<{ state?: { products?: Array<{ id: string; slug: string; name: string }> } } | null>(
+    'content-store',
+    null,
+  );
+  const products = blob?.state?.products || [];
+
+  const seen = new Set<string>();
+  const rows: InlineBtn[][] = [];
+  for (const it of items) {
+    const pid = String(it.productId || '');
+    if (!pid || seen.has(pid)) continue;
+    seen.add(pid);
+    const p = products.find((x) => x.id === pid);
+    if (!p?.slug) continue;
+    const name = (p.name || it.name || 'Mahsulot').slice(0, 30);
+    const btn = openAppButton(`⭐ ${name}`, `/product/${p.slug}?review=1`);
+    if (btn) rows.push([btn]);
+    if (rows.length >= 6) break;
+  }
+  if (!rows.length) return false;
+
+  try {
+    const r = await tg('sendMessage', {
+      chat_id: chatId,
+      text:
+        `✅ *${rec.number}* buyurtmangiz yetkazildi!\n\n` +
+        'Mahsulotlarni baholang va sharh qoldiring — bu boshqa mijozlarga yordam beradi ⭐',
+      parse_mode: 'Markdown',
+      reply_markup: { inline_keyboard: rows },
+    });
+    return Boolean(r?.ok);
+  } catch {
+    return false;
+  }
+}
+
 /** Send a plain message to a specific chat (e.g. a password-reset code). */
 export async function sendBotMessage(chatId: number | string, text: string): Promise<boolean> {
   if (!BOT_TOKEN) return false;
