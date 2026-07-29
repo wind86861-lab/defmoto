@@ -948,8 +948,10 @@ export function clearPendingReview(chatId: number): void {
   pendingReviewText.delete(chatId);
 }
 
+// Number + one star, so 4★ and 5★ are unambiguous — Telegram truncates long
+// emoji runs, which made "⭐⭐⭐⭐" and "⭐⭐⭐⭐⭐" look identical ("⭐⭐⭐…").
 const starRow = (productId: string): CbBtn[] =>
-  [1, 2, 3, 4, 5].map((n) => ({ text: '⭐'.repeat(n), callback_data: `rate:${productId}:${n}` }));
+  [1, 2, 3, 4, 5].map((n) => ({ text: `${n} ⭐`, callback_data: `rate:${productId}:${n}` }));
 
 /** Resolve productId → {slug,name} from the admin content store. */
 function catalogProduct(productId: string): { slug?: string; name?: string } | null {

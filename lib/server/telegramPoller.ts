@@ -154,7 +154,7 @@ interface TgUpdate {
   update_id: number;
   message?: {
     message_id?: number;
-    chat?: { id: number };
+    chat?: { id: number; type?: string };
     from?: { id: number; first_name?: string; username?: string };
     text?: string;
     caption?: string;
@@ -219,6 +219,11 @@ async function handleUpdate(update: TgUpdate) {
     await tg('sendMessage', { chat_id: chatId, text: `chat_id: ${chatId}` });
     return;
   }
+
+  // In a group/supergroup the bot ONLY posts (new orders / leads) — it must
+  // never reply to members' messages. /chatid above is the sole exception.
+  const chatType = msg.chat?.type;
+  if (chatType && chatType !== 'private') return;
 
   const startPasswordChange = async () => {
     const acc = account();
