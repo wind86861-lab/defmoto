@@ -16,7 +16,14 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
-import { listOrders, getOrder, getUserByTelegramId, getContent } from '@/lib/db';
+import {
+  listOrders,
+  getOrder,
+  getUserByTelegramId,
+  getContent,
+  saveReview,
+  userPurchasedProduct,
+} from '@/lib/db';
 import { tgApi, tgDownload } from './tgFetch';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
@@ -926,11 +933,37 @@ export async function getBotUsername(): Promise<string> {
   return envName;
 }
 
+/* ------------------------- in-bot product ratings ------------------------ */
+
+// Chat → the product a customer is mid-rating, so their next text message is
+// captured as the review comment (name kept for the saved review's author).
+const pendingReviewText = new Map<
+  number,
+  { productId: string; productName: string; userName: string; rating: number }
+>();
+export function hasPendingReview(chatId: number): boolean {
+  return pendingReviewText.has(chatId);
+}
+export function clearPendingReview(chatId: number): void {
+  pendingReviewText.delete(chatId);
+}
+
+const starRow = (productId: string): CbBtn[] =>
+  [1, 2, 3, 4, 5].map((n) => ({ text: '⭐'.repeat(n), callback_data: `rate:${productId}:${n}` }));
+
+/** Resolve productId → {slug,name} from the admin content store. */
+function catalogProduct(productId: string): { slug?: string; name?: string } | null {
+  const blob = getContent<{ state?: { products?: Array<{ id: string; slug: string; name: string }> } } | null>(
+    'content-store',
+    null,
+  );
+  return blob?.state?.products?.find((x) => x.id === productId) ?? null;
+}
+
 /**
- * After an order is delivered, ask the customer on Telegram to rate + review
- * each product, with a Mini App button that opens the product's review form.
- * Product slugs are resolved from the admin content store. No-op when the site
- * isn't HTTPS (Mini App buttons require it) or the order has no items.
+ * After an order is delivered, ask the customer on Telegram to rate each
+ * product with tap-to-rate star buttons — the whole flow finishes inside the
+ * bot (tap a star, then optionally send a comment). No Mini App needed.
  */
 export async function sendReviewRequest(
   chatId: number | string,
@@ -942,40 +975,108 @@ export async function sendReviewRequest(
     ?.items;
   if (!rec || !items?.length) return false;
 
-  const blob = getContent<{ state?: { products?: Array<{ id: string; slug: string; name: string }> } } | null>(
-    'content-store',
-    null,
-  );
-  const products = blob?.state?.products || [];
-
   const seen = new Set<string>();
-  const rows: InlineBtn[][] = [];
+  const products: { id: string; name: string }[] = [];
   for (const it of items) {
     const pid = String(it.productId || '');
     if (!pid || seen.has(pid)) continue;
     seen.add(pid);
-    const p = products.find((x) => x.id === pid);
-    if (!p?.slug) continue;
-    const name = (p.name || it.name || 'Mahsulot').slice(0, 30);
-    const btn = openAppButton(`⭐ ${name}`, `/product/${p.slug}?review=1`);
-    if (btn) rows.push([btn]);
-    if (rows.length >= 6) break;
+    const p = catalogProduct(pid);
+    products.push({ id: pid, name: (p?.name || it.name || 'Mahsulot').slice(0, 40) });
+    if (products.length >= 8) break;
   }
-  if (!rows.length) return false;
+  if (!products.length) return false;
 
   try {
-    const r = await tg('sendMessage', {
+    await tg('sendMessage', {
       chat_id: chatId,
-      text:
-        `✅ *${rec.number}* buyurtmangiz yetkazildi!\n\n` +
-        'Mahsulotlarni baholang va sharh qoldiring — bu boshqa mijozlarga yordam beradi ⭐',
+      text: `✅ *${rec.number}* buyurtmangiz yetkazildi!\n\nMahsulotlarni baholang — bu boshqa mijozlarga yordam beradi 🙌`,
       parse_mode: 'Markdown',
-      reply_markup: { inline_keyboard: rows },
     });
-    return Boolean(r?.ok);
+    for (const p of products) {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: `⭐ *${p.name}* — nechta yulduz?`,
+        parse_mode: 'Markdown',
+        reply_markup: { inline_keyboard: [starRow(p.id)] },
+      });
+    }
+    return true;
   } catch {
     return false;
   }
+}
+
+/**
+ * Handle a star tap (`rate:<productId>:<n>`). Saves the rating immediately (so a
+ * bare tap already counts), then invites an optional written comment.
+ */
+export async function handleRatingCallback(cb: {
+  id: string;
+  data?: string;
+  from?: { id: number };
+  message?: { message_id?: number; chat?: { id: number } };
+}): Promise<void> {
+  const data = cb.data || '';
+  const m = /^rate:(.+):([1-5])$/.exec(data);
+  const chatId = cb.message?.chat?.id ?? cb.from?.id;
+  const msgId = cb.message?.message_id;
+  if (!m || chatId == null) {
+    await tg('answerCallbackQuery', { callback_query_id: cb.id });
+    return;
+  }
+  const productId = m[1];
+  const rating = Number(m[2]);
+
+  // Only a verified buyer of this product may rate it.
+  if (!userPurchasedProduct(String(chatId), productId)) {
+    await tg('answerCallbackQuery', {
+      callback_query_id: cb.id,
+      text: 'Bu mahsulotni siz sotib olmagansiz.',
+      show_alert: true,
+    });
+    return;
+  }
+
+  const acc = getUserByTelegramId(chatId);
+  const userName = (acc?.name || 'Mijoz').slice(0, 60);
+  const prod = catalogProduct(productId);
+  const productName = (prod?.name || 'Mahsulot').slice(0, 40);
+
+  saveReview({ productId, userId: String(chatId), userName, rating, text: '' });
+  pendingReviewText.set(chatId, { productId, productName, userName, rating });
+
+  // Lock in the chosen star count on the original message.
+  if (msgId != null) {
+    await tg('editMessageText', {
+      chat_id: chatId,
+      message_id: msgId,
+      text: `⭐ *${productName}* — bahoyingiz: ${'⭐'.repeat(rating)}`,
+      parse_mode: 'Markdown',
+    });
+  }
+  await tg('answerCallbackQuery', { callback_query_id: cb.id, text: `${rating}⭐ qabul qilindi!` });
+  await tg('sendMessage', {
+    chat_id: chatId,
+    text: 'Rahmat! 🙌 Izoh qoldirmoqchimisiz? Shu yerga yozib yuboring yoki /skip bilan tashlab keting.',
+  });
+}
+
+/** The customer's next message after a star tap → saved as the review comment. */
+export function ingestReviewComment(chatId: number, text: string): boolean {
+  const pending = pendingReviewText.get(chatId);
+  if (!pending) return false;
+  pendingReviewText.delete(chatId);
+  // Re-save with the SAME rating the customer already picked (saveReview upserts
+  // by product+user), now with their comment attached.
+  saveReview({
+    productId: pending.productId,
+    userId: String(chatId),
+    userName: pending.userName,
+    rating: pending.rating,
+    text: text.slice(0, 1000).trim(),
+  });
+  return true;
 }
 
 /** Send a plain message to a specific chat (e.g. a password-reset code). */

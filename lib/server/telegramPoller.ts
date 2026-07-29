@@ -23,6 +23,10 @@ import {
   forwardBotCustomerMessage,
   ensureRelayLoaded,
   takePendingReply,
+  handleRatingCallback,
+  hasPendingReview,
+  clearPendingReview,
+  ingestReviewComment,
   operatorReplyToSession,
   operatorReplyImageToSession,
   ingestOperatorReplyPhoto,
@@ -60,6 +64,11 @@ const operatorChat = new Set<number>(); // customers connected to the operator
 const pwFails = new Map<number, { n: number; until: number }>(); // brute-force guard
 
 const PW_MIN = 6;
+
+const MENU_TEXTS: string[] = Object.values(MENU);
+function isMenuText(text: string): boolean {
+  return MENU_TEXTS.includes(text);
+}
 
 function clearState(chatId: number) {
   pwFlows.delete(chatId);
@@ -184,6 +193,11 @@ async function handleUpdate(update: TgUpdate) {
       await tg('answerCallbackQuery', { callback_query_id: cb.id, text: 'Bekor qilindi' });
       return;
     }
+    // Product star rating tapped in the delivery review request.
+    if (data.startsWith('rate:')) {
+      await handleRatingCallback(cb);
+      return;
+    }
     await handleCallback(cb);
     return;
   }
@@ -275,10 +289,17 @@ async function handleUpdate(update: TgUpdate) {
   }
 
   /* ------------------------------ commands ------------------------------- */
+  // /skip — finish rating without a written comment (the star is already saved).
+  if (lower === '/skip' && hasPendingReview(chatId)) {
+    clearPendingReview(chatId);
+    await tg('sendMessage', { chat_id: chatId, text: '✅ Bahoyingiz saqlandi. Rahmat! 🙌', reply_markup: customerMenuKeyboard() });
+    return;
+  }
   // /cancel — leave any in-progress flow.
   if (lower === '/cancel') {
     const had = pwFlows.has(chatId) || pendingReset.has(chatId) || pendingOperatorVerify.has(chatId) || operatorChat.has(chatId);
     clearState(chatId);
+    clearPendingReview(chatId);
     await tg('sendMessage', { chat_id: chatId, text: had ? '✅ Bekor qilindi.' : 'Bosh menyu 👇', reply_markup: customerMenuKeyboard() });
     return;
   }
@@ -542,6 +563,19 @@ async function handleUpdate(update: TgUpdate) {
       await tg('sendMessage', { chat_id: chatId, text: body, parse_mode: 'Markdown', reply_markup: isOperatorChat(chatId) ? startKeyboard() : customerMenuKeyboard() });
       return;
     }
+    return;
+  }
+
+  /* ---------------- delivery review comment (after a star tap) ------------ */
+  // The customer just rated a product and is sending the optional comment.
+  // Menu-button taps are excluded so they can still open the menu instead.
+  if (hasPendingReview(chatId) && text && !text.startsWith('/') && !isMenuText(text)) {
+    ingestReviewComment(chatId, text);
+    await tg('sendMessage', {
+      chat_id: chatId,
+      text: '✅ Sharhingiz saqlandi. Rahmat! 🙌',
+      reply_markup: customerMenuKeyboard(),
+    });
     return;
   }
 
