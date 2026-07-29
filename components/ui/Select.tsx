@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { useClickOutside } from '@/hooks/useClickOutside';
 
 export interface SelectOption {
   value: string;
@@ -80,7 +79,29 @@ export function Select({
 
   const toggle = () => (open ? setOpen(false) : openMenu());
 
-  useClickOutside(wrapRef, () => setOpen(false), open);
+  // The listbox is portaled to <body>, so it's OUTSIDE wrapRef. A plain
+  // click-outside would treat tapping an option as "outside" and close the menu
+  // on pointerdown BEFORE the option's click lands — making selection
+  // impossible (this broke the BTS region/city pickers). So we close only when
+  // the pointer is outside BOTH the trigger and the portaled list.
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (wrapRef.current?.contains(target)) return;
+      if (listRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
 
   // Reposition while open (scroll / resize).
   useEffect(() => {
