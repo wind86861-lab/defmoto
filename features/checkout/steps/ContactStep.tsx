@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { User, Phone, Send } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/Button';
@@ -14,10 +14,9 @@ export function ContactStep({ onNext }: { onNext: () => void }) {
   const t = useTranslations('checkout');
   const { contact, setContact } = useCheckoutState();
   const { user, loading, refresh } = useAuth();
-  const { user: tgUser, webApp, isInTelegram } = useTelegram();
+  const { user: tgUser, webApp } = useTelegram();
   const [sharing, setSharing] = useState(false);
   const [edited, setEdited] = useState(false);
-  const autoTriedRef = useRef(false);
 
   const tgName = tgUser ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') : '';
 
@@ -76,19 +75,6 @@ export function ContactStep({ onNext }: { onNext: () => void }) {
       void poll();
     });
   };
-
-  // Inside the Telegram mini app, a returning user's phone is auto-filled from
-  // their account; a first-timer has none, so request their contact once
-  // automatically — they just confirm the Telegram dialog instead of hunting
-  // for a button. Fires once, only after auth resolves and only when no phone
-  // is known. Declining is respected (autoTried stays set).
-  useEffect(() => {
-    if (autoTriedRef.current || loading || phone) return;
-    if (!isInTelegram || !webApp?.requestContact) return;
-    autoTriedRef.current = true;
-    shareViaTelegram();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, phone, isInTelegram]);
 
   const handleContinue = () => {
     // Remember the details on the Telegram account so next time they're
