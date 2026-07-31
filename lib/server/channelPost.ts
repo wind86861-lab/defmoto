@@ -155,36 +155,43 @@ export async function postProductToChannel(productId: string): Promise<PostResul
   const ig = igHref(contact.instagram);
   if (ig) links.push({ label: '📸 Instagram', url: ig });
 
+  // Links as inline buttons (2 per row).
+  const buttonRows: UrlBtn[][] = [];
+  for (let i = 0; i < links.length; i += 2) {
+    buttonRows.push(links.slice(i, i + 2).map((l) => ({ text: l.label, url: l.url })));
+  }
+  const keyboard = buttonRows.length ? { inline_keyboard: buttonRows } : undefined;
+
   try {
-    // Single image → one photo post with inline buttons (nicest).
+    // Single image → one photo post with the caption + inline buttons.
     if (images.length === 1) {
-      const rows: UrlBtn[][] = [];
-      for (let i = 0; i < links.length; i += 2) {
-        rows.push(links.slice(i, i + 2).map((l) => ({ text: l.label, url: l.url })));
-      }
       const r = await tgApi<{ ok?: boolean }>('sendPhoto', {
         chat_id: channel,
         photo: images[0],
         caption,
         parse_mode: 'HTML',
-        reply_markup: rows.length ? { inline_keyboard: rows } : undefined,
+        reply_markup: keyboard,
       });
       return r?.ok ? { ok: true } : { ok: false, error: 'send-failed' };
     }
 
-    // Multiple images → ONE grouped album post. Telegram albums can't hold an
-    // inline keyboard, so the caption (on the first photo) carries the links as
-    // tappable HTML links — keeping it a single post instead of album + text.
-    let albumCaption = caption;
-    if (links.length) {
-      const linkText = links.map((l) => `<a href="${l.url}">${esc(l.label)}</a>`).join('\n');
-      albumCaption = `${caption}\n\n🔗 <b>Havolalar:</b>\n${linkText}`.slice(0, 1024);
-    }
+    // Multiple images → the album carries the product text (caption on the first
+    // photo, so it reads as one post), then a compact follow-up holds the link
+    // BUTTONS — Telegram albums can't carry an inline keyboard themselves.
     const media = images.map((url, i) =>
-      i === 0 ? { type: 'photo', media: url, caption: albumCaption, parse_mode: 'HTML' } : { type: 'photo', media: url },
+      i === 0 ? { type: 'photo', media: url, caption, parse_mode: 'HTML' } : { type: 'photo', media: url },
     );
     const album = await tgApi<{ ok?: boolean }>('sendMediaGroup', { chat_id: channel, media });
-    return album?.ok ? { ok: true } : { ok: false, error: 'send-failed' };
+    if (!album?.ok) return { ok: false, error: 'send-failed' };
+    if (keyboard) {
+      await tgApi<{ ok?: boolean }>('sendMessage', {
+        chat_id: channel,
+        text: '🔗 Havolalar:',
+        reply_markup: keyboard,
+        disable_web_page_preview: true,
+      });
+    }
+    return { ok: true };
   } catch {
     return { ok: false, error: 'send-failed' };
   }
