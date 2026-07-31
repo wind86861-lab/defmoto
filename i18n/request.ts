@@ -18,5 +18,16 @@ export default getRequestConfig(async () => {
   return {
     locale,
     messages: (await import(`./messages/${locale}.json`)).default,
+    // Safety net: a missing/unknown key must never crash a page render (an
+    // admin-created category slug that isn't in the i18n namespace used to throw
+    // MISSING_MESSAGE during SSR). Log in dev, render a readable fallback.
+    onError(error) {
+      if (process.env.NODE_ENV !== 'production') console.warn('[i18n]', error.message);
+    },
+    getMessageFallback({ key, namespace }) {
+      // Show the last path segment (e.g. the slug) rather than the full key.
+      const leaf = key.split('.').pop() || key;
+      return namespace ? leaf : key;
+    },
   };
 });

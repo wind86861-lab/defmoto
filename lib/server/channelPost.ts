@@ -184,45 +184,29 @@ export async function postProductToChannel(productId: string): Promise<PostResul
   }
   const keyboard = buttonRows.length ? { inline_keyboard: buttonRows } : undefined;
 
-  const fail = (r: { description?: string }): PostResult => {
+  const fail = (r: { description?: string; parameters?: { retry_after?: number } }): PostResult => {
     // Surface Telegram's reason so the admin knows what to fix (e.g.
-    // "CHAT_ADMIN_REQUIRED", "chat not found", "failed to get HTTP URL content").
+    // "CHAT_ADMIN_REQUIRED", "chat not found", "WEBPAGE_MEDIA_EMPTY").
     recentPosts.delete(dedupeKey); // allow an immediate retry after a failure
-    return { ok: false, error: 'send-failed', detail: r?.description };
+    const retry = r?.parameters?.retry_after;
+    const detail = retry ? `Juda tez — ${retry}s dan keyin urinib koʻring.` : r?.description;
+    return { ok: false, error: 'send-failed', detail };
   };
 
   try {
-    // Single image → one photo post with the caption + inline buttons.
-    if (images.length === 1) {
-      const r = await tgApi<{ ok?: boolean; description?: string }>(
-        'sendPhoto',
-        { chat_id: channel, photo: images[0], caption, parse_mode: 'HTML', reply_markup: keyboard },
-        { timeoutMs: MEDIA_TIMEOUT_MS },
-      );
-      return r?.ok ? { ok: true } : fail(r);
-    }
-
-    // Multiple images → the album carries the product text (caption on the first
-    // photo, so it reads as one post), then a compact follow-up holds the link
-    // BUTTONS — Telegram albums can't carry an inline keyboard themselves.
-    const media = images.map((url, i) =>
-      i === 0 ? { type: 'photo', media: url, caption, parse_mode: 'HTML' } : { type: 'photo', media: url },
-    );
-    const album = await tgApi<{ ok?: boolean; description?: string }>(
-      'sendMediaGroup',
-      { chat_id: channel, media },
+    // ONE post: the main image + caption + inline buttons.
+    //
+    // We deliberately don't send an album of every image: Telegram albums can't
+    // carry inline buttons (so the links became an orphaned follow-up message),
+    // count as 2 messages toward the channel rate limit, and a single bad image
+    // URL fails the whole group with WEBPAGE_MEDIA_EMPTY. The main photo is
+    // reliable and the "DEFT MOTO" button opens the full gallery on the site.
+    const r = await tgApi<{ ok?: boolean; description?: string; parameters?: { retry_after?: number } }>(
+      'sendPhoto',
+      { chat_id: channel, photo: images[0], caption, parse_mode: 'HTML', reply_markup: keyboard },
       { timeoutMs: MEDIA_TIMEOUT_MS },
     );
-    if (!album?.ok) return fail(album);
-    if (keyboard) {
-      await tgApi<{ ok?: boolean }>('sendMessage', {
-        chat_id: channel,
-        text: '🔗 Havolalar:',
-        reply_markup: keyboard,
-        disable_web_page_preview: true,
-      });
-    }
-    return { ok: true };
+    return r?.ok ? { ok: true } : fail(r);
   } catch (e) {
     recentPosts.delete(dedupeKey);
     return { ok: false, error: 'send-failed', detail: (e as Error)?.message };

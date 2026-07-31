@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { categoryName as resolveCategoryName } from '@/lib/categoryName';
 import type { Category } from '@/types/product';
 
 interface CategoryTileProps {
@@ -19,7 +20,10 @@ export function CategoryTile({
 }: CategoryTileProps) {
   const t = useTranslations('common');
   const tCategories = useTranslations('categories');
-  const categoryName = category.slug ? tCategories(category.slug) : category.name;
+  const locale = useLocale();
+  // Safe resolver: built-in slugs use i18n, admin slugs fall back to the stored
+  // name (a raw tCategories(slug) throws MISSING_MESSAGE for admin slugs).
+  const categoryName = resolveCategoryName(tCategories, category, locale);
 
   if (variant === 'circle') {
     return (

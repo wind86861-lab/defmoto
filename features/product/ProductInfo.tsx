@@ -9,6 +9,8 @@ import type { Product } from '@/types/product';
 import type { useProductReviews } from '@/hooks/useProductReviews';
 import { Truck, Package, RotateCcw, MapPin } from 'lucide-react';
 import { useSiteSettings } from '@/lib/stores/siteSettings';
+import { useContentStore } from '@/lib/stores/content';
+import { categoryName } from '@/lib/categoryName';
 import { productDescription } from '@/lib/productLocale';
 import { useMounted } from '@/hooks/useMounted';
 
@@ -27,6 +29,14 @@ export function ProductInfo({
   const summary = reviews.data.summary;
   const mounted = useMounted();
   const storedTerms = useSiteSettings((s) => s.deliveryTerms);
+  // Resolve the category display name through the safe helper — a raw
+  // tCategories(slug) throws MISSING_MESSAGE for admin-created slugs that aren't
+  // in the i18n namespace.
+  const categories = useContentStore((s) => s.categories);
+  const productCategory = categories.find((c) => c.slug === product.categorySlug);
+  const categoryLabel = productCategory
+    ? categoryName(tCategories, productCategory, locale)
+    : product.categorySlug || '—';
   // Localized defaults — used unless the admin has set custom delivery terms,
   // so the tab stays translated in all 3 languages.
   const i18nTerms: DeliveryTerm[] = [
@@ -54,7 +64,7 @@ export function ProductInfo({
         <dl className="grid gap-2 text-sm sm:grid-cols-2">
           {[
             [t('specBrand'), product.brand ?? '—'],
-            [t('specCategory'), tCategories(product.categorySlug)],
+            [t('specCategory'), categoryLabel],
             [t('specAvailability'), product.inStock ? t('inStockLabel') : t('outOfStockLabel')],
             [t('specRating'), summary.count ? `${summary.average.toFixed(1)} / 5` : '—'],
             [t('tabReviews'), String(summary.count)],
