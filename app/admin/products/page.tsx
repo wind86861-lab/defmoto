@@ -11,6 +11,7 @@ import {
   Package,
   X,
   Store,
+  Send,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Input } from '@/components/ui/Input';
@@ -130,6 +131,36 @@ export default function AdminProductsPage() {
 function ProductRow({ product, onEdit }: { product: Product; onEdit: () => void }) {
   const t = useTranslations('admin');
   const remove = useContentStore((s) => s.removeProduct);
+  const toast = useToast();
+  const [posting, setPosting] = useState(false);
+
+  const postToChannel = async () => {
+    setPosting(true);
+    try {
+      const res = await fetch('/api/admin/products/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: product.id }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok && j?.ok) {
+        toast.success('Kanalga joylandi', product.name);
+      } else {
+        const msg =
+          j?.error === 'no-channel'
+            ? "Kanal sozlanmagan — Sozlamalar → Post kanali'ni to'ldiring."
+            : j?.error === 'no-image'
+              ? 'Mahsulotда rasm yoʻq.'
+              : 'Yuborilmadi — bot kanalда admin ekanini tekshiring.';
+        toast.error('Xatolik', msg);
+      }
+    } catch {
+      toast.error('Xatolik', 'Tarmoq xatosi.');
+    } finally {
+      setPosting(false);
+    }
+  };
+
   return (
     <li className="flex items-center gap-3 rounded-2xl border border-brand-surface-border bg-brand-surface p-3">
       <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-brand-dark">
@@ -146,6 +177,16 @@ function ProductRow({ product, onEdit }: { product: Product; onEdit: () => void 
           {product.price ? `${product.price.toLocaleString('ru-RU')} so'm` : '—'}
           {product.brand ? ` · ${product.brand}` : ''}
         </p>
+      </button>
+      <button
+        type="button"
+        onClick={postToChannel}
+        disabled={posting}
+        title="Kanalga joylash"
+        className="inline-flex items-center gap-1.5 rounded-xl border border-brand-surface-border px-3 py-2 text-xs font-bold text-white/80 transition-colors hover:border-brand-yellow/40 hover:text-brand-yellow disabled:opacity-50"
+      >
+        <Send className="h-3.5 w-3.5" />
+        <span className="hidden sm:inline">{posting ? '…' : 'Kanalga'}</span>
       </button>
       <button
         type="button"

@@ -83,6 +83,9 @@ export interface SiteContact {
   whatsapp?: string;
   instagram?: string;
   viber?: string;
+  /** Telegram channel for product posts — @username or numeric -100… id.
+   *  The bot must be an admin of the channel. */
+  channelId?: string;
   /** RU/EN translations of this record's text fields. */
   tr?: TrMap;
 }

@@ -59,7 +59,7 @@ export default function AdminSettingsPage() {
 
   const field = (
     label: string,
-    key: 'tagline' | 'phone' | 'address' | 'workingHours' | 'telegram' | 'whatsapp' | 'instagram' | 'viber',
+    key: 'tagline' | 'phone' | 'address' | 'workingHours' | 'telegram' | 'whatsapp' | 'instagram' | 'viber' | 'channelId',
     placeholder: string,
     icon?: React.ReactNode,
   ) => (
@@ -133,6 +133,19 @@ export default function AdminSettingsPage() {
           {field('Instagram', 'instagram', '@deftmoto', undefined)}
           {field('Viber', 'viber', '998998107090', undefined)}
         </div>
+      </section>
+
+      {/* Telegram channel for product posts */}
+      <section className="space-y-3 rounded-2xl border border-brand-surface-border bg-brand-surface p-4">
+        <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white/45">
+          <Send className="h-4 w-4 text-brand-yellow" /> Post kanali
+        </h2>
+        <p className="text-[11px] text-white/40">
+          Mahsulotni post qilinadigan Telegram kanali (@username yoki -100… id). Botni shu kanalga{' '}
+          <b>admin</b> qilib qo'shing. Keyin “Mahsulotlar”da har bir mahsulotда “Kanalga joylash”
+          tugmasi paydo bo'ladi.
+        </p>
+        {field('Kanal', 'channelId', '@deftmotouz yoki -1001234567890', <Send className="h-4 w-4" />)}
       </section>
 
       {/* Delivery terms */}
