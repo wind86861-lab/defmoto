@@ -139,61 +139,52 @@ export async function postProductToChannel(productId: string): Promise<PostResul
 
   const caption = lines.join('\n').slice(0, 1024);
 
-  // ---- inline buttons (url only — channels don't allow web_app) ----
-  const rows: UrlBtn[][] = [];
-  if (APP_URL && product.slug) {
-    rows.push([{ text: '🛍 DEFT MOTO', url: `${APP_URL}/product/${product.slug}` }]);
+  // ---- links (one source of truth) ----
+  // Only the marketplaces THIS product is listed on — its competitor links.
+  const links: { label: string; url: string }[] = [];
+  if (APP_URL && product.slug) links.push({ label: '🛍 DEFT MOTO', url: `${APP_URL}/product/${product.slug}` });
+  for (const c of product.competitorPrices || []) {
+    if (!c.url) continue;
+    const mk = marketplaces.find((m) => m.id === c.source);
+    links.push({ label: `🛒 ${mk?.name || mk?.label || c.label || c.source || 'Market'}`, url: c.url });
   }
-  // Only the marketplaces THIS product is actually listed on — the product's
-  // competitor links (each with a URL). The button label uses the marketplace's
-  // configured name (matched by id) with the competitor label / source as
-  // fallback.
-  const mkBtns = (product.competitorPrices || [])
-    .filter((c) => c.url)
-    .map((c) => {
-      const mk = marketplaces.find((m) => m.id === c.source);
-      const name = mk?.name || mk?.label || c.label || c.source || 'Market';
-      return { text: `🛒 ${name}`, url: c.url as string };
-    });
-  for (let i = 0; i < mkBtns.length; i += 2) rows.push(mkBtns.slice(i, i + 2));
-
   const dm = tgHref(contact.telegram);
+  if (dm) links.push({ label: '💬 Telegramdan yozish', url: dm });
   const video = fullUrl(product.videoUrl) || (product.videoUrl?.startsWith('http') ? product.videoUrl : null);
-  const lastRow: UrlBtn[] = [];
-  if (dm) lastRow.push({ text: '💬 Telegramdan yozish', url: dm });
-  if (video) lastRow.push({ text: '▶️ Videoni koʻrish', url: video });
-  if (lastRow.length) rows.push(lastRow);
-
+  if (video) links.push({ label: '▶️ Videoni koʻrish', url: video });
   const ig = igHref(contact.instagram);
-  if (ig) rows.push([{ text: '📸 Instagram', url: ig }]);
-
-  const keyboard = rows.length ? { inline_keyboard: rows } : undefined;
+  if (ig) links.push({ label: '📸 Instagram', url: ig });
 
   try {
+    // Single image → one photo post with inline buttons (nicest).
     if (images.length === 1) {
+      const rows: UrlBtn[][] = [];
+      for (let i = 0; i < links.length; i += 2) {
+        rows.push(links.slice(i, i + 2).map((l) => ({ text: l.label, url: l.url })));
+      }
       const r = await tgApi<{ ok?: boolean }>('sendPhoto', {
         chat_id: channel,
         photo: images[0],
         caption,
         parse_mode: 'HTML',
-        reply_markup: keyboard,
+        reply_markup: rows.length ? { inline_keyboard: rows } : undefined,
       });
       return r?.ok ? { ok: true } : { ok: false, error: 'send-failed' };
     }
 
-    // Multiple images → send them as an album, then the caption + buttons in a
-    // follow-up message (Telegram albums can't carry an inline keyboard).
-    const media = images.map((url) => ({ type: 'photo', media: url }));
+    // Multiple images → ONE grouped album post. Telegram albums can't hold an
+    // inline keyboard, so the caption (on the first photo) carries the links as
+    // tappable HTML links — keeping it a single post instead of album + text.
+    let albumCaption = caption;
+    if (links.length) {
+      const linkText = links.map((l) => `<a href="${l.url}">${esc(l.label)}</a>`).join('\n');
+      albumCaption = `${caption}\n\n🔗 <b>Havolalar:</b>\n${linkText}`.slice(0, 1024);
+    }
+    const media = images.map((url, i) =>
+      i === 0 ? { type: 'photo', media: url, caption: albumCaption, parse_mode: 'HTML' } : { type: 'photo', media: url },
+    );
     const album = await tgApi<{ ok?: boolean }>('sendMediaGroup', { chat_id: channel, media });
-    if (!album?.ok) return { ok: false, error: 'send-failed' };
-    const msg = await tgApi<{ ok?: boolean }>('sendMessage', {
-      chat_id: channel,
-      text: caption,
-      parse_mode: 'HTML',
-      disable_web_page_preview: true,
-      reply_markup: keyboard,
-    });
-    return msg?.ok ? { ok: true } : { ok: false, error: 'send-failed' };
+    return album?.ok ? { ok: true } : { ok: false, error: 'send-failed' };
   } catch {
     return { ok: false, error: 'send-failed' };
   }
