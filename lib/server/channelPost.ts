@@ -93,6 +93,11 @@ export type PostResult =
   | { ok: true }
   | { ok: false; error: 'no-token' | 'no-channel' | 'not-found' | 'no-image' | 'send-failed' };
 
+// Guard against a double-click / double-submit posting the same product twice
+// in quick succession (which showed up as two identical posts in the channel).
+const recentPosts = new Map<string, number>();
+const DEDUPE_MS = 10_000;
+
 export async function postProductToChannel(productId: string): Promise<PostResult> {
   if (!BOT_TOKEN) return { ok: false, error: 'no-token' };
 
@@ -102,6 +107,15 @@ export async function postProductToChannel(productId: string): Promise<PostResul
   const { contact, marketplaces } = readSettings();
   const channel = (contact.channelId || process.env.TELEGRAM_CHANNEL_ID || '').trim();
   if (!channel) return { ok: false, error: 'no-channel' };
+
+  // Rapid duplicate → treat as success without re-sending.
+  const dedupeKey = `${channel}:${productId}`;
+  const now = Date.now();
+  const last = recentPosts.get(dedupeKey);
+  if (last && now - last < DEDUPE_MS) return { ok: true };
+  recentPosts.set(dedupeKey, now);
+  // Prune old entries so the map can't grow unbounded.
+  for (const [k, t] of recentPosts) if (now - t > DEDUPE_MS) recentPosts.delete(k);
 
   // All product images (Telegram albums allow up to 10).
   const images = (product.images || [])
