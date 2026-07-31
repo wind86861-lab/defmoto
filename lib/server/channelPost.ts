@@ -11,6 +11,13 @@ import { tgApi } from './tgFetch';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 
+interface CompetitorLite {
+  source: string; // marketplace id (from settings) or free label
+  label?: string;
+  url?: string;
+  price?: number;
+}
+
 interface ProductLite {
   id: string;
   slug: string;
@@ -21,9 +28,11 @@ interface ProductLite {
   brand?: string;
   images?: string[];
   videoUrl?: string;
+  competitorPrices?: CompetitorLite[];
 }
 
 interface MarketplaceLite {
+  id: string;
   name: string;
   label?: string;
   url: string;
@@ -94,8 +103,12 @@ export async function postProductToChannel(productId: string): Promise<PostResul
   const channel = (contact.channelId || process.env.TELEGRAM_CHANNEL_ID || '').trim();
   if (!channel) return { ok: false, error: 'no-channel' };
 
-  const photo = fullUrl(product.images?.[0]);
-  if (!photo) return { ok: false, error: 'no-image' };
+  // All product images (Telegram albums allow up to 10).
+  const images = (product.images || [])
+    .map((s) => fullUrl(s))
+    .filter((u): u is string => Boolean(u))
+    .slice(0, 10);
+  if (!images.length) return { ok: false, error: 'no-image' };
 
   // ---- caption (HTML) ----
   const lines: string[] = [`🏍 <b>${esc(product.name)}</b>`];
@@ -131,9 +144,17 @@ export async function postProductToChannel(productId: string): Promise<PostResul
   if (APP_URL && product.slug) {
     rows.push([{ text: '🛍 DEFT MOTO', url: `${APP_URL}/product/${product.slug}` }]);
   }
-  const mkBtns = marketplaces
-    .filter((m) => m.enabled !== false && m.url)
-    .map((m) => ({ text: `🛒 ${m.name || m.label || 'Market'}`, url: m.url }));
+  // Only the marketplaces THIS product is actually listed on — the product's
+  // competitor links (each with a URL). The button label uses the marketplace's
+  // configured name (matched by id) with the competitor label / source as
+  // fallback.
+  const mkBtns = (product.competitorPrices || [])
+    .filter((c) => c.url)
+    .map((c) => {
+      const mk = marketplaces.find((m) => m.id === c.source);
+      const name = mk?.name || mk?.label || c.label || c.source || 'Market';
+      return { text: `🛒 ${name}`, url: c.url as string };
+    });
   for (let i = 0; i < mkBtns.length; i += 2) rows.push(mkBtns.slice(i, i + 2));
 
   const dm = tgHref(contact.telegram);
@@ -146,16 +167,33 @@ export async function postProductToChannel(productId: string): Promise<PostResul
   const ig = igHref(contact.instagram);
   if (ig) rows.push([{ text: '📸 Instagram', url: ig }]);
 
+  const keyboard = rows.length ? { inline_keyboard: rows } : undefined;
+
   try {
-    const r = await tgApi<{ ok?: boolean; description?: string }>('sendPhoto', {
+    if (images.length === 1) {
+      const r = await tgApi<{ ok?: boolean }>('sendPhoto', {
+        chat_id: channel,
+        photo: images[0],
+        caption,
+        parse_mode: 'HTML',
+        reply_markup: keyboard,
+      });
+      return r?.ok ? { ok: true } : { ok: false, error: 'send-failed' };
+    }
+
+    // Multiple images → send them as an album, then the caption + buttons in a
+    // follow-up message (Telegram albums can't carry an inline keyboard).
+    const media = images.map((url) => ({ type: 'photo', media: url }));
+    const album = await tgApi<{ ok?: boolean }>('sendMediaGroup', { chat_id: channel, media });
+    if (!album?.ok) return { ok: false, error: 'send-failed' };
+    const msg = await tgApi<{ ok?: boolean }>('sendMessage', {
       chat_id: channel,
-      photo,
-      caption,
+      text: caption,
       parse_mode: 'HTML',
-      reply_markup: rows.length ? { inline_keyboard: rows } : undefined,
+      disable_web_page_preview: true,
+      reply_markup: keyboard,
     });
-    if (r?.ok) return { ok: true };
-    return { ok: false, error: 'send-failed' };
+    return msg?.ok ? { ok: true } : { ok: false, error: 'send-failed' };
   } catch {
     return { ok: false, error: 'send-failed' };
   }
