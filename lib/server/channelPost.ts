@@ -91,7 +91,15 @@ type UrlBtn = { text: string; url: string };
 
 export type PostResult =
   | { ok: true }
-  | { ok: false; error: 'no-token' | 'no-channel' | 'not-found' | 'no-image' | 'send-failed' };
+  | {
+      ok: false;
+      error: 'no-token' | 'no-channel' | 'not-found' | 'no-image' | 'send-failed';
+      detail?: string;
+    };
+
+// Telegram fetches every image URL itself, which can take a while for an album,
+// so media sends get a generous timeout (kept under nginx's 60s proxy limit).
+const MEDIA_TIMEOUT_MS = 50_000;
 
 // Guard against a double-click / double-submit posting the same product twice
 // in quick succession (which showed up as two identical posts in the channel).
@@ -176,17 +184,22 @@ export async function postProductToChannel(productId: string): Promise<PostResul
   }
   const keyboard = buttonRows.length ? { inline_keyboard: buttonRows } : undefined;
 
+  const fail = (r: { description?: string }): PostResult => {
+    // Surface Telegram's reason so the admin knows what to fix (e.g.
+    // "CHAT_ADMIN_REQUIRED", "chat not found", "failed to get HTTP URL content").
+    recentPosts.delete(dedupeKey); // allow an immediate retry after a failure
+    return { ok: false, error: 'send-failed', detail: r?.description };
+  };
+
   try {
     // Single image → one photo post with the caption + inline buttons.
     if (images.length === 1) {
-      const r = await tgApi<{ ok?: boolean }>('sendPhoto', {
-        chat_id: channel,
-        photo: images[0],
-        caption,
-        parse_mode: 'HTML',
-        reply_markup: keyboard,
-      });
-      return r?.ok ? { ok: true } : { ok: false, error: 'send-failed' };
+      const r = await tgApi<{ ok?: boolean; description?: string }>(
+        'sendPhoto',
+        { chat_id: channel, photo: images[0], caption, parse_mode: 'HTML', reply_markup: keyboard },
+        { timeoutMs: MEDIA_TIMEOUT_MS },
+      );
+      return r?.ok ? { ok: true } : fail(r);
     }
 
     // Multiple images → the album carries the product text (caption on the first
@@ -195,8 +208,12 @@ export async function postProductToChannel(productId: string): Promise<PostResul
     const media = images.map((url, i) =>
       i === 0 ? { type: 'photo', media: url, caption, parse_mode: 'HTML' } : { type: 'photo', media: url },
     );
-    const album = await tgApi<{ ok?: boolean }>('sendMediaGroup', { chat_id: channel, media });
-    if (!album?.ok) return { ok: false, error: 'send-failed' };
+    const album = await tgApi<{ ok?: boolean; description?: string }>(
+      'sendMediaGroup',
+      { chat_id: channel, media },
+      { timeoutMs: MEDIA_TIMEOUT_MS },
+    );
+    if (!album?.ok) return fail(album);
     if (keyboard) {
       await tgApi<{ ok?: boolean }>('sendMessage', {
         chat_id: channel,
@@ -206,7 +223,8 @@ export async function postProductToChannel(productId: string): Promise<PostResul
       });
     }
     return { ok: true };
-  } catch {
-    return { ok: false, error: 'send-failed' };
+  } catch (e) {
+    recentPosts.delete(dedupeKey);
+    return { ok: false, error: 'send-failed', detail: (e as Error)?.message };
   }
 }

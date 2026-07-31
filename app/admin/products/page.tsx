@@ -146,12 +146,14 @@ function ProductRow({ product, onEdit }: { product: Product; onEdit: () => void 
       if (res.ok && j?.ok) {
         toast.success('Kanalga joylandi', product.name);
       } else {
-        const msg =
+        const base =
           j?.error === 'no-channel'
             ? "Kanal sozlanmagan — Sozlamalar → Post kanali'ni to'ldiring."
             : j?.error === 'no-image'
               ? 'Mahsulotда rasm yoʻq.'
               : 'Yuborilmadi — bot kanalда admin ekanini tekshiring.';
+        // Telegram's own reason, when available, is the most useful.
+        const msg = j?.detail ? `${base}\n(${j.detail})` : base;
         toast.error('Xatolik', msg);
       }
     } catch {

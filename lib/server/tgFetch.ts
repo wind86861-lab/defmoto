@@ -18,10 +18,17 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 // keepAlive:false → the socket is closed after each response (no stale reuse).
 const agent = new https.Agent({ keepAlive: false });
 
-export function tgApi<T = unknown>(method: string, params: Record<string, unknown> = {}): Promise<T> {
+export function tgApi<T = unknown>(
+  method: string,
+  params: Record<string, unknown> = {},
+  opts: { timeoutMs?: number } = {},
+): Promise<T> {
   const payload = JSON.stringify(params);
   // Long-poll calls carry a `timeout` (seconds); give them headroom, else 20s.
+  // Callers that upload media (Telegram fetches each image URL) can pass a
+  // longer timeoutMs.
   const pollSecs = typeof params.timeout === 'number' ? (params.timeout as number) : 0;
+  const timeoutMs = opts.timeoutMs ?? (pollSecs + 20) * 1000;
   return new Promise<T>((resolve, reject) => {
     const req = https.request(
       {
@@ -34,7 +41,7 @@ export function tgApi<T = unknown>(method: string, params: Record<string, unknow
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(payload),
         },
-        timeout: (pollSecs + 20) * 1000,
+        timeout: timeoutMs,
       },
       (res) => {
         let data = '';

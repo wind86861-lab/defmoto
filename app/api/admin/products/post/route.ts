@@ -21,9 +21,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'missing-productId' }, { status: 400 });
   }
   const result = await postProductToChannel(productId);
-  if (!result.ok) {
-    const status = result.error === 'no-channel' ? 400 : 502;
-    return NextResponse.json(result, { status });
-  }
-  return NextResponse.json({ ok: true });
+  // Always answer 200: the API itself worked; the body says whether the channel
+  // send succeeded. (A 502 here just made the browser console noisy and hid the
+  // real reason.) The client reads `ok` + `detail`.
+  return NextResponse.json(result);
 }
