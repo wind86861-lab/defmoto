@@ -6,10 +6,58 @@
  * an admin of the channel. Everything is read from the persisted stores so this
  * works from a plain API call with no client state.
  */
+import { promises as fs } from 'fs';
+import path from 'path';
+import https from 'node:https';
 import { getContent } from '@/lib/db';
-import { tgApi } from './tgFetch';
+import { tgApi, tgUpload, type TgFilePart } from './tgFetch';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+
+const IMG_CONTENT_TYPE: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  gif: 'image/gif',
+};
+
+/** Read an image's bytes: from local /uploads on disk, else fetch over IPv4. */
+async function readImageBytes(src: string): Promise<TgFilePart | null> {
+  try {
+    const ext = (src.split('?')[0].split('.').pop() || 'jpg').toLowerCase();
+    const contentType = IMG_CONTENT_TYPE[ext] || 'image/jpeg';
+    const uploadsIdx = src.indexOf('/uploads/');
+    if (uploadsIdx >= 0) {
+      const name = path.basename(src.slice(uploadsIdx + '/uploads/'.length).split('?')[0]);
+      const buffer = await fs.readFile(path.join(process.cwd(), 'public', 'uploads', name));
+      return { field: '', filename: name, buffer, contentType };
+    }
+    if (/^https?:\/\//i.test(src)) {
+      const buffer = await new Promise<Buffer>((resolve, reject) => {
+        https
+          .get(src, { family: 4, timeout: 20_000 }, (res) => {
+            if ((res.statusCode || 0) >= 400) {
+              res.resume();
+              reject(new Error(`HTTP ${res.statusCode}`));
+              return;
+            }
+            const parts: Buffer[] = [];
+            res.on('data', (c: Buffer) => parts.push(c));
+            res.on('end', () => resolve(Buffer.concat(parts)));
+          })
+          .on('error', reject)
+          .on('timeout', function (this: import('http').ClientRequest) {
+            this.destroy(new Error('timeout'));
+          });
+      });
+      return { field: '', filename: `img.${ext}`, buffer, contentType };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 interface CompetitorLite {
   source: string; // marketplace id (from settings) or free label
@@ -194,16 +242,45 @@ export async function postProductToChannel(productId: string): Promise<PostResul
   };
 
   try {
-    // ONE post: main image + caption + inline buttons — the format the admin
-    // approved. Telegram does NOT allow inline buttons on a multi-photo album,
-    // so attaching the link buttons requires a single-photo message. The extra
-    // images are reachable via the "DEFT MOTO" button (full gallery on the site).
-    const r = await tgApi<{ ok?: boolean; description?: string; parameters?: { retry_after?: number } }>(
+    // 1) Main post: main image + caption + inline buttons (the approved format).
+    //    Telegram can't put buttons on a multi-photo album, so the buttons must
+    //    ride a single-photo message — this keeps them attached, not detached.
+    const main = await tgApi<{ ok?: boolean; description?: string; parameters?: { retry_after?: number } }>(
       'sendPhoto',
       { chat_id: channel, photo: images[0], caption, parse_mode: 'HTML', reply_markup: keyboard },
       { timeoutMs: MEDIA_TIMEOUT_MS },
     );
-    return r?.ok ? { ok: true } : fail(r);
+    if (!main?.ok) return fail(main);
+
+    // 2) Remaining images → a supplementary gallery below (bytes uploaded so
+    //    they can't fail with WEBPAGE_MEDIA_EMPTY). Best-effort: the main post
+    //    is already live, so a gallery hiccup never fails the whole post.
+    const extras = images.slice(1, 10);
+    if (extras.length) {
+      const parts: TgFilePart[] = [];
+      for (const src of extras) {
+        const file = await readImageBytes(src);
+        if (file) parts.push({ ...file, field: `file${parts.length}` });
+      }
+      try {
+        if (parts.length === 1) {
+          await tgUpload('sendPhoto', { chat_id: channel }, [{ ...parts[0], field: 'photo' }], {
+            timeoutMs: MEDIA_TIMEOUT_MS,
+          });
+        } else if (parts.length >= 2) {
+          const mediaJson = parts.map((p) => ({ type: 'photo', media: `attach://${p.field}` }));
+          await tgUpload(
+            'sendMediaGroup',
+            { chat_id: channel, media: JSON.stringify(mediaJson) },
+            parts,
+            { timeoutMs: MEDIA_TIMEOUT_MS },
+          );
+        }
+      } catch {
+        /* gallery is best-effort — the main post already succeeded */
+      }
+    }
+    return { ok: true };
   } catch (e) {
     recentPosts.delete(dedupeKey);
     return { ok: false, error: 'send-failed', detail: (e as Error)?.message };
