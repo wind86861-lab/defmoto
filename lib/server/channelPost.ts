@@ -242,9 +242,9 @@ export async function postProductToChannel(productId: string): Promise<PostResul
   };
 
   try {
-    // 1) Main post: main image + caption + inline buttons (the approved format).
-    //    Telegram can't put buttons on a multi-photo album, so the buttons must
-    //    ride a single-photo message — this keeps them attached, not detached.
+    // Main post: photo + caption + ATTACHED buttons — exactly the approved
+    // format. Telegram forbids inline buttons on a multi-photo album, so the
+    // buttons must ride a single-photo message to stay attached.
     const main = await tgApi<{ ok?: boolean; description?: string; parameters?: { retry_after?: number } }>(
       'sendPhoto',
       { chat_id: channel, photo: images[0], caption, parse_mode: 'HTML', reply_markup: keyboard },
@@ -252,9 +252,9 @@ export async function postProductToChannel(productId: string): Promise<PostResul
     );
     if (!main?.ok) return fail(main);
 
-    // 2) Remaining images → a supplementary gallery below (bytes uploaded so
-    //    they can't fail with WEBPAGE_MEDIA_EMPTY). Best-effort: the main post
-    //    is already live, so a gallery hiccup never fails the whole post.
+    // Then the remaining images, so ALL of the product's photos are shown. Byte
+    // upload → no WEBPAGE_MEDIA_EMPTY. Best-effort: the main post is already
+    // live, so a gallery hiccup never fails the post.
     const extras = images.slice(1, 10);
     if (extras.length) {
       const parts: TgFilePart[] = [];
@@ -269,15 +269,12 @@ export async function postProductToChannel(productId: string): Promise<PostResul
           });
         } else if (parts.length >= 2) {
           const mediaJson = parts.map((p) => ({ type: 'photo', media: `attach://${p.field}` }));
-          await tgUpload(
-            'sendMediaGroup',
-            { chat_id: channel, media: JSON.stringify(mediaJson) },
-            parts,
-            { timeoutMs: MEDIA_TIMEOUT_MS },
-          );
+          await tgUpload('sendMediaGroup', { chat_id: channel, media: JSON.stringify(mediaJson) }, parts, {
+            timeoutMs: MEDIA_TIMEOUT_MS,
+          });
         }
       } catch {
-        /* gallery is best-effort — the main post already succeeded */
+        /* best-effort — main post already succeeded */
       }
     }
     return { ok: true };
