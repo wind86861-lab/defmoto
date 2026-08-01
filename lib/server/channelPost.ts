@@ -6,10 +6,60 @@
  * an admin of the channel. Everything is read from the persisted stores so this
  * works from a plain API call with no client state.
  */
+import { promises as fs } from 'fs';
+import path from 'path';
+import https from 'node:https';
 import { getContent } from '@/lib/db';
-import { tgApi } from './tgFetch';
+import { tgApi, tgUpload, type TgFilePart } from './tgFetch';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+
+const IMG_CONTENT_TYPE: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  gif: 'image/gif',
+};
+
+/** Read an image's bytes: from local /uploads on disk, else fetch over IPv4. */
+async function readImageBytes(src: string): Promise<TgFilePart | null> {
+  try {
+    const ext = (src.split('?')[0].split('.').pop() || 'jpg').toLowerCase();
+    const contentType = IMG_CONTENT_TYPE[ext] || 'image/jpeg';
+    // Local upload (relative or our-domain URL) → straight off disk.
+    const uploadsIdx = src.indexOf('/uploads/');
+    if (uploadsIdx >= 0) {
+      const name = path.basename(src.slice(uploadsIdx + '/uploads/'.length).split('?')[0]);
+      const buffer = await fs.readFile(path.join(process.cwd(), 'public', 'uploads', name));
+      return { field: '', filename: name, buffer, contentType };
+    }
+    // External http(s) → fetch the bytes (IPv4).
+    if (/^https?:\/\//i.test(src)) {
+      const buffer = await new Promise<Buffer>((resolve, reject) => {
+        https
+          .get(src, { family: 4, timeout: 20_000 }, (res) => {
+            if ((res.statusCode || 0) >= 400) {
+              res.resume();
+              reject(new Error(`HTTP ${res.statusCode}`));
+              return;
+            }
+            const parts: Buffer[] = [];
+            res.on('data', (c: Buffer) => parts.push(c));
+            res.on('end', () => resolve(Buffer.concat(parts)));
+          })
+          .on('error', reject)
+          .on('timeout', function (this: import('http').ClientRequest) {
+            this.destroy(new Error('timeout'));
+          });
+      });
+      return { field: '', filename: `img.${ext}`, buffer, contentType };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 interface CompetitorLite {
   source: string; // marketplace id (from settings) or free label
@@ -194,19 +244,68 @@ export async function postProductToChannel(productId: string): Promise<PostResul
   };
 
   try {
-    // ONE post: the main image + caption + inline buttons.
-    //
-    // We deliberately don't send an album of every image: Telegram albums can't
-    // carry inline buttons (so the links became an orphaned follow-up message),
-    // count as 2 messages toward the channel rate limit, and a single bad image
-    // URL fails the whole group with WEBPAGE_MEDIA_EMPTY. The main photo is
-    // reliable and the "DEFT MOTO" button opens the full gallery on the site.
-    const r = await tgApi<{ ok?: boolean; description?: string; parameters?: { retry_after?: number } }>(
-      'sendPhoto',
-      { chat_id: channel, photo: images[0], caption, parse_mode: 'HTML', reply_markup: keyboard },
+    // Single image → one photo post with caption + inline buttons.
+    if (images.length === 1) {
+      const r = await tgApi<{ ok?: boolean; description?: string; parameters?: { retry_after?: number } }>(
+        'sendPhoto',
+        { chat_id: channel, photo: images[0], caption, parse_mode: 'HTML', reply_markup: keyboard },
+        { timeoutMs: MEDIA_TIMEOUT_MS },
+      );
+      return r?.ok ? { ok: true } : fail(r);
+    }
+
+    // Multiple images → upload the BYTES as an album (reliable, no
+    // WEBPAGE_MEDIA_EMPTY), caption on the first photo. Telegram albums can't
+    // hold inline buttons, so the links ride a compact follow-up message.
+    const parts: TgFilePart[] = [];
+    const mediaJson: Record<string, unknown>[] = [];
+    for (const src of images) {
+      const file = await readImageBytes(src);
+      if (!file) continue;
+      const field = `file${parts.length}`;
+      parts.push({ ...file, field });
+      mediaJson.push(
+        parts.length === 1
+          ? { type: 'photo', media: `attach://${field}`, caption, parse_mode: 'HTML' }
+          : { type: 'photo', media: `attach://${field}` },
+      );
+    }
+    // Fallback: if no bytes could be read, post the main image by URL.
+    if (parts.length === 0) {
+      const r = await tgApi<{ ok?: boolean; description?: string; parameters?: { retry_after?: number } }>(
+        'sendPhoto',
+        { chat_id: channel, photo: images[0], caption, parse_mode: 'HTML', reply_markup: keyboard },
+        { timeoutMs: MEDIA_TIMEOUT_MS },
+      );
+      return r?.ok ? { ok: true } : fail(r);
+    }
+    if (parts.length === 1) {
+      // Only one readable image → normal photo post with buttons.
+      const r = await tgUpload<{ ok?: boolean; description?: string; parameters?: { retry_after?: number } }>(
+        'sendPhoto',
+        { chat_id: channel, caption, parse_mode: 'HTML', reply_markup: JSON.stringify(keyboard ?? {}) },
+        [{ ...parts[0], field: 'photo' }],
+        { timeoutMs: MEDIA_TIMEOUT_MS },
+      );
+      return r?.ok ? { ok: true } : fail(r);
+    }
+
+    const album = await tgUpload<{ ok?: boolean; description?: string; parameters?: { retry_after?: number } }>(
+      'sendMediaGroup',
+      { chat_id: channel, media: JSON.stringify(mediaJson) },
+      parts,
       { timeoutMs: MEDIA_TIMEOUT_MS },
     );
-    return r?.ok ? { ok: true } : fail(r);
+    if (!album?.ok) return fail(album);
+    if (keyboard) {
+      await tgApi<{ ok?: boolean }>('sendMessage', {
+        chat_id: channel,
+        text: '🔗 Havolalar:',
+        reply_markup: keyboard,
+        disable_web_page_preview: true,
+      });
+    }
+    return { ok: true };
   } catch (e) {
     recentPosts.delete(dedupeKey);
     return { ok: false, error: 'send-failed', detail: (e as Error)?.message };

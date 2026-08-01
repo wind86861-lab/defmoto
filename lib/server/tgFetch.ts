@@ -63,6 +63,78 @@ export function tgApi<T = unknown>(
   });
 }
 
+export interface TgFilePart {
+  field: string;
+  filename: string;
+  buffer: Buffer;
+  contentType?: string;
+}
+
+/**
+ * multipart/form-data POST (fresh IPv4 connection, like tgApi) — for uploading
+ * file BYTES to Telegram (e.g. sendMediaGroup with attach://). Uploading bytes
+ * avoids WEBPAGE_MEDIA_EMPTY / URL-fetch failures.
+ */
+export function tgUpload<T = unknown>(
+  method: string,
+  fields: Record<string, string>,
+  files: TgFilePart[],
+  opts: { timeoutMs?: number } = {},
+): Promise<T> {
+  const boundary = `----deft${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+  const chunks: Buffer[] = [];
+  for (const [k, v] of Object.entries(fields)) {
+    chunks.push(
+      Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${k}"\r\n\r\n${v}\r\n`),
+    );
+  }
+  for (const f of files) {
+    chunks.push(
+      Buffer.from(
+        `--${boundary}\r\nContent-Disposition: form-data; name="${f.field}"; filename="${f.filename}"\r\n` +
+          `Content-Type: ${f.contentType || 'application/octet-stream'}\r\n\r\n`,
+      ),
+    );
+    chunks.push(f.buffer);
+    chunks.push(Buffer.from('\r\n'));
+  }
+  chunks.push(Buffer.from(`--${boundary}--\r\n`));
+  const body = Buffer.concat(chunks);
+
+  return new Promise<T>((resolve, reject) => {
+    const req = https.request(
+      {
+        hostname: 'api.telegram.org',
+        path: `/bot${BOT_TOKEN}/${method}`,
+        method: 'POST',
+        family: 4,
+        agent,
+        headers: {
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+          'Content-Length': body.length,
+        },
+        timeout: opts.timeoutMs ?? 60_000,
+      },
+      (res) => {
+        let data = '';
+        res.setEncoding('utf8');
+        res.on('data', (c) => (data += c));
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(data) as T);
+          } catch (e) {
+            reject(e);
+          }
+        });
+      },
+    );
+    req.on('timeout', () => req.destroy(new Error('ETIMEDOUT')));
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
 /**
  * Download a Telegram file (photo/video/document) by its `file_path` as a
  * Buffer. Uses the same fresh-IPv4-connection strategy as tgApi — the global

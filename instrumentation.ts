@@ -18,5 +18,8 @@ export async function register() {
     }
     const { startTelegramPoller } = await import('./lib/server/telegramPoller');
     startTelegramPoller();
+    // Fire scheduled channel posts when their (Uzbekistan) time arrives.
+    const { startScheduler } = await import('./lib/server/scheduledPosts');
+    startScheduler();
   }
 }

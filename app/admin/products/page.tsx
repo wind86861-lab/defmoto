@@ -12,6 +12,7 @@ import {
   X,
   Store,
   Send,
+  Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Input } from '@/components/ui/Input';
@@ -133,6 +134,40 @@ function ProductRow({ product, onEdit }: { product: Product; onEdit: () => void 
   const remove = useContentStore((s) => s.removeProduct);
   const toast = useToast();
   const [posting, setPosting] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [when, setWhen] = useState('');
+  const [scheduling, setScheduling] = useState(false);
+
+  const schedulePost = async () => {
+    if (!when) return;
+    setScheduling(true);
+    try {
+      const res = await fetch('/api/admin/products/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: product.id, localTime: when }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok && j?.ok) {
+        toast.success('Rejalandi', `${product.name}\n${when.replace('T', ' ')} (UZB)`);
+        setScheduleOpen(false);
+        setWhen('');
+      } else {
+        toast.error(
+          'Xatolik',
+          j?.error === 'past-time'
+            ? "O'tган vaqt — kelajakdagi vaqtни tanlang."
+            : j?.error === 'bad-time'
+              ? "Vaqt noto'g'ri."
+              : 'Rejalab bo‘lmadi.',
+        );
+      }
+    } catch {
+      toast.error('Xatolik', 'Tarmoq xatosi.');
+    } finally {
+      setScheduling(false);
+    }
+  };
 
   const postToChannel = async () => {
     setPosting(true);
@@ -190,6 +225,64 @@ function ProductRow({ product, onEdit }: { product: Product; onEdit: () => void 
         <Send className="h-3.5 w-3.5" />
         <span className="hidden sm:inline">{posting ? '…' : 'Kanalga'}</span>
       </button>
+      <button
+        type="button"
+        onClick={() => setScheduleOpen(true)}
+        title="Rejalashtirib joylash"
+        className="inline-flex items-center gap-1.5 rounded-xl border border-brand-surface-border px-3 py-2 text-xs font-bold text-white/80 transition-colors hover:border-brand-yellow/40 hover:text-brand-yellow"
+      >
+        <Clock className="h-3.5 w-3.5" />
+        <span className="hidden sm:inline">Rejalash</span>
+      </button>
+
+      {scheduleOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setScheduleOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm space-y-3 rounded-2xl border border-brand-surface-border bg-brand-surface p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="flex items-center gap-2 font-display text-base font-extrabold">
+              <Clock className="h-4 w-4 text-brand-yellow" /> Rejalashtirib joylash
+            </h3>
+            <p className="truncate text-xs text-white/55">{product.name}</p>
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">
+                Vaqt (Oʻzbekiston vaqti 🇺🇿)
+              </span>
+              <input
+                type="datetime-local"
+                value={when}
+                onChange={(e) => setWhen(e.target.value)}
+                style={{ colorScheme: 'dark' }}
+                className="w-full rounded-xl border border-brand-surface-border bg-brand-dark px-3 py-2.5 text-sm text-white outline-none focus:border-brand-yellow/60"
+              />
+            </label>
+            <p className="text-[11px] text-white/40">
+              Belgilanган vaqt kelганda mahsulot avtomatik kanalга joylanadi.
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setScheduleOpen(false)}
+                className="flex-1 rounded-xl border border-brand-surface-border px-4 py-2.5 text-sm font-bold text-white/80"
+              >
+                Bekor
+              </button>
+              <button
+                type="button"
+                onClick={schedulePost}
+                disabled={!when || scheduling}
+                className="flex-1 rounded-xl bg-gradient-yellow px-4 py-2.5 text-sm font-bold text-brand-dark shadow-glow-sm hover:brightness-110 disabled:opacity-50"
+              >
+                {scheduling ? '…' : 'Rejalash'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <button
         type="button"
         onClick={onEdit}
