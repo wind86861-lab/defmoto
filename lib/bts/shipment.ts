@@ -97,8 +97,8 @@ export async function createShipmentForOrder(
           ? ov.receiverBranchCode || btsSel.branchCode || undefined
           : undefined,
     },
-    bringBackMoney: cod ? 1 : 0,
-    back_money: cod ? order.total : undefined,
+    // bringBackMoney is the COD AMOUNT to collect (not a 0/1 flag).
+    bringBackMoney: cod ? Math.round(order.total || 0) : 0,
     ready_to_take: true,
     cargo: {
       weight,

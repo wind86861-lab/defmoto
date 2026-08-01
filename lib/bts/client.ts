@@ -189,7 +189,9 @@ export interface BtsCreateOrderInput {
   is_receiver_location?: boolean;
   sender: BtsParty;
   receiver: BtsParty;
-  bringBackMoney?: 0 | 1;
+  /** Cash-on-delivery AMOUNT to collect from the receiver (so'm) — NOT a 0/1
+   *  flag. Sending 1 is rejected with a misleading "Mahsulotlarni kiriting". */
+  bringBackMoney?: number;
   back_money?: number;
   takePhoto?: 0 | 1;
   bringBackWaybill?: 0 | 1;
