@@ -88,10 +88,10 @@ export async function createShipmentForOrder(
       address:
         [address.city, address.street, address.apartment].filter(Boolean).join(', ') ||
         (contact.name ?? ''),
-      city_code:
-        dropoff === 'courier'
-          ? ov.receiverCityCode || btsSel.cityCode || undefined
-          : undefined,
+      // BTS requires receiver.city_code for BOTH courier and branch delivery
+      // (branch delivery also needs branch_code). Omitting it for branch
+      // dropoff was rejected with "Receiver city_code kiritilishi shart".
+      city_code: ov.receiverCityCode || btsSel.cityCode || undefined,
       branch_code:
         dropoff === 'branch'
           ? ov.receiverBranchCode || btsSel.branchCode || undefined
@@ -103,6 +103,9 @@ export async function createShipmentForOrder(
     cargo: {
       weight,
       piece,
+      // Required by BTS — a package type id from /v1/package (8 = "BTS ПАКЕТ").
+      // Override via BTS_PACKAGE_ID if the shop uses a different packaging.
+      packageId: Number(process.env.BTS_PACKAGE_ID) || 8,
       postTypes: items.slice(0, 50).map((i, idx) => ({
         name: String(i.name || `Tovar ${idx + 1}`).slice(0, 120),
         code: String(i.id || i.sku || idx),
