@@ -224,6 +224,16 @@ export function setOrderBts(id: string, bts: Partial<OrderBts>): OrderRecord | n
   return o;
 }
 
+/** Remove the BTS shipment record from an order (after a cancellation). */
+export function clearOrderBts(id: string): OrderRecord | null {
+  load();
+  const o = store.orders.find((x) => x.id === id);
+  if (!o) return null;
+  delete o.bts;
+  atomicWrite(ORDERS_FILE, store.orders);
+  return o;
+}
+
 /** Find an order by its BTS-side order id (for webhooks). */
 export function getOrderByBtsId(btsOrderId: number): OrderRecord | null {
   load();

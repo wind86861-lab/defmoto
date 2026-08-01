@@ -219,6 +219,13 @@ export function btsCreateOrder(input: BtsCreateOrderInput) {
   return api<BtsCreateOrderData>('POST', '/v1/order/add', input);
 }
 
+// Cancel a shipment. The endpoint reads orderId from the QUERY string (a JSON
+// body is ignored), and returns "Buyurtma allaqachon bekor qilingan" when it was
+// already cancelled.
+export function btsCancelOrder(btsOrderId: number) {
+  return api<unknown>('POST', `/v1/order-cancel/index?orderId=${btsOrderId}`);
+}
+
 export interface BtsDirectoryItem {
   code: string;
   name: string;

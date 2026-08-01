@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { btsConfigured } from '@/lib/bts/client';
-import { createShipmentForOrder } from '@/lib/bts/shipment';
+import { createShipmentForOrder, cancelShipmentForOrder } from '@/lib/bts/shipment';
 import { isAdminRequest } from '@/lib/server/adminAuth';
 
 export const runtime = 'nodejs';
@@ -31,5 +31,18 @@ export async function POST(req: Request) {
     dropoff_type: body.dropoff_type,
     weight: body.weight ? Number(body.weight) : undefined,
   });
+  return NextResponse.json(r, { status: r.ok ? 200 : 400 });
+}
+
+// DELETE /api/delivery/bts/shipment?orderId=...  — cancel a shipment (admin).
+export async function DELETE(req: Request) {
+  if (!isAdminRequest(req)) {
+    return NextResponse.json({ ok: false }, { status: 401 });
+  }
+  const orderId = new URL(req.url).searchParams.get('orderId') || '';
+  if (!orderId) {
+    return NextResponse.json({ ok: false, error: 'missing-orderId' }, { status: 400 });
+  }
+  const r = await cancelShipmentForOrder(orderId);
   return NextResponse.json(r, { status: r.ok ? 200 : 400 });
 }

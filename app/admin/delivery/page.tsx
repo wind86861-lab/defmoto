@@ -92,6 +92,24 @@ function BtsShipmentsSection() {
     }
   };
 
+  const cancelShipment = async (o: BtsOrder) => {
+    if (!confirm(`${o.number} — BTS joʻnatmasi bekor qilinsinmi?`)) return;
+    setErr(null);
+    setBusyId(o.id);
+    try {
+      const res = await fetch(`/api/delivery/bts/shipment?orderId=${encodeURIComponent(o.id)}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (res.ok && data?.ok) load();
+      else setErr(`${o.number}: ${data?.error || 'Bekor qilib boʻlmadi'}`);
+    } catch {
+      setErr(`${o.number}: tarmoq xatosi`);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const rowName = (o: BtsOrder) => o.customerName || o.payload?.contact?.name || 'Mijoz';
 
   return (
@@ -165,6 +183,14 @@ function BtsShipmentsSection() {
                         🔍 Kuzatish
                       </a>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => cancelShipment(o)}
+                      disabled={busyId === o.id}
+                      className="rounded-md border border-danger/40 px-1.5 py-0.5 text-danger hover:bg-danger/15 disabled:opacity-50"
+                    >
+                      {busyId === o.id ? '…' : '❌ Bekor'}
+                    </button>
                   </span>
                 ) : missingW ? (
                   <Link

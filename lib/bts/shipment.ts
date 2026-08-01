@@ -5,12 +5,13 @@
  * passed as overrides by the operator when dispatching from the admin panel.
  */
 
-import { getOrder, setOrderBts, updateOrderStatus } from '@/lib/db';
+import { getOrder, setOrderBts, updateOrderStatus, clearOrderBts } from '@/lib/db';
 import { notifyOperator } from '@/lib/server/chatRelay';
 import { notifyOrderStatus } from '@/lib/server/orderNotify';
 import { getBtsSender } from './settings';
 import {
   btsCreateOrder,
+  btsCancelOrder,
   type BtsCreateOrderInput,
   type BtsPickupType,
   type BtsDropoffType,
@@ -145,4 +146,26 @@ export async function createShipmentForOrder(
   );
 
   return { ok: true, data: r.data };
+}
+
+/** Cancel a shipment at BTS, then clear the order's BTS record and revert it. */
+export async function cancelShipmentForOrder(
+  orderId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const order = getOrder(orderId);
+  if (!order) return { ok: false, error: 'order-not-found' };
+  const btsOrderId = order.bts?.orderId;
+  if (!btsOrderId) return { ok: false, error: 'not-shipped' };
+
+  const r = await btsCancelOrder(btsOrderId);
+  const already = /allaqachon|already|bekor qilingan/i.test(r.message || '');
+  if (!r.status && !already) {
+    return { ok: false, error: r.message || 'bts-error' };
+  }
+
+  // Remove the BTS record and move the order back so it can be re-shipped.
+  clearOrderBts(order.id);
+  updateOrderStatus(order.id, 'received');
+  void notifyOperator(`❌ *BTS jo'natma bekor qilindi* ${order.number}`);
+  return { ok: true };
 }
