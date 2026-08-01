@@ -160,7 +160,6 @@ export default function AdminSettingsPage() {
             }}
             options={[
               { value: 'single', label: '1 rasm + yopishgan tugmalar', hint: 'default' },
-              { value: 'gallery', label: 'Bir nechta rasm + tugmalar alohida' },
               { value: 'album', label: 'Bir nechta rasm + matn-link (tugmasiz)' },
             ]}
           />
