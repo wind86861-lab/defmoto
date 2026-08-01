@@ -107,7 +107,8 @@ export async function createShipmentForOrder(
       // Override via BTS_PACKAGE_ID if the shop uses a different packaging.
       packageId: Number(process.env.BTS_PACKAGE_ID) || 8,
       postTypes: items.slice(0, 50).map((i, idx) => ({
-        name: String(i.name || `Tovar ${idx + 1}`).slice(0, 120),
+        // BTS caps the product name at 20 characters ("максимум 20 символа").
+        name: String(i.name || `Tovar ${idx + 1}`).slice(0, 20),
         code: String(i.id || i.sku || idx),
         count: Number(i.quantity) || 1,
         cost: Math.round(Number(i.price) || 0),
