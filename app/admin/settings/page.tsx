@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { Settings, Check, Plus, Trash2, Phone, MapPin, Clock, Send, Truck, Upload, Award, X } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { TrInput } from '@/components/admin/TrInput';
 import type { DeliveryTerm } from '@/lib/stores/siteSettings';
 import { Button } from '@/components/ui/Button';
@@ -146,6 +147,27 @@ export default function AdminSettingsPage() {
           tugmasi paydo bo'ladi.
         </p>
         {field('Kanal', 'channelId', '@deftmotouz yoki -1001234567890', <Send className="h-4 w-4" />)}
+
+        <div>
+          <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-white/45">
+            Post ko'rinishi
+          </label>
+          <Select
+            value={contact.channelPostMode ?? 'single'}
+            onChange={(v) => {
+              setContact({ channelPostMode: v as 'single' | 'gallery' | 'album' });
+              flash();
+            }}
+            options={[
+              { value: 'single', label: '1 rasm + yopishgan tugmalar', hint: 'default' },
+              { value: 'gallery', label: 'Bir nechta rasm + tugmalar alohida' },
+              { value: 'album', label: 'Bir nechta rasm + matn-link (tugmasiz)' },
+            ]}
+          />
+          <p className="mt-1 text-[11px] text-white/40">
+            Telegram bitta xabarda “ko‘p rasm + tugma”ni birga qo‘yolmaydi — shuning uchun 3 variant.
+          </p>
+        </div>
       </section>
 
       {/* Delivery terms */}

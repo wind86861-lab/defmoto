@@ -92,6 +92,7 @@ interface ContactLite {
   telegram?: string;
   instagram?: string;
   channelId?: string;
+  channelPostMode?: string;
 }
 
 function readProducts(): ProductLite[] {
@@ -241,10 +242,46 @@ export async function postProductToChannel(productId: string): Promise<PostResul
     return { ok: false, error: 'send-failed', detail };
   };
 
+  // Admin-chosen post layout (Telegram can't do multi-image + buttons in one
+  // message, so each mode is a different trade-off):
+  //   'single'  — 1 photo + caption + attached buttons (default)
+  //   'gallery' — the single post, then the rest of the images as an album below
+  //   'album'   — one album of all images; links as tappable text (no buttons)
+  const mode = (contact.channelPostMode || 'single') as 'single' | 'gallery' | 'album';
+
+  const readAll = async (srcs: string[]): Promise<TgFilePart[]> => {
+    const parts: TgFilePart[] = [];
+    for (const src of srcs) {
+      const f = await readImageBytes(src);
+      if (f) parts.push({ ...f, field: `file${parts.length}` });
+    }
+    return parts;
+  };
+
   try {
-    // Main post: photo + caption + ATTACHED buttons — exactly the approved
-    // format. Telegram forbids inline buttons on a multi-photo album, so the
-    // buttons must ride a single-photo message to stay attached.
+    // 'album' → one grouped album of all images, links as tappable HTML text.
+    if (mode === 'album' && images.length > 1) {
+      const linkText = links.map((l) => `<a href="${l.url}">${esc(l.label)}</a>`).join('\n');
+      const albumCaption = (links.length ? `${caption}\n\n🔗 <b>Havolalar:</b>\n${linkText}` : caption).slice(0, 1024);
+      const parts = await readAll(images.slice(0, 10));
+      if (parts.length >= 2) {
+        const mediaJson = parts.map((p, i) =>
+          i === 0
+            ? { type: 'photo', media: `attach://${p.field}`, caption: albumCaption, parse_mode: 'HTML' }
+            : { type: 'photo', media: `attach://${p.field}` },
+        );
+        const r = await tgUpload<{ ok?: boolean; description?: string; parameters?: { retry_after?: number } }>(
+          'sendMediaGroup',
+          { chat_id: channel, media: JSON.stringify(mediaJson) },
+          parts,
+          { timeoutMs: MEDIA_TIMEOUT_MS },
+        );
+        return r?.ok ? { ok: true } : fail(r);
+      }
+      // <2 readable images → fall through to single.
+    }
+
+    // Main post: photo + caption + attached buttons (default look).
     const main = await tgApi<{ ok?: boolean; description?: string; parameters?: { retry_after?: number } }>(
       'sendPhoto',
       { chat_id: channel, photo: images[0], caption, parse_mode: 'HTML', reply_markup: keyboard },
@@ -252,16 +289,9 @@ export async function postProductToChannel(productId: string): Promise<PostResul
     );
     if (!main?.ok) return fail(main);
 
-    // Then the remaining images, so ALL of the product's photos are shown. Byte
-    // upload → no WEBPAGE_MEDIA_EMPTY. Best-effort: the main post is already
-    // live, so a gallery hiccup never fails the post.
-    const extras = images.slice(1, 10);
-    if (extras.length) {
-      const parts: TgFilePart[] = [];
-      for (const src of extras) {
-        const file = await readImageBytes(src);
-        if (file) parts.push({ ...file, field: `file${parts.length}` });
-      }
+    // 'gallery' → send the remaining images below as a supplementary album.
+    if (mode === 'gallery' && images.length > 1) {
+      const parts = await readAll(images.slice(1, 10));
       try {
         if (parts.length === 1) {
           await tgUpload('sendPhoto', { chat_id: channel }, [{ ...parts[0], field: 'photo' }], {
