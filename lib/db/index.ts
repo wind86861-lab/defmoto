@@ -503,7 +503,8 @@ export function createLink(input: { label: string; target: string; code?: string
   // Target may be a full URL (paste a page link) or a site path. A full URL on
   // our own host is reduced to its path; other full URLs are kept as-is;
   // everything else is treated as a path with a leading slash.
-  let target = (input.target || '/').trim();
+  // Repair a stray leading slash before a pasted URL ("/https://…" → "https://…").
+  let target = (input.target || '/').trim().replace(/^\/+(https?:\/\/)/i, '$1');
   if (/^https?:\/\//i.test(target)) {
     try {
       const u = new URL(target);

@@ -22,21 +22,33 @@ export function GET(req: Request, { params }: { params: { code: string } }) {
     return NextResponse.redirect(`${origin}/`, 302);
   }
 
+  // Resolve the destination robustly:
+  //  - repair a malformed leading slash before a full URL ("/https://…" from an
+  //    older paste) so it doesn't become {origin}/https://…
+  //  - a real full URL → as-is; a site path → prefix the public origin.
+  let target = (link.target || '/').trim().replace(/^\/+(https?:\/\/)/i, '$1');
+  const dest = /^https?:\/\//i.test(target)
+    ? target
+    : `${origin}${target.startsWith('/') ? target : `/${target}`}`;
+
+  // Don't let link-preview crawlers (Telegram/WhatsApp/social when the link is
+  // shared) inflate the click count — they must still be redirected, just not
+  // counted. Only real user agents count.
+  const ua = req.headers.get('user-agent') || '';
+  const isBot =
+    /bot|crawl|spider|preview|facebookexternalhit|telegram|whatsapp|slack|discord|twitter|linkedin|embed|scrap|monitor|fetch|curl|wget|python|go-http|headless/i.test(
+      ua,
+    );
+
   const cookieName = `dmref_${link.code}`;
   const seen = (req.headers.get('cookie') || '')
     .split(';')
     .some((c) => c.trim().startsWith(`${cookieName}=`));
 
-  recordLinkClick(link.code, !seen);
+  if (!isBot) recordLinkClick(link.code, !seen);
 
-  // Path → prefix with the public origin; full URL (external campaign) → as-is.
-  const dest = /^https?:\/\//i.test(link.target)
-    ? link.target
-    : link.target.startsWith('/')
-      ? `${origin}${link.target}`
-      : `${origin}/`;
   const res = NextResponse.redirect(dest, 302);
-  if (!seen) {
+  if (!isBot && !seen) {
     res.cookies.set(cookieName, '1', {
       path: '/',
       maxAge: 60 * 60 * 24 * 365,
