@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { SearchX } from 'lucide-react';
 import { ProductCard } from '@/components/features/ProductCard';
 import type { Product } from '@/types/product';
 
@@ -8,7 +9,7 @@ export function ProductGrid({ products }: { products: Product[] }) {
   if (products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-brand-surface-border py-16 text-center">
-        <div className="mb-4 text-5xl">🔍</div>
+        <SearchX className="mb-4 h-12 w-12 text-white/30" strokeWidth={1.5} />
         <h3 className="font-display text-lg font-bold">{t('emptyTitle')}</h3>
         <p className="mt-1 max-w-xs text-sm text-white/55">{t('emptyDesc')}</p>
       </div>

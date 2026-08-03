@@ -209,8 +209,10 @@ export async function postProductToChannel(productId: string): Promise<PostResul
   if (!images.length) return { ok: false, error: 'no-image' };
 
   // ---- caption (HTML) ----
-  const lines: string[] = [`🏍 <b>${esc(product.name)}</b>`];
-  if (product.brand) lines.push(`🏷 ${esc(product.brand)}`);
+  // Minimalist / monochrome styling: thin unicode marks instead of colourful
+  // emoji for a premium, editorial look.
+  const lines: string[] = [`▎<b>${esc(product.name)}</b>`];
+  if (product.brand) lines.push(`<i>${esc(product.brand)}</i>`);
 
   const descLines = (product.description || '')
     .split(/\n+/)
@@ -219,39 +221,40 @@ export async function postProductToChannel(productId: string): Promise<PostResul
     .slice(0, 8);
   if (descLines.length) {
     lines.push('');
-    for (const l of descLines) lines.push(`▫️ ${esc(l)}`);
+    for (const l of descLines) lines.push(`— ${esc(l)}`);
   }
 
   lines.push('');
   const priceLine =
     product.oldPrice && product.oldPrice > product.price
-      ? `💰 <b>${sum(product.price)} so'm</b>  <s>${sum(product.oldPrice)} so'm</s>`
-      : `💰 <b>${sum(product.price)} so'm</b>`;
+      ? `<b>${sum(product.price)} so'm</b>   <s>${sum(product.oldPrice)} so'm</s>`
+      : `<b>${sum(product.price)} so'm</b>`;
   lines.push(priceLine);
 
-  if (contact.phone) lines.push(`📞 ${esc(contact.phone)}`);
+  lines.push('');
+  if (contact.phone) lines.push(esc(contact.phone));
   const tgUser = contact.telegram?.replace(/^https?:\/\/t\.me\//i, '').replace(/^@/, '');
-  if (tgUser) lines.push(`✈️ @${esc(tgUser)}`);
+  if (tgUser) lines.push(`Telegram · @${esc(tgUser)}`);
   const igUser = contact.instagram?.replace(/^@/, '');
-  if (igUser) lines.push(`📸 ${esc(igUser)}`);
+  if (igUser) lines.push(`Instagram · ${esc(igUser)}`);
 
   const caption = fitCaption(lines);
 
   // ---- links (one source of truth) ----
   // Only the marketplaces THIS product is listed on — its competitor links.
   const links: { label: string; url: string }[] = [];
-  if (APP_URL && product.slug) links.push({ label: '🛍 DEFT MOTO', url: `${APP_URL}/product/${product.slug}` });
+  if (APP_URL && product.slug) links.push({ label: '▸ DEFT MOTO', url: `${APP_URL}/product/${product.slug}` });
   for (const c of product.competitorPrices || []) {
     if (!c.url) continue;
     const mk = marketplaces.find((m) => m.id === c.source);
-    links.push({ label: `🛒 ${mk?.name || mk?.label || c.label || c.source || 'Market'}`, url: c.url });
+    links.push({ label: `▸ ${mk?.name || mk?.label || c.label || c.source || 'Market'}`, url: c.url });
   }
   const dm = tgHref(contact.telegram);
-  if (dm) links.push({ label: '💬 Telegramdan yozish', url: dm });
+  if (dm) links.push({ label: '✉ Telegramdan yozish', url: dm });
   const video = fullUrl(product.videoUrl) || (product.videoUrl?.startsWith('http') ? product.videoUrl : null);
-  if (video) links.push({ label: '▶️ Videoni koʻrish', url: video });
+  if (video) links.push({ label: '▸ Videoni koʻrish', url: video });
   const ig = igHref(contact.instagram);
-  if (ig) links.push({ label: '📸 Instagram', url: ig });
+  if (ig) links.push({ label: '▸ Instagram', url: ig });
 
   // Links as inline buttons (2 per row).
   const buttonRows: UrlBtn[][] = [];
@@ -292,7 +295,7 @@ export async function postProductToChannel(productId: string): Promise<PostResul
         // esc() the href too — URLs with & (e.g. Instagram ?utm=…&igsh=…) break
         // HTML parsing otherwise ("can't parse entities").
         const linkLines = links.length
-          ? ['', '🔗 <b>Havolalar:</b>', ...links.map((l) => `<a href="${esc(l.url)}">${esc(l.label)}</a>`)]
+          ? ['', '<b>Havolalar</b>', ...links.map((l) => `<a href="${esc(l.url)}">${esc(l.label)}</a>`)]
           : [];
         const albumCaption = fitCaption([...lines, ...linkLines]);
         const mediaJson = parts.map((p, i) =>

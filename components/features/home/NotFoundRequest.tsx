@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Search, Send } from 'lucide-react';
+import { Search, Send, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { formatUzPhone } from '@/lib/phoneInput';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -100,8 +100,9 @@ export function NotFoundRequest() {
                 disabled={submitting || submitted}
               />
               {error && (
-                <p className="rounded-lg bg-brand-dark/85 px-3 py-2 text-xs font-bold text-red-400">
-                  ⚠️ {error}
+                <p className="inline-flex items-center gap-1.5 rounded-lg bg-brand-dark/85 px-3 py-2 text-xs font-bold text-red-400">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                  {error}
                 </p>
               )}
               <button

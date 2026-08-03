@@ -9,6 +9,7 @@ import {
   MapPin,
   MessageCircle,
   Send,
+  User,
   LogOut,
   LogIn,
   ChevronRight,
@@ -70,7 +71,7 @@ export function ProfileClient() {
             />
           ) : (
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-yellow font-display text-2xl font-extrabold text-brand-dark shadow-glow-sm">
-              {user?.first_name?.[0] ?? '👤'}
+              {user?.first_name?.[0] ?? <User className="h-7 w-7" strokeWidth={2.5} />}
             </div>
           )}
           <div className="min-w-0 flex-1">

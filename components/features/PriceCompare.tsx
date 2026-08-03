@@ -114,8 +114,9 @@ export function PriceCompare({
 
         {!compact && savings > 0 && (
           <div className="mt-3 rounded-lg bg-success/10 px-3 py-2 text-center">
-            <p className="text-xs font-semibold text-success">
-              💰 {t('youSave', { amount: formatPrice(savings, locale).replace(/[^\d\s]/g, '').trim() })}
+            <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-success">
+              <TrendingDown className="h-3.5 w-3.5" strokeWidth={2.5} />
+              {t('youSave', { amount: formatPrice(savings, locale).replace(/[^\d\s]/g, '').trim() })}
             </p>
           </div>
         )}

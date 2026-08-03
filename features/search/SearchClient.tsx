@@ -297,7 +297,7 @@ export function SearchClient() {
               </>
             ) : (
               <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-brand-surface-border py-12 text-center">
-                <div className="mb-4 text-5xl opacity-70">🔍</div>
+                <Search className="mb-4 h-12 w-12 text-white/30" strokeWidth={1.5} />
                 <h3 className="font-display text-lg font-bold">
                   {t('noResultsTitle', { query: debounced })}
                 </h3>
