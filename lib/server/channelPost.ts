@@ -149,18 +149,31 @@ function fullUrl(src?: string): string | null {
   return null;
 }
 
+/**
+ * Extract a clean handle from anything the admin pasted — a bare @username, a
+ * full profile URL, or a share URL with tracking params
+ * (e.g. "https://www.instagram.com/deft.moto?utm_source=…&igsh=…" → "deft.moto").
+ * `host` strips the known domain prefix; query/hash/path tail is dropped.
+ */
+function cleanHandle(raw?: string, host?: RegExp): string {
+  let s = (raw || '').trim();
+  if (!s) return '';
+  s = s.replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+  if (host) s = s.replace(host, '');
+  return s.replace(/^@/, '').split(/[/?#]/)[0].trim();
+}
+
+const TG_HOST = /^(t\.me|telegram\.me|telegram\.dog)\//i;
+const IG_HOST = /^(instagram\.com|instagr\.am)\//i;
+
 function tgHref(handle?: string): string | null {
-  const s = (handle || '').trim();
-  if (!s) return null;
-  if (/^https?:\/\//i.test(s)) return s;
-  return `https://t.me/${s.replace(/^@/, '')}`;
+  const u = cleanHandle(handle, TG_HOST);
+  return u ? `https://t.me/${u}` : null;
 }
 
 function igHref(handle?: string): string | null {
-  const s = (handle || '').trim();
-  if (!s) return null;
-  if (/^https?:\/\//i.test(s)) return s;
-  return `https://instagram.com/${s.replace(/^@/, '')}`;
+  const u = cleanHandle(handle, IG_HOST);
+  return u ? `https://instagram.com/${u}` : null;
 }
 
 type UrlBtn = { text: string; url: string };
@@ -233,10 +246,13 @@ export async function postProductToChannel(productId: string): Promise<PostResul
 
   lines.push('');
   if (contact.phone) lines.push(esc(contact.phone));
-  const tgUser = contact.telegram?.replace(/^https?:\/\/t\.me\//i, '').replace(/^@/, '');
-  if (tgUser) lines.push(`Telegram · @${esc(tgUser)}`);
-  const igUser = contact.instagram?.replace(/^@/, '');
-  if (igUser) lines.push(`Instagram · ${esc(igUser)}`);
+  // Social handles render as clean, tappable links (never the raw share URL).
+  const tgU = cleanHandle(contact.telegram, TG_HOST);
+  const tgH = tgHref(contact.telegram);
+  if (tgU && tgH) lines.push(`Telegram · <a href="${esc(tgH)}">@${esc(tgU)}</a>`);
+  const igU = cleanHandle(contact.instagram, IG_HOST);
+  const igH = igHref(contact.instagram);
+  if (igU && igH) lines.push(`Instagram · <a href="${esc(igH)}">@${esc(igU)}</a>`);
 
   const caption = fitCaption(lines);
 
