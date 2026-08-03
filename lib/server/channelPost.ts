@@ -176,6 +176,18 @@ function igHref(handle?: string): string | null {
   return u ? `https://instagram.com/${u}` : null;
 }
 
+/**
+ * A recognisable icon per marketplace. Telegram inline buttons can only carry
+ * unicode (no brand logos), so we pick the closest emoji — Uzum ("uzum" =
+ * grape) → 🍇, Wildberries (wild berry) → 🫐, otherwise a generic cart.
+ */
+function marketIcon(id?: string): string {
+  const s = (id || '').toLowerCase();
+  if (s.includes('uzum')) return '🍇';
+  if (s.includes('wildber') || s === 'wb') return '🫐';
+  return '🛒';
+}
+
 type UrlBtn = { text: string; url: string };
 
 export type PostResult =
@@ -224,8 +236,8 @@ export async function postProductToChannel(productId: string): Promise<PostResul
   // ---- caption (HTML) ----
   // Minimalist / monochrome styling: thin unicode marks instead of colourful
   // emoji for a premium, editorial look.
-  const lines: string[] = [`▎<b>${esc(product.name)}</b>`];
-  if (product.brand) lines.push(`<i>${esc(product.brand)}</i>`);
+  const lines: string[] = [`🏍 <b>${esc(product.name)}</b>`];
+  if (product.brand) lines.push(`🏷 ${esc(product.brand)}`);
 
   const descLines = (product.description || '')
     .split(/\n+/)
@@ -234,43 +246,43 @@ export async function postProductToChannel(productId: string): Promise<PostResul
     .slice(0, 8);
   if (descLines.length) {
     lines.push('');
-    for (const l of descLines) lines.push(`— ${esc(l)}`);
+    for (const l of descLines) lines.push(`▫️ ${esc(l)}`);
   }
 
   lines.push('');
   const priceLine =
     product.oldPrice && product.oldPrice > product.price
-      ? `<b>${sum(product.price)} so'm</b>   <s>${sum(product.oldPrice)} so'm</s>`
-      : `<b>${sum(product.price)} so'm</b>`;
+      ? `💰 <b>${sum(product.price)} so'm</b>  <s>${sum(product.oldPrice)} so'm</s>`
+      : `💰 <b>${sum(product.price)} so'm</b>`;
   lines.push(priceLine);
 
   lines.push('');
-  if (contact.phone) lines.push(esc(contact.phone));
+  if (contact.phone) lines.push(`📞 ${esc(contact.phone)}`);
   // Social handles render as clean, tappable links (never the raw share URL).
   const tgU = cleanHandle(contact.telegram, TG_HOST);
   const tgH = tgHref(contact.telegram);
-  if (tgU && tgH) lines.push(`Telegram · <a href="${esc(tgH)}">@${esc(tgU)}</a>`);
+  if (tgU && tgH) lines.push(`✈️ <a href="${esc(tgH)}">@${esc(tgU)}</a>`);
   const igU = cleanHandle(contact.instagram, IG_HOST);
   const igH = igHref(contact.instagram);
-  if (igU && igH) lines.push(`Instagram · <a href="${esc(igH)}">@${esc(igU)}</a>`);
+  if (igU && igH) lines.push(`📸 <a href="${esc(igH)}">@${esc(igU)}</a>`);
 
   const caption = fitCaption(lines);
 
   // ---- links (one source of truth) ----
   // Only the marketplaces THIS product is listed on — its competitor links.
   const links: { label: string; url: string }[] = [];
-  if (APP_URL && product.slug) links.push({ label: '▸ DEFT MOTO', url: `${APP_URL}/product/${product.slug}` });
+  if (APP_URL && product.slug) links.push({ label: '🏍 DEFT MOTO', url: `${APP_URL}/product/${product.slug}` });
   for (const c of product.competitorPrices || []) {
     if (!c.url) continue;
     const mk = marketplaces.find((m) => m.id === c.source);
-    links.push({ label: `▸ ${mk?.name || mk?.label || c.label || c.source || 'Market'}`, url: c.url });
+    links.push({ label: `${marketIcon(mk?.id || c.source)} ${mk?.name || mk?.label || c.label || c.source || 'Market'}`, url: c.url });
   }
   const dm = tgHref(contact.telegram);
-  if (dm) links.push({ label: '✉ Telegramdan yozish', url: dm });
+  if (dm) links.push({ label: '✈️ Telegramdan yozish', url: dm });
   const video = fullUrl(product.videoUrl) || (product.videoUrl?.startsWith('http') ? product.videoUrl : null);
-  if (video) links.push({ label: '▸ Videoni koʻrish', url: video });
+  if (video) links.push({ label: '▶️ Videoni koʻrish', url: video });
   const ig = igHref(contact.instagram);
-  if (ig) links.push({ label: '▸ Instagram', url: ig });
+  if (ig) links.push({ label: '📸 Instagram', url: ig });
 
   // Links as inline buttons (2 per row).
   const buttonRows: UrlBtn[][] = [];
@@ -311,7 +323,7 @@ export async function postProductToChannel(productId: string): Promise<PostResul
         // esc() the href too — URLs with & (e.g. Instagram ?utm=…&igsh=…) break
         // HTML parsing otherwise ("can't parse entities").
         const linkLines = links.length
-          ? ['', '<b>Havolalar</b>', ...links.map((l) => `<a href="${esc(l.url)}">${esc(l.label)}</a>`)]
+          ? ['', '🔗 <b>Havolalar</b>', ...links.map((l) => `<a href="${esc(l.url)}">${esc(l.label)}</a>`)]
           : [];
         const albumCaption = fitCaption([...lines, ...linkLines]);
         const mediaJson = parts.map((p, i) =>
