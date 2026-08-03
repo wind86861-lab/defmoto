@@ -183,8 +183,11 @@ function igHref(handle?: string): string | null {
  */
 function marketIcon(id?: string): string {
   const s = (id || '').toLowerCase();
-  if (s.includes('uzum')) return '🍇';
-  if (s.includes('wildber') || s === 'wb') return '🫐';
+  // Colour-matched to each brand (a real logo can't go on a Telegram button —
+  // buttons hold text only — so we echo the brand colour with a unicode glyph):
+  if (s.includes('uzum')) return '🟪'; // Uzum's purple square
+  if (s.includes('wildber') || s === 'wb') return '🟪'; // Wildberries purple
+  if (s.includes('yandex')) return '🟥'; // Yandex red
   return '🛒';
 }
 
