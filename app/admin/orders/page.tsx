@@ -12,6 +12,7 @@ import { OrderStatusBadge, getOrderStatusMeta } from '@/features/orders/OrderSta
 import type { Order, OrderStatus } from '@/types/order';
 
 const STATUS_OPTIONS: OrderStatus[] = [
+  'received',
   'pending',
   'confirmed',
   'paid',
