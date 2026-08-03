@@ -527,7 +527,9 @@
     "retryPaymentButton": "Pay again",
     "backToCartButton": "Back to cart",
     "continueTelegramButton": "Continue in Telegram bot",
-    "homeButton": "Go home"
+    "homeButton": "Go home",
+    "statusReceived": "Received",
+    "statusExpired": "Expired"
   },
   "payment": {
     "redirecting": "Redirecting to payment system",

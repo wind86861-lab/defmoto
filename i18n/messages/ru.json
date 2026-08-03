@@ -527,7 +527,9 @@
     "retryPaymentButton": "Оплатить снова",
     "backToCartButton": "Вернуться в корзину",
     "continueTelegramButton": "Продолжить в Telegram-боте",
-    "homeButton": "На главную"
+    "homeButton": "На главную",
+    "statusReceived": "Принят",
+    "statusExpired": "Истёк"
   },
   "payment": {
     "redirecting": "Переход в платёжную систему",

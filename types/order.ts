@@ -1,12 +1,14 @@
 import type { CartItem } from '@/lib/stores/cart';
 
 export type OrderStatus =
+  | 'received'
   | 'pending'
   | 'confirmed'
   | 'paid'
   | 'shipping'
   | 'delivered'
-  | 'cancelled';
+  | 'cancelled'
+  | 'expired';
 
 export type DeliveryMethod = 'courier' | 'pickup' | 'post' | 'bts';
 export type PaymentMethod = 'click' | 'payme' | 'bts' | 'cash';

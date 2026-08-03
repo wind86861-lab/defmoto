@@ -527,7 +527,9 @@
     "retryPaymentButton": "Qayta toʻlash",
     "backToCartButton": "Savatga qaytish",
     "continueTelegramButton": "Telegram botda davom ettirish",
-    "homeButton": "Bosh sahifaga"
+    "homeButton": "Bosh sahifaga",
+    "statusReceived": "Qabul qilindi",
+    "statusExpired": "Muddati o'tdi"
   },
   "payment": {
     "redirecting": "To'lov tizimiga yo'naltirilmoqda",

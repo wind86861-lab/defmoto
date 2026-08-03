@@ -163,9 +163,10 @@ export async function cancelShipmentForOrder(
     return { ok: false, error: r.message || 'bts-error' };
   }
 
-  // Remove the BTS record and move the order back so it can be re-shipped.
+  // Remove the BTS record and move the order back to an actionable state so it
+  // can be re-shipped (a normal-flow status, not the orphaned 'received').
   clearOrderBts(order.id);
-  updateOrderStatus(order.id, 'received');
+  updateOrderStatus(order.id, 'confirmed');
   void notifyOperator(`❌ *BTS jo'natma bekor qilindi* ${order.number}`);
   return { ok: true };
 }

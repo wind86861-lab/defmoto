@@ -9,20 +9,38 @@ export function getOrderStatusMeta(
   t: ReturnType<typeof useTranslations>,
 ): Record<OrderStatus, { label: string; color: string; icon: typeof Clock; pct: number }> {
   return {
+    received: { label: t('statusReceived'), color: 'text-info', icon: Package, pct: 15 },
     pending: { label: t('statusPending'), color: 'text-warning', icon: Clock, pct: 20 },
     confirmed: { label: t('statusConfirmed'), color: 'text-info', icon: Check, pct: 40 },
     paid: { label: t('statusPaid'), color: 'text-success', icon: CreditCard, pct: 60 },
     shipping: { label: t('statusShipping'), color: 'text-info', icon: Truck, pct: 80 },
     delivered: { label: t('statusDelivered'), color: 'text-success', icon: Package, pct: 100 },
     cancelled: { label: t('statusCancelled'), color: 'text-danger', icon: X, pct: 0 },
+    expired: { label: t('statusExpired'), color: 'text-danger', icon: X, pct: 0 },
   };
+}
+
+// Safe lookup — an unknown/legacy status must never crash the UI (a missing key
+// used to throw "Cannot read properties of undefined" on the admin orders page).
+export function orderStatusMeta(
+  t: ReturnType<typeof useTranslations>,
+  status: OrderStatus,
+) {
+  return (
+    getOrderStatusMeta(t)[status] ?? {
+      label: String(status),
+      color: 'text-white/60',
+      icon: Clock,
+      pct: 0,
+    }
+  );
 }
 
 const TIMELINE: OrderStatus[] = ['pending', 'confirmed', 'paid', 'shipping', 'delivered'];
 
 export function OrderStatusBadge({ status }: { status: OrderStatus }) {
   const t = useTranslations('orders');
-  const meta = getOrderStatusMeta(t)[status];
+  const meta = orderStatusMeta(t, status);
   const Icon = meta.icon;
   return (
     <span
