@@ -87,10 +87,9 @@ export interface SiteContact {
    *  The bot must be an admin of the channel. */
   channelId?: string;
   /** How a product is posted to the channel:
-   *  'single'  — 1 photo + caption + attached buttons (default)
-   *  'gallery' — the single post, then the remaining images as an album below
-   *  'album'   — one album of all images, links as tappable text (no buttons) */
-  channelPostMode?: 'single' | 'gallery' | 'album';
+   *  'single' — 1 photo + caption + attached buttons (default)
+   *  'album'  — one album of all images, links as tappable text (no buttons) */
+  channelPostMode?: 'single' | 'album';
   /** RU/EN translations of this record's text fields. */
   tr?: TrMap;
 }

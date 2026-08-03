@@ -115,6 +115,33 @@ const sum = (n: number) => (n || 0).toLocaleString('ru-RU');
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+/**
+ * Fit an HTML caption within `max` chars without leaving a half-cut tag or
+ * entity — Telegram rejects "unclosed start tag" / "can't parse entities".
+ * Tags live on whole lines here, so we drop whole ▫️ description lines first
+ * (never splitting a tag), then hard-trim any dangling `<…`/`&…` as a last resort.
+ */
+function fitCaption(allLines: string[], max = 1024): string {
+  const lines = [...allLines];
+  const joined = () => lines.join('\n');
+  while (joined().length > max) {
+    const i = lines.map((l) => l.trimStart().startsWith('▫️')).lastIndexOf(true);
+    if (i === -1) break;
+    lines.splice(i, 1);
+  }
+  let out = joined();
+  if (out.length > max) {
+    out = out.slice(0, max);
+    const lt = out.lastIndexOf('<');
+    const gt = out.lastIndexOf('>');
+    if (lt > gt) out = out.slice(0, lt); // drop a partial tag
+    const amp = out.lastIndexOf('&');
+    const semi = out.lastIndexOf(';');
+    if (amp > semi && out.length - amp <= 10) out = out.slice(0, amp); // partial entity
+  }
+  return out.trimEnd();
+}
+
 function fullUrl(src?: string): string | null {
   if (!src) return null;
   if (/^https?:\/\//i.test(src)) return src;
@@ -208,7 +235,7 @@ export async function postProductToChannel(productId: string): Promise<PostResul
   const igUser = contact.instagram?.replace(/^@/, '');
   if (igUser) lines.push(`📸 ${esc(igUser)}`);
 
-  const caption = lines.join('\n').slice(0, 1024);
+  const caption = fitCaption(lines);
 
   // ---- links (one source of truth) ----
   // Only the marketplaces THIS product is listed on — its competitor links.
@@ -243,11 +270,10 @@ export async function postProductToChannel(productId: string): Promise<PostResul
   };
 
   // Admin-chosen post layout (Telegram can't do multi-image + buttons in one
-  // message, so each mode is a different trade-off):
-  //   'single'  — 1 photo + caption + attached buttons (default)
-  //   'gallery' — the single post, then the rest of the images as an album below
-  //   'album'   — one album of all images; links as tappable text (no buttons)
-  const mode = (contact.channelPostMode || 'single') as 'single' | 'gallery' | 'album';
+  // message):
+  //   'single' — 1 photo + caption + attached buttons (default)
+  //   'album'  — one album of all images; links as tappable HTML text (no buttons)
+  const mode = (contact.channelPostMode || 'single') as 'single' | 'album';
 
   const readAll = async (srcs: string[]): Promise<TgFilePart[]> => {
     const parts: TgFilePart[] = [];
@@ -261,10 +287,14 @@ export async function postProductToChannel(productId: string): Promise<PostResul
   try {
     // 'album' → one grouped album of all images, links as tappable HTML text.
     if (mode === 'album' && images.length > 1) {
-      const linkText = links.map((l) => `<a href="${l.url}">${esc(l.label)}</a>`).join('\n');
-      const albumCaption = (links.length ? `${caption}\n\n🔗 <b>Havolalar:</b>\n${linkText}` : caption).slice(0, 1024);
       const parts = await readAll(images.slice(0, 10));
       if (parts.length >= 2) {
+        // esc() the href too — URLs with & (e.g. Instagram ?utm=…&igsh=…) break
+        // HTML parsing otherwise ("can't parse entities").
+        const linkLines = links.length
+          ? ['', '🔗 <b>Havolalar:</b>', ...links.map((l) => `<a href="${esc(l.url)}">${esc(l.label)}</a>`)]
+          : [];
+        const albumCaption = fitCaption([...lines, ...linkLines]);
         const mediaJson = parts.map((p, i) =>
           i === 0
             ? { type: 'photo', media: `attach://${p.field}`, caption: albumCaption, parse_mode: 'HTML' }
@@ -281,32 +311,13 @@ export async function postProductToChannel(productId: string): Promise<PostResul
       // <2 readable images → fall through to single.
     }
 
-    // Main post: photo + caption + attached buttons (default look).
+    // 'single' (default) → one photo + caption + attached buttons.
     const main = await tgApi<{ ok?: boolean; description?: string; parameters?: { retry_after?: number } }>(
       'sendPhoto',
       { chat_id: channel, photo: images[0], caption, parse_mode: 'HTML', reply_markup: keyboard },
       { timeoutMs: MEDIA_TIMEOUT_MS },
     );
     if (!main?.ok) return fail(main);
-
-    // 'gallery' → send the remaining images below as a supplementary album.
-    if (mode === 'gallery' && images.length > 1) {
-      const parts = await readAll(images.slice(1, 10));
-      try {
-        if (parts.length === 1) {
-          await tgUpload('sendPhoto', { chat_id: channel }, [{ ...parts[0], field: 'photo' }], {
-            timeoutMs: MEDIA_TIMEOUT_MS,
-          });
-        } else if (parts.length >= 2) {
-          const mediaJson = parts.map((p) => ({ type: 'photo', media: `attach://${p.field}` }));
-          await tgUpload('sendMediaGroup', { chat_id: channel, media: JSON.stringify(mediaJson) }, parts, {
-            timeoutMs: MEDIA_TIMEOUT_MS,
-          });
-        }
-      } catch {
-        /* best-effort — main post already succeeded */
-      }
-    }
     return { ok: true };
   } catch (e) {
     recentPosts.delete(dedupeKey);

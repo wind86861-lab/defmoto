@@ -155,7 +155,7 @@ export default function AdminSettingsPage() {
           <Select
             value={contact.channelPostMode ?? 'single'}
             onChange={(v) => {
-              setContact({ channelPostMode: v as 'single' | 'gallery' | 'album' });
+              setContact({ channelPostMode: v as 'single' | 'album' });
               flash();
             }}
             options={[
