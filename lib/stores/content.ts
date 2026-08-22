@@ -198,7 +198,8 @@ export const useContentStore = create<ContentState>()(
         set((s) => ({ products: s.products.filter((p) => p.id !== id) })),
       resetProducts: () => set({ products: mockProducts }),
 
-      addCategory: (c) => set((s) => ({ categories: [...s.categories, c] })),
+      // Prepend so a newly added category shows at the top of the list.
+      addCategory: (c) => set((s) => ({ categories: [c, ...s.categories] })),
       updateCategory: (id, patch) =>
         set((s) => ({
           categories: s.categories.map((c) => (c.id === id ? { ...c, ...patch } : c)),
