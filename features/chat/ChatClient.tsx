@@ -102,6 +102,7 @@ export function ChatClient() {
             const attachments = [
               ...(m.image ? [{ kind: 'image' as const, url: m.image }] : []),
               ...(m.video ? [{ kind: 'video' as const, url: m.video }] : []),
+              ...(m.file ? [{ kind: 'file' as const, url: m.file.url, name: m.file.name, size: m.file.size }] : []),
             ];
             addMessage({
               id: m.id,

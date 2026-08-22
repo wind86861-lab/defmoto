@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { ShoppingBag, MapPin, Wrench, ArrowRight } from 'lucide-react';
+import { ShoppingBag, MapPin, Wrench, ArrowRight, FileText } from 'lucide-react';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { formatPrice } from '@/lib/format';
 import { useCartStore } from '@/lib/stores/cart';
@@ -15,6 +15,8 @@ export function ChatAttachmentView({ attachment }: { attachment: ChatAttachment 
       return <ImageAttachment src={attachment.url} alt={attachment.alt} />;
     case 'video':
       return <VideoAttachment src={attachment.url} />;
+    case 'file':
+      return <FileAttachment url={attachment.url} name={attachment.name} size={attachment.size} />;
     case 'product':
       return <ProductLinkCard attachment={attachment} />;
     case 'service':
@@ -47,6 +49,26 @@ function VideoAttachment({ src }: { src: string }) {
         className="max-h-80 w-full bg-black object-contain"
       />
     </div>
+  );
+}
+
+function FileAttachment({ url, name, size }: { url: string; name: string; size?: number }) {
+  const kb = size ? (size < 1024 * 1024 ? `${(size / 1024).toFixed(0)} KB` : `${(size / 1024 / 1024).toFixed(1)} MB`) : '';
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="flex items-center gap-3 rounded-2xl border border-brand-surface-border bg-brand-dark p-3 transition-colors hover:border-brand-yellow/40"
+    >
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-yellow/15 text-brand-yellow">
+        <FileText className="h-5 w-5" />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-semibold text-white">{name}</span>
+        {kb && <span className="block text-[11px] text-white/45">{kb}</span>}
+      </span>
+    </a>
   );
 }
 

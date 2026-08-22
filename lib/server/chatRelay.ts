@@ -39,8 +39,12 @@ export interface RelayMessage {
   text: string;
   image?: string; // /uploads/... when an image was sent
   video?: string; // /uploads/... when a video was sent
+  file?: { url: string; name: string; size?: number }; // any other document (PDF …)
   createdAt: string;
 }
+
+/** A chat's lifecycle: unanswered → in-progress → finished. */
+export type SessionStatus = 'new' | 'open' | 'closed';
 
 export interface OperatorConfig {
   name: string;
@@ -51,6 +55,9 @@ interface Session {
   messages: RelayMessage[];
   lastActivity: number;
   customerName?: string;
+  status?: SessionStatus;
+  unread?: number; // customer messages the operator hasn't opened yet
+  closedAt?: number;
 }
 
 export interface SessionSummary {
@@ -60,7 +67,30 @@ export interface SessionSummary {
   lastActivity: number;
   messageCount: number;
   customerCount: number;
+  status: SessionStatus;
+  unread: number;
   messages: RelayMessage[];
+}
+
+/** Derive a status for legacy sessions saved before the field existed. */
+function effectiveStatus(s: Session): SessionStatus {
+  if (s.status) return s.status;
+  const last = s.messages[s.messages.length - 1];
+  return last?.author === 'customer' ? 'new' : 'open';
+}
+
+/** Customer wrote → bump unread and (re)open the thread. */
+function touchCustomer(s: Session): void {
+  s.unread = (s.unread ?? 0) + 1;
+  const answered = s.messages.some((m) => m.author === 'operator');
+  // Reopen a finished chat; otherwise 'new' until the operator answers.
+  s.status = effectiveStatus(s) === 'closed' || answered ? 'open' : 'new';
+}
+
+/** Operator acted → the chat is in-progress and nothing is unread. */
+function touchOperator(s: Session): void {
+  s.status = 'open';
+  s.unread = 0;
 }
 
 interface RelayState {
@@ -319,6 +349,7 @@ export async function forwardToOperator(
     text,
     createdAt: new Date().toISOString(),
   });
+  touchCustomer(session);
   persistSessions();
 
   if (!BOT_TOKEN || state.operatorChatId == null) return { relayed: false };
@@ -415,8 +446,7 @@ export function takePendingReply(chatId: number): string | undefined {
 }
 
 function sessionIsNew(s: Session): boolean {
-  const last = s.messages[s.messages.length - 1];
-  return last?.author === 'customer'; // last word is the customer's → unanswered
+  return effectiveStatus(s) === 'new'; // unanswered
 }
 
 /** Inbox list — unanswered first, each session a button. */
@@ -473,8 +503,81 @@ export function operatorReplyToSession(sessionId: string, text: string): boolean
     createdAt: new Date().toISOString(),
   });
   session.lastActivity = Date.now();
+  touchOperator(session);
   persistSessions();
   if (sessionId.startsWith('tg:')) void sendBotMessage(sessionId.slice(3), `💬 *Operator:* ${text}`);
+  return true;
+}
+
+/**
+ * Absolute public URL for an /uploads/... path, so Telegram can fetch the file
+ * when we forward an operator attachment to a bot-based customer.
+ */
+function absoluteUpload(url: string): string {
+  const base = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/+$/, '');
+  return url.startsWith('http') ? url : `${base}${url}`;
+}
+
+/**
+ * Operator sends a message (optionally with an attachment) from the admin panel
+ * to a session. The attachment is already uploaded to /uploads via /api/upload.
+ */
+export async function operatorSendToSession(
+  sessionId: string,
+  opts: { text?: string; attachment?: { url: string; kind: 'image' | 'video' | 'file'; name?: string; size?: number } },
+): Promise<boolean> {
+  const session = getSession(sessionId);
+  const text = (opts.text || '').trim();
+  const att = opts.attachment;
+  const msg: RelayMessage = {
+    id: `op_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    author: 'operator',
+    text: text || (att ? (att.kind === 'image' ? '🖼 Rasm' : att.kind === 'video' ? '🎥 Video' : '📎 Fayl') : ''),
+    createdAt: new Date().toISOString(),
+  };
+  if (att?.kind === 'image') msg.image = att.url;
+  else if (att?.kind === 'video') msg.video = att.url;
+  else if (att?.kind === 'file') msg.file = { url: att.url, name: att.name || 'fayl', size: att.size };
+  session.messages.push(msg);
+  session.lastActivity = Date.now();
+  touchOperator(session);
+  persistSessions();
+
+  // Deliver to Telegram-based customers (web customers read it via polling).
+  if (sessionId.startsWith('tg:')) {
+    const chatId = sessionId.slice(3);
+    if (att) {
+      const url = absoluteUpload(att.url);
+      const caption = text || undefined;
+      if (att.kind === 'image') await tg('sendPhoto', { chat_id: chatId, photo: url, caption });
+      else if (att.kind === 'video') await tg('sendVideo', { chat_id: chatId, video: url, caption });
+      else await tg('sendDocument', { chat_id: chatId, document: url, caption });
+    } else if (text) {
+      void sendBotMessage(chatId, `💬 *Operator:* ${text}`);
+    }
+  }
+  return true;
+}
+
+/** Mark a chat finished (operator pressed "Yakunlash"). */
+export async function closeSession(sessionId: string): Promise<boolean> {
+  await ensureLoaded();
+  const s = state.sessions.get(sessionId);
+  if (!s) return false;
+  s.status = 'closed';
+  s.closedAt = Date.now();
+  s.unread = 0;
+  persistSessions();
+  return true;
+}
+
+/** Operator opened a chat → clear its unread counter. */
+export async function markSessionRead(sessionId: string): Promise<boolean> {
+  await ensureLoaded();
+  const s = state.sessions.get(sessionId);
+  if (!s) return false;
+  s.unread = 0;
+  persistSessions();
   return true;
 }
 
@@ -520,6 +623,7 @@ export async function operatorReplyImageToSession(
     createdAt: new Date().toISOString(),
   });
   session.lastActivity = Date.now();
+  touchOperator(session);
   persistSessions();
   if (isTg) {
     await tg('sendPhoto', { chat_id: sessionId.slice(3), photo: fileId, caption: caption || undefined });
@@ -556,6 +660,7 @@ export async function operatorReplyVideoToSession(
     createdAt: new Date().toISOString(),
   });
   session.lastActivity = Date.now();
+  touchOperator(session);
   persistSessions();
   if (isTg) {
     await tg('sendVideo', { chat_id: sessionId.slice(3), video: fileId, caption: caption || undefined });
@@ -1137,6 +1242,7 @@ export function ingestOperatorReply(replyToMessageId: number, text: string): boo
     createdAt: new Date().toISOString(),
   });
   session.lastActivity = Date.now();
+  touchOperator(session);
   persistSessions();
   // Chat started from inside the bot → deliver the reply straight to that chat.
   if (sessionId.startsWith('tg:')) {
@@ -1179,6 +1285,8 @@ export async function listSessions(): Promise<SessionSummary[]> {
         lastActivity: s.lastActivity,
         messageCount: s.messages.length,
         customerCount: s.messages.filter((m) => m.author === 'customer').length,
+        status: effectiveStatus(s),
+        unread: s.unread ?? 0,
         messages: s.messages.slice(-50),
       };
     })
