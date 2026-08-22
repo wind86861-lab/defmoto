@@ -19,6 +19,7 @@ interface ServerOrder {
   createdAt: number;
   payload: Order;
   bts?: { barcode?: string; tracking?: string; cost?: number };
+  btsIssueAck?: { at: number };
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -117,6 +118,18 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
     }
   };
 
+  const toggleBtsAck = async (on: boolean) => {
+    const res = await fetch(`/api/orders/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ btsAck: on }),
+    }).catch(() => null);
+    if (res?.ok) {
+      const d = await res.json();
+      if (d?.order) setOrder(d.order);
+    }
+  };
+
   if (loading) {
     return <div className="py-16 text-center text-sm text-white/45">Yuklanmoqda...</div>;
   }
@@ -132,6 +145,13 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
   const items = p.items || [];
   const d = p.delivery;
   const addr = d?.address;
+
+  // BTS-incompatible products in a BTS/post order → the admin must arrange
+  // delivery manually. Only relevant when delivery goes through BTS.
+  const isBtsDelivery = d?.method === 'bts' || d?.method === 'post';
+  const noBtsItems = items.filter((it) => (it as { noBts?: boolean }).noBts);
+  const showBtsWarn = isBtsDelivery && noBtsItems.length > 0;
+  const acked = Boolean(order.btsIssueAck);
 
   return (
     <div className="max-w-2xl space-y-5">
@@ -150,6 +170,49 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
           {STATUS_LABEL[order.status] || order.status}
         </span>
       </header>
+
+      {/* BTS-incompatible product warning — admin arranges delivery manually */}
+      {showBtsWarn && (
+        <section
+          className={`rounded-2xl border p-4 ${
+            acked ? 'border-success/40 bg-success/10' : 'border-danger/50 bg-danger/10'
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            <span className={`mt-0.5 text-lg ${acked ? 'text-success' : 'text-danger'}`}>
+              {acked ? '✅' : '⚠️'}
+            </span>
+            <div className="min-w-0 flex-1">
+              <h3 className={`text-sm font-bold ${acked ? 'text-success' : 'text-danger'}`}>
+                {acked
+                  ? 'BTS masalasi hal qilindi (mijoz bilan kelishilgan)'
+                  : 'Diqqat: bu buyurtmada BTS qabul qilmaydigan mahsulot bor'}
+              </h3>
+              <p className="mt-1 text-xs text-white/65">
+                Yetkazib berishni mijoz bilan alohida kelishing. BTS orqali jo‘natib bo‘lmaydi:
+              </p>
+              <ul className="mt-1.5 space-y-0.5 text-xs text-white/80">
+                {noBtsItems.map((it) => (
+                  <li key={it.productId} className="flex items-center gap-1.5">
+                    <span className="text-danger">•</span> {it.name}
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={() => toggleBtsAck(!acked)}
+                className={`mt-3 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                  acked
+                    ? 'border border-brand-surface-border text-white/60 hover:text-white'
+                    : 'bg-gradient-yellow text-brand-dark shadow-glow-sm hover:brightness-110'
+                }`}
+              >
+                {acked ? 'Bekor qilish' : '✔️ Hal qilindi deb belgilash'}
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Customer */}
       <section className="grid gap-3 sm:grid-cols-2">

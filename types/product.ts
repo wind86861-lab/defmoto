@@ -35,6 +35,7 @@ export interface Product {
   images: string[];
   video?: string; // uploaded /uploads/*.mp4 or a video/YouTube URL
   weight?: number; // kg — used for BTS delivery price
+  noBts?: boolean; // true → can't be shipped via BTS (admin arranges delivery manually)
   price: number;
   oldPrice?: number;
   currency: Currency;

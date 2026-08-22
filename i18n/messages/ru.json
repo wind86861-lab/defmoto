@@ -942,6 +942,7 @@
     "fldProdInStock": "В наличии",
     "fldProdNew": "Новинка",
     "fldProdBestseller": "Бестселлер",
+    "fldProdNoBts": "Нельзя отправить через BTS",
     "fldProdStock": "На складе (шт)",
     "uploadImageBtn": "Загрузить фото",
     "fldProdVideo": "Видео",

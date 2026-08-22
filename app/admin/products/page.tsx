@@ -743,6 +743,7 @@ function ProductModal({
             <Toggle checked={draft.inStock} onChange={(v) => set({ inStock: v })} label={t('fldProdInStock')} />
             <Toggle checked={Boolean(draft.isNew)} onChange={(v) => set({ isNew: v })} label={t('fldProdNew')} />
             <Toggle checked={Boolean(draft.isBestseller)} onChange={(v) => set({ isBestseller: v })} label={t('fldProdBestseller')} />
+            <Toggle checked={Boolean(draft.noBts)} onChange={(v) => set({ noBts: v })} label={t('fldProdNoBts')} />
           </div>
         </div>
 

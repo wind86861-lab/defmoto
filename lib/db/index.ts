@@ -160,6 +160,9 @@ export interface OrderRecord {
   payload: unknown;
   createdAt: number;
   bts?: OrderBts;
+  // Admin acknowledged the "contains a BTS-incompatible product" warning and
+  // arranged delivery with the customer manually.
+  btsIssueAck?: { at: number };
 }
 
 export function listOrders(): OrderRecord[] {
@@ -212,6 +215,16 @@ export function updateOrderStatus(id: string, status: string): boolean {
   }
   atomicWrite(ORDERS_FILE, store.orders);
   return true;
+}
+
+/** Admin marks the BTS-incompatible-product warning handled (or reopens it). */
+export function ackOrderBtsIssue(id: string, on: boolean): OrderRecord | null {
+  load();
+  const o = store.orders.find((x) => x.id === id);
+  if (!o) return null;
+  o.btsIssueAck = on ? { at: Date.now() } : undefined;
+  atomicWrite(ORDERS_FILE, store.orders);
+  return o;
 }
 
 /** Attach/merge BTS shipment info onto an order. */

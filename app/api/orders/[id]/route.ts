@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { updateOrderStatus, getOrder } from '@/lib/db';
+import { updateOrderStatus, getOrder, ackOrderBtsIssue } from '@/lib/db';
 import { isAdminRequest } from '@/lib/server/adminAuth';
 import { currentUserId } from '@/lib/server/userAuth';
 import { notifyOrderStatus } from '@/lib/server/orderNotify';
@@ -22,11 +22,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (!isAdminRequest(req)) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
-  let body: { status?: string };
+  let body: { status?: string; btsAck?: boolean };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ ok: false }, { status: 400 });
+  }
+  // Toggle the "BTS-incompatible product handled" acknowledgement.
+  if (typeof body.btsAck === 'boolean') {
+    const order = ackOrderBtsIssue(params.id, body.btsAck);
+    if (!order) return NextResponse.json({ ok: false }, { status: 404 });
+    return NextResponse.json({ ok: true, order });
   }
   if (!body.status) return NextResponse.json({ ok: false }, { status: 400 });
   const ok = updateOrderStatus(params.id, body.status);

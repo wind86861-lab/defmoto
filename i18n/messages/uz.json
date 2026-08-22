@@ -942,6 +942,7 @@
     "fldProdInStock": "Sotuvda bor",
     "fldProdNew": "Yangi",
     "fldProdBestseller": "Bestseller",
+    "fldProdNoBts": "BTS orqali jo'natilmaydi",
     "fldProdStock": "Omborда (soni)",
     "uploadImageBtn": "Rasm yuklash",
     "fldProdVideo": "Video",

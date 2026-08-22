@@ -8,6 +8,7 @@ export interface CartItem {
   price: number;
   oldPrice?: number;
   weight?: number; // kg — for BTS delivery weight
+  noBts?: boolean; // snapshot: this product can't ship via BTS (admin-only flag)
   quantity: number;
   variant?: { color?: string; size?: string };
 }

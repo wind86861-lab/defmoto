@@ -942,6 +942,7 @@
     "fldProdInStock": "In stock",
     "fldProdNew": "New",
     "fldProdBestseller": "Bestseller",
+    "fldProdNoBts": "Can't ship via BTS",
     "fldProdStock": "Stock (qty)",
     "uploadImageBtn": "Upload image",
     "fldProdVideo": "Video",

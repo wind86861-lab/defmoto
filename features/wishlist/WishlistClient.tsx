@@ -130,6 +130,7 @@ export function WishlistClient() {
                       price: p.price,
                       oldPrice: p.oldPrice,
                       weight: p.weight,
+                      noBts: p.noBts,
                     });
                     toggle(p.id);
                     toast.cart(t('movedToCartTitle'), productName(p, locale), {

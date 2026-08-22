@@ -31,6 +31,7 @@ interface ServerOrder {
   createdAt: number;
   payload: Order;
   bts?: { barcode?: string; tracking?: string };
+  btsIssueAck?: { at: number };
 }
 
 /**
@@ -62,6 +63,27 @@ function BtsChip({ o }: { o: ServerOrder }) {
   ) : (
     <span className="inline-flex items-center gap-1 rounded-md bg-brand-yellow/15 px-1.5 py-0.5 text-[10px] font-bold text-brand-yellow">
       🚚 BTS — joʻnatma yaratilmagan
+    </span>
+  );
+}
+
+/** Whether this order has a BTS-incompatible product on a BTS/post delivery. */
+function orderHasNoBts(o: ServerOrder): boolean {
+  const dm = o.payload?.delivery?.method;
+  if (dm !== 'bts' && dm !== 'post') return false;
+  return (o.payload?.items || []).some((it) => (it as { noBts?: boolean }).noBts);
+}
+
+/** Red warning chip when an order contains a product BTS won't take. */
+function NoBtsChip({ o }: { o: ServerOrder }) {
+  if (!orderHasNoBts(o)) return null;
+  return o.btsIssueAck ? (
+    <span className="inline-flex items-center gap-1 rounded-md bg-success/15 px-1.5 py-0.5 text-[10px] font-bold text-success">
+      ✔ BTS: kelishildi
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1 rounded-md bg-danger/15 px-1.5 py-0.5 text-[10px] font-bold text-danger">
+      ⚠️ BTS olmaydi
     </span>
   );
 }
@@ -174,13 +196,19 @@ export default function AdminOrdersPage() {
           </thead>
           <tbody className="divide-y divide-brand-surface-border">
             {filtered.map((o) => (
-              <tr key={o.id} className="transition-colors hover:bg-white/3">
+              <tr
+                key={o.id}
+                className={cn(
+                  'transition-colors hover:bg-white/3',
+                  orderHasNoBts(o) && !o.btsIssueAck && 'bg-danger/5 shadow-[inset_3px_0_0_0] shadow-danger',
+                )}
+              >
                 <td className="px-4 py-3">
                   <Link href={`/admin/orders/${o.id}`} className="font-display text-sm font-bold text-white transition-colors hover:text-brand-yellow">
                     #{o.number}
                   </Link>
                   <div className="text-[11px] text-white/45">{tAdmin('productCountText', { count: itemsCount(o) })}</div>
-                  <div className="mt-1"><BtsChip o={o} /></div>
+                  <div className="mt-1 flex flex-wrap gap-1"><BtsChip o={o} /><NoBtsChip o={o} /></div>
                 </td>
                 <td className="px-4 py-3 text-sm">
                   <div className="font-semibold">{name(o)}</div>
