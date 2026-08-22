@@ -802,7 +802,7 @@
     "resetButton": "Сбросить",
     "savedFlashText": "Сохранено · {time}",
     "slidesSectionTitle": "Слайды баннера ({count})",
-    "uploadButton": "Загрузить",
+    "uploadButton": "Добавить",
     "noCustomBannerTitle": "Нет своего баннера",
     "noCustomBannerDescLine1": "На сайте используются стандартные 4 слайда.",
     "noCustomBannerDescLine2": "Нажмите кнопку выше, чтобы загрузить.",

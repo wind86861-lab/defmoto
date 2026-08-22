@@ -802,7 +802,7 @@
     "resetButton": "Reset",
     "savedFlashText": "Saved · {time}",
     "slidesSectionTitle": "Banner slides ({count})",
-    "uploadButton": "Upload",
+    "uploadButton": "Add",
     "noCustomBannerTitle": "No custom banner",
     "noCustomBannerDescLine1": "The site uses the default 4 slides.",
     "noCustomBannerDescLine2": "Click the button above to upload.",
