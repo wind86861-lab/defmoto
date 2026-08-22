@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createLead, listLeads } from '@/lib/db';
+import { createLead, listLeads, updateLeadStatus, type LeadStatus } from '@/lib/db';
 import { isAdminRequest } from '@/lib/server/adminAuth';
 import { notifyOperator, notifyOrdersGroup } from '@/lib/server/chatRelay';
 
@@ -27,6 +27,25 @@ export function GET(req: Request) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
   return NextResponse.json({ ok: true, leads: listLeads() });
+}
+
+// PATCH { id, status } — admin sets a lead's workflow status. Admin-only.
+export async function PATCH(req: Request) {
+  if (!isAdminRequest(req)) {
+    return NextResponse.json({ ok: false }, { status: 401 });
+  }
+  let body: { id?: string; status?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ ok: false }, { status: 400 });
+  }
+  const valid: LeadStatus[] = ['new', 'progress', 'done'];
+  if (!body.id || !valid.includes(body.status as LeadStatus)) {
+    return NextResponse.json({ ok: false }, { status: 400 });
+  }
+  const lead = updateLeadStatus(body.id, body.status as LeadStatus);
+  return NextResponse.json({ ok: Boolean(lead), lead });
 }
 
 export async function POST(req: Request) {

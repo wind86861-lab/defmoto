@@ -559,6 +559,9 @@ export function deleteLink(id: string): boolean {
 
 /* -------------------------------- leads ---------------------------------- */
 
+/** Admin workflow state for a lead. */
+export type LeadStatus = 'new' | 'progress' | 'done';
+
 /** Customer request ("Maxsus so'rov" / branch / service / franchise forms). */
 export interface LeadRecord {
   id: string;
@@ -567,6 +570,7 @@ export interface LeadRecord {
   phone: string;
   message?: string; // free text / requested product
   meta?: Record<string, string>;
+  status?: LeadStatus; // undefined = legacy 'new'
   createdAt: number;
 }
 
@@ -586,4 +590,14 @@ export function createLead(input: Omit<LeadRecord, 'id' | 'createdAt'>): LeadRec
 export function listLeads(): LeadRecord[] {
   load();
   return [...store.leads].sort((a, b) => b.createdAt - a.createdAt);
+}
+
+/** Admin sets a lead's workflow status (Yangi / Jarayonda / Ko'rib chiqilgan). */
+export function updateLeadStatus(id: string, status: LeadStatus): LeadRecord | null {
+  load();
+  const lead = store.leads.find((l) => l.id === id);
+  if (!lead) return null;
+  lead.status = status;
+  atomicWrite(LEADS_FILE, store.leads);
+  return lead;
 }
