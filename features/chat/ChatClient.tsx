@@ -9,10 +9,19 @@ import { cn } from '@/lib/cn';
 import { useChatStore } from '@/lib/stores/chat';
 import { useMounted } from '@/hooks/useMounted';
 import { useHaptic } from '@/hooks/useHaptic';
+import { uploadAttachment } from '@/lib/uploadImage';
 import { useTelegram } from '@/components/providers/TelegramProvider';
 import { ChatBubble, TypingIndicator } from './ChatBubble';
 import { ChatInput } from './ChatInput';
 import type { ChatMessage } from '@/types/chat';
+
+/** Convert a composer data-URL preview into a File for upload. */
+async function dataUrlToFile(dataUrl: string, name: string): Promise<File> {
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  const ext = (blob.type.split('/')[1] || 'jpg').replace(/[^a-z0-9]/gi, '');
+  return new File([blob], name.replace(/\.\w+$/, `.${ext}`), { type: blob.type || 'image/jpeg' });
+}
 
 function id() {
   return `m_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -147,22 +156,58 @@ export function ChatClient() {
     addMessage(userMsg);
 
     setTimeout(() => updateMessage(userMsg.id, { status: 'sent' }), 350);
+
+    // Upload any images to the server so the operator actually receives them
+    // (the composer holds them as local data URLs otherwise).
+    let uploaded: string[] = [];
+    if (images?.length) {
+      uploaded = (
+        await Promise.all(
+          images.map(async (src) => {
+            try {
+              const file = await dataUrlToFile(src, `chat_${Date.now()}.jpg`);
+              const att = await uploadAttachment(file);
+              return att.url;
+            } catch {
+              return null;
+            }
+          }),
+        )
+      ).filter((u): u is string => Boolean(u));
+      // Swap the local previews for the persisted URLs.
+      if (uploaded.length) {
+        updateMessage(userMsg.id, {
+          attachments: uploaded.map((url) => ({ kind: 'image' as const, url })),
+        });
+      }
+    }
+
     setTimeout(() => updateMessage(userMsg.id, { status: 'delivered' }), 700);
 
-    // Try to relay to a live Telegram operator first.
+    // Relay to the live Telegram operator: text (+ first image) in one message,
+    // any extra images as their own messages.
     let relayed = false;
     try {
+      const first = uploaded[0];
       const res = await fetch('/api/chat/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sessionId,
-          text: text || (images?.length ? '📷 (rasm yuborildi)' : ''),
+          text: text || '',
+          image: first,
           customerName: user?.first_name,
         }),
       });
       const data = await res.json();
       relayed = Boolean(data?.relayed);
+      for (const url of uploaded.slice(1)) {
+        await fetch('/api/chat/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId, image: url, customerName: user?.first_name }),
+        }).catch(() => {});
+      }
     } catch {
       relayed = false;
     }

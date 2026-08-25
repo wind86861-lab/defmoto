@@ -337,6 +337,7 @@ export async function forwardToOperator(
   sessionId: string,
   text: string,
   customerName?: string,
+  image?: string, // /uploads/... when the customer sent a photo
 ): Promise<{ relayed: boolean }> {
   await ensureLoaded();
 
@@ -347,6 +348,7 @@ export async function forwardToOperator(
     id: `cu_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     author: 'customer',
     text,
+    image: image || undefined,
     createdAt: new Date().toISOString(),
   });
   touchCustomer(session);
@@ -356,17 +358,30 @@ export async function forwardToOperator(
 
   const who = (customerName || session.customerName || 'Mijoz').slice(0, 40);
   const shortId = sessionId.slice(-6);
-  const payload =
-    `👤 *${who}*  \`#${shortId}\`\n\n${text}\n\n` +
-    `↩️ _Reply qilib yozing yoki tez javob tugmalaridan foydalaning:_`;
 
   try {
-    const r = await tg('sendMessage', {
-      chat_id: state.operatorChatId,
-      text: payload,
-      parse_mode: 'Markdown',
-      reply_markup: quickReplyKeyboard(sessionId),
-    });
+    let r;
+    if (image) {
+      // Relay the actual photo so the operator sees it (not just a placeholder).
+      const caption = `👤 *${who}*  \`#${shortId}\`${text ? `\n\n${text}` : ''}`;
+      r = await tg('sendPhoto', {
+        chat_id: state.operatorChatId,
+        photo: absoluteUpload(image),
+        caption,
+        parse_mode: 'Markdown',
+        reply_markup: quickReplyKeyboard(sessionId),
+      });
+    } else {
+      const payload =
+        `👤 *${who}*  \`#${shortId}\`\n\n${text}\n\n` +
+        `↩️ _Reply qilib yozing yoki tez javob tugmalaridan foydalaning:_`;
+      r = await tg('sendMessage', {
+        chat_id: state.operatorChatId,
+        text: payload,
+        parse_mode: 'Markdown',
+        reply_markup: quickReplyKeyboard(sessionId),
+      });
+    }
     if (r?.ok && r.result?.message_id) {
       state.forwarded.set(r.result.message_id, sessionId);
       pruneForwarded();
