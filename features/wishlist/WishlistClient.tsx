@@ -15,7 +15,6 @@ import { useToast } from '@/components/ui/Toaster';
 import { useContentStore } from '@/lib/stores/content';
 import { productName } from '@/lib/productLocale';
 import { useMounted } from '@/hooks/useMounted';
-import { mockProducts } from '@/mocks/products';
 
 export function WishlistClient() {
   const t = useTranslations('wishlist');
@@ -30,9 +29,9 @@ export function WishlistClient() {
   const storeProducts = useContentStore((s) => s.products);
   const { notify, impact } = useHaptic();
 
-  // Resolve liked ids against the admin-managed catalogue (mock as fallback).
+  // Resolve liked ids against the admin-managed catalogue.
   const products = useMemo(() => {
-    const all = mounted && storeProducts.length ? storeProducts : mockProducts;
+    const all = mounted ? storeProducts : [];
     return all.filter((p) => ids.includes(p.id));
   }, [ids, mounted, storeProducts]);
 

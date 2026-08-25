@@ -14,7 +14,6 @@ import { ProductGrid } from './ProductGrid';
 import { useCatalogQuery } from './useCatalogQuery';
 import { queryProducts } from '@/mocks/api';
 import { mockCategories } from '@/mocks/categories';
-import { mockProducts } from '@/mocks/products';
 import { useContentStore } from '@/lib/stores/content';
 import { useMounted } from '@/hooks/useMounted';
 import { categoryName } from '@/lib/categoryName';
@@ -26,7 +25,7 @@ export function CatalogClient() {
   const mounted = useMounted();
   const storeProducts = useContentStore((s) => s.products);
   const storeCategories = useContentStore((s) => s.categories);
-  const products = mounted && storeProducts.length ? storeProducts : mockProducts;
+  const products = mounted ? storeProducts : [];
   const categories = mounted && storeCategories.length ? storeCategories : mockCategories;
   const { query, activeFilterCount, reset } = useCatalogQuery();
   const [filtersOpen, setFiltersOpen] = useState(false);

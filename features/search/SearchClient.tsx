@@ -16,7 +16,6 @@ import { productName } from '@/lib/productLocale';
 import { useMounted } from '@/hooks/useMounted';
 import { categoryName as resolveCategoryName } from '@/lib/categoryName';
 import { mockCategories } from '@/mocks/categories';
-import { mockProducts } from '@/mocks/products';
 
 export function SearchClient() {
   const t = useTranslations('search');
@@ -33,7 +32,7 @@ export function SearchClient() {
   // Live catalogue (admin-managed) — mock as fallback before hydration.
   const storeProducts = useContentStore((s) => s.products);
   const storeCategories = useContentStore((s) => s.categories);
-  const products = mounted && storeProducts.length ? storeProducts : mockProducts;
+  const products = mounted ? storeProducts : [];
   const categories = (mounted && storeCategories.length ? storeCategories : mockCategories).slice(0, 6);
 
   useEffect(() => {

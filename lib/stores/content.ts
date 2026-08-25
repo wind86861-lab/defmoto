@@ -3,7 +3,6 @@ import { persist } from 'zustand/middleware';
 import { createServerPersist } from '@/lib/serverPersist';
 import { mockBranches } from '@/mocks/branches';
 import { mockServiceCenters } from '@/mocks/services';
-import { mockProducts } from '@/mocks/products';
 import { mockCategories } from '@/mocks/categories';
 import { mockBlogPosts } from '@/mocks/blog';
 import type {
@@ -122,7 +121,7 @@ export const useContentStore = create<ContentState>()(
       serviceCenters: mockServiceCenters,
       franchise: {},
       franchises: [],
-      products: mockProducts,
+      products: [],
       categories: mockCategories,
       blogPosts: mockBlogPosts,
       about: {},
@@ -196,7 +195,7 @@ export const useContentStore = create<ContentState>()(
         })),
       removeProduct: (id) =>
         set((s) => ({ products: s.products.filter((p) => p.id !== id) })),
-      resetProducts: () => set({ products: mockProducts }),
+      resetProducts: () => set({ products: [] }),
 
       // Prepend so a newly added category shows at the top of the list.
       addCategory: (c) => set((s) => ({ categories: [c, ...s.categories] })),
@@ -241,7 +240,7 @@ export const useContentStore = create<ContentState>()(
       // v4 adds blog posts + the About page content; v5 adds promo codes.
       migrate: (persisted) => {
         const s = persisted as ContentState;
-        if (!s.products || s.products.length === 0) s.products = mockProducts;
+        if (!Array.isArray(s.products)) s.products = [];
         if (!s.categories || s.categories.length === 0) s.categories = mockCategories;
         if (!s.franchises) s.franchises = [];
         if (!s.blogPosts || s.blogPosts.length === 0) s.blogPosts = mockBlogPosts;

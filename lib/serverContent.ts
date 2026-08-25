@@ -9,7 +9,6 @@
  */
 
 import { getContent, hasContent } from '@/lib/db';
-import { mockProducts } from '@/mocks/products';
 import { mockCategories } from '@/mocks/categories';
 import type { Product, Category } from '@/types/product';
 
@@ -30,8 +29,8 @@ const seeded = () => hasContent('content-store');
 
 export function getProductsServer(): Product[] {
   const p = contentState()?.products;
-  if (Array.isArray(p) && (p.length || seeded())) return p;
-  return mockProducts;
+  if (Array.isArray(p)) return p;
+  return [];
 }
 
 export function getProductBySlugServer(slug: string): Product | undefined {

@@ -17,14 +17,15 @@ import { cn } from '@/lib/cn';
 import { formatPrice, formatNumber, formatDateTime } from '@/lib/format';
 import { useOrdersStore } from '@/lib/stores/orders';
 import { useMounted } from '@/hooks/useMounted';
-import { mockProducts } from '@/mocks/products';
-import { mockCategories } from '@/mocks/categories';
+import { useContentStore } from '@/lib/stores/content';
 import { OrderStatusBadge } from '@/features/orders/OrderStatus';
 
 export default function AdminDashboardPage() {
   const t = useTranslations('admin');
   const mounted = useMounted();
   const orders = useOrdersStore((s) => s.orders);
+  const productCount = useContentStore((s) => s.products.length);
+  const categoryCount = useContentStore((s) => s.categories.length);
 
   const stats = useMemo(() => {
     if (!mounted) {
@@ -106,13 +107,13 @@ export default function AdminDashboardPage() {
         <QuickStat
           icon={Package}
           label={t('navProducts')}
-          value={formatNumber(mockProducts.length)}
+          value={formatNumber(mounted ? productCount : 0)}
           href="/admin/products"
         />
         <QuickStat
           icon={Tag}
           label={t('navCategories')}
-          value={formatNumber(mockCategories.length)}
+          value={formatNumber(mounted ? categoryCount : 0)}
           href="/admin/categories"
         />
         <QuickStat
