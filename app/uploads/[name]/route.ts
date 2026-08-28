@@ -26,6 +26,18 @@ const MIME: Record<string, string> = {
   webm: 'video/webm',
   ogg: 'video/ogg',
   m4v: 'video/mp4',
+  // Documents — files an operator/customer sends in chat.
+  pdf: 'application/pdf',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xls: 'application/vnd.ms-excel',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ppt: 'application/vnd.ms-powerpoint',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  txt: 'text/plain; charset=utf-8',
+  csv: 'text/csv; charset=utf-8',
+  zip: 'application/zip',
+  rar: 'application/vnd.rar',
 };
 
 export async function GET(req: Request, { params }: { params: { name: string } }) {
@@ -35,8 +47,9 @@ export async function GET(req: Request, { params }: { params: { name: string } }
     return new Response('Not found', { status: 404 });
   }
   const ext = (name.split('.').pop() || '').toLowerCase();
-  const type = MIME[ext];
-  if (!type) return new Response('Not found', { status: 404 });
+  // Known types get a proper MIME (PDF/images open inline); anything else still
+  // serves as a generic download instead of 404 — so any format works.
+  const type = MIME[ext] || 'application/octet-stream';
 
   const file = path.join(UPLOAD_DIR, name);
   let buf: Buffer;
